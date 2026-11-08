@@ -2,7 +2,15 @@
 // repository configuration only: no product, no harness code, no environment variable of the host.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -182,4 +190,45 @@ test("hook refuses a Node 24 without its manifest, and a relative PRODUCTS_ROOT,
   assert.equal(b.status, 1);
   assert.match(b.stderr, /PRODUCTS_ROOT must be an absolute path/);
   assert.equal(readFileSync(envB, "utf8"), "");
+});
+
+test("hook rejects a symlinked Node 24 installation directory and leaves CLAUDE_ENV_FILE unchanged", () => {
+  const real = fakeRuntime(join(scratch, "symlink-real"), NODE24_PIN, NODE24_PIN);
+  const realDir = dirname(dirname(real));
+  const root = join(scratch, "symlink-root");
+  mkdirSync(join(root, "node"), { recursive: true });
+  symlinkSync(realDir, join(root, "node", NODE24_PIN));
+  const node22 = fakeRuntime(join(scratch, "symlink-n22"), "22.23.4", "22.23.4");
+  const envFile = join(scratch, "symlink-env.sh");
+  writeFileSync(envFile, "export PREEXISTING=1\n");
+  const result = runHook({
+    PATH: `${dirname(node22)}:/usr/bin:/bin`,
+    HOME: scratch,
+    CLAUDE_CODE_REMOTE: "true",
+    QA_TOOLCHAIN_ROOT: root,
+    CLAUDE_ENV_FILE: envFile,
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /session-start: ERROR/);
+  assert.equal(readFileSync(envFile, "utf8"), "export PREEXISTING=1\n");
+});
+
+test("control: a normal (non-symlinked) Node 24 installation directory is accepted and exported", () => {
+  const root = join(scratch, "normal-control-root");
+  const node24 = fakeRuntime(root, NODE24_PIN, NODE24_PIN);
+  const node22 = fakeRuntime(join(scratch, "normal-control-n22"), "22.23.4", "22.23.4");
+  const envFile = join(scratch, "normal-control-env.sh");
+  writeFileSync(envFile, "");
+  const result = runHook({
+    PATH: `${dirname(node22)}:/usr/bin:/bin`,
+    HOME: scratch,
+    CLAUDE_CODE_REMOTE: "true",
+    QA_TOOLCHAIN_ROOT: root,
+    CLAUDE_ENV_FILE: envFile,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    readFileSync(envFile, "utf8"),
+    new RegExp(`NODE24=${node24.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`),
+  );
 });
