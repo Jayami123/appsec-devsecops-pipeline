@@ -1,0 +1,14 @@
+# Vendored from Jayami123/api-webhook-db-test-suite ref 99a2fde .prettierignore. Change here only with a reason in the PR.
+node_modules/
+package-lock.json
+test-results/
+playwright-report/
+results/
+receiver-logs/
+# Prose and generated docs keep their own wrapping. Prettier also rewrites GIT_AUTHOR_* to
+# GIT_AUTHOR__ in AGENTS.md (probe 2026-10-20), which changes its meaning.
+AGENTS.md
+docs/
+
+# vendored upstream OpenAPI, kept byte-identical (sha256 checked)
+contracts/med/upstream/
