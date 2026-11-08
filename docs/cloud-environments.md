@@ -64,10 +64,26 @@ Repository commands must run on the Node 22 that the contract selects. This hand
 `PATH`, including one with no Node 22, and with a `QA_TOOLCHAIN_ROOT` that contains spaces:
 
 ```bash
-NODE22="$(bash scripts/cloud-install.sh --toolchain-only | sed -n 's/^\[cloud-install\] NODE22=\(.*\) (v[^)]*)$/\1/p')"
-[ -n "$NODE22" ] && [ -x "$NODE22" ] || echo "no NODE22 selected: fix the setup error first" >&2
+# Handoff: on any failure, return (when sourced) or exit (when run as a file) BEFORE anything is exported
+# or PATH is changed. Paste into a shell, or source the block; do not run it as a subshell.
+NODE22_LOG="$(bash scripts/cloud-install.sh --toolchain-only 2>&1)" \
+  || { printf '%s\n' "$NODE22_LOG" >&2; echo "NODE22 handoff: installer failed; nothing exported" >&2; return 1 2>/dev/null || exit 1; }
+NODE22_CANDIDATE="$(printf '%s\n' "$NODE22_LOG" | sed -n 's/^\[cloud-install\] NODE22=\(.*\) (v[^)]*)$/\1/p')"
+NODE22_VERSION="$([ -x "$NODE22_CANDIDATE" ] && "$NODE22_CANDIDATE" -p 'process.versions.node' 2>/dev/null || true)"
+if [ -z "$NODE22_CANDIDATE" ] || [ "${NODE22_CANDIDATE#/}" = "$NODE22_CANDIDATE" ] || [ ! -x "$NODE22_CANDIDATE" ] \
+  || [ "${NODE22_VERSION%%.*}" != "22" ] \
+  || [ "$(printf '%s\n' 22.22.0 "$NODE22_VERSION" | sort -V | head -n 1)" != "22.22.0" ]; then
+  echo "NODE22 handoff: invalid NODE22 (${NODE22_CANDIDATE:-empty}); nothing exported" >&2
+  return 1 2>/dev/null || exit 1
+fi
+NODE22="$NODE22_CANDIDATE"
 export NODE22
 export PATH="$(dirname "$NODE22"):$PATH"
+```
+
+Then the repository commands, on the selected Node 22:
+
+```bash
 npm ci
 npm run check:static
 npm run unit
