@@ -4,8 +4,9 @@
 # Usage: bash scripts/bootstrap.sh [medusa|cal|documenso|twenty ...]   (default: medusa)
 # Idempotent: an existing checkout is never reset, pulled or overwritten. Never prints secrets.
 # P5 F0-1 adaptations (listed in docs/cloud-environments.md): the Cal .env writer is removed
-# (fork .env provisioning is harness-owned); a pin mismatch is a hard error; Node 24 is checked
-# (absolute path, exact 24.22.0, npm >= 11.17) before any Documenso install; no .env is written.
+# (fork .env provisioning is harness-owned); a pin mismatch is a hard error; NODE24 must be supplied
+# by the selection contract and is checked (absolute path, exact 24.22.0, npm >= 11.17) before any
+# Documenso install; no .env is written.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -124,7 +125,13 @@ install_medusa_deps() {
 # Documenso needs Node 24.22.0 + npm >= 11.17 (fork engines). Checked BEFORE any install: an
 # absent, relative, non-executable or wrong-version NODE24 is an ENV failure, never a fallback.
 check_node24() {
-  local node24="${NODE24:-/opt/node24/bin/node}"
+  # Supplied by the selection contract (scripts/cloud-install.sh exports it). No default: a stale or
+  # system Node 24 is never selected silently.
+  local node24="${NODE24:-}"
+  if [ -z "$node24" ]; then
+    log "ERROR NODE24 is not set. Run scripts/cloud-install.sh (selection contract) or export NODE24."
+    exit 1
+  fi
   case "$node24" in
     /*) ;;
     *) log "ERROR NODE24 must be an absolute path (got a relative value)"; exit 1 ;;
