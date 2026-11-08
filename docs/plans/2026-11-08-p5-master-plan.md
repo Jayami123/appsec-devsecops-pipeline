@@ -47,8 +47,8 @@ Status comes from the code-read record. "Pinned" means the ref named in the reco
 | 14 | Stripe libraries default tolerance 5 minutes; stripe-node 300 s | docs.stripe.com/webhooks text; stripe-node `v23.0.1` `src/Webhooks.ts:142` | CONFIRMED (Stripe only; Daily tolerance UNVERIFIED) |
 | 15 | P2 reusable kit: Daily signer/verifier, receiver reach, roles | P2 `99a2fde` `src/webhooks/sign.ts:87`, `:105`; `verify.ts:102`; `reach.ts:25`, `:29`; `src/db/roles.ts:12-13` | CONFIRMED |
 | 16 | This repo: public rulesets API returns `[]`; secret scanning and push protection stated on; code scanning default setup and Actions permissions not readable without auth | `GET /repos/Jayami123/appsec-devsecops-pipeline/rulesets` returned `[]` | Rulesets CONFIRMED; others UNREAD (owner steps, section 12) |
-| 17 | P2 CAL-DLY-002 tests: a valid-signature Daily-shaped body is accepted by signature but returns 400 `Invalid Payload`; an unknown type with a valid signature returns 200 | P2 `99a2fde` `tests/webhooks/cal/cal-dly.spec.ts:38-80` | CONFIRMED (signature acceptance only; no business success) |
-| 18 | Medusa cart GET `/store/carts/:id` has only query validation middleware; no customer-auth middleware | Medusa core `v2.21.2` `api/store/carts/middlewares.ts:26-36` | CONFIRMED (cart semantics UNPROBED) |
+| 17 | P2 CAL-DLY tests at `99a2fde`: `:23-40` negative (tampered body with the old signature returns 403 `Signature does not match`); `:42-60` valid signature accepted by the signature check, downstream 400 `Invalid Payload`; `:63-79` unknown type with valid signature returns 200 | P2 `tests/webhooks/cal/cal-dly.spec.ts:23-40, 42-60, 63-79` | CONFIRMED. Uncovered residual: random or forged signature values not derived from the secret or body (plan section 4.2, CAL-WH-004). |
+| 18 | Medusa cart middlewares at the pin: `GET /store/carts/:id` has only query validation; `POST /store/carts/:id/customer` is the only cart matcher with `authenticate("customer", …)` (line 63); line-item, promotion, tax, shipping and complete routes have no authenticate. Ownership checks inside handlers are not shown by middleware. | Medusa core `v2.21.2` `packages/medusa/src/api/store/carts/middlewares.ts` (grep of matchers and `authenticate`, this revision) | CONFIRMED for middleware; handler ownership checks UNPROBED (plan P-10, P-14) |
 | 19 | Cal normal seed inherits the harness process env: harness runs `yarn db-seed` with env merged over `process.env` | harness `v0.3.1` `src/adapters/cal.adapter.ts:977-981`; `src/internal/run.ts:100-102` | CONFIRMED (no pass-through needed for seed vars; whether the harness sets `SEED_OAUTH2_*` is UNPROBED) |
 | 20 | Twenty limiter layers: API-key short window (100/1 s), API-key long window (3600/60 s), application window (500/60 s); spender types `apiKey` and `application`, `spenderId` empty; counted by token-bucket try-consume scripts | Twenty `usage-limit-definitions.constant.ts:9-46` (spender types and variables); `constants/try-consume-token-buckets-script.constant.ts:7-15`; P6 `limiter-profile.ts:6-8` (binding claim); request-versus-operation counting UNPROBED | CONFIRMED (structure); unit of counting UNPROBED |
 | 21 | Harness has only a whole-stack volume reset (`down -v` / `TWENTY_DOWN_VOLUMES=1`); no product-scoped limiter reset | harness `v0.3.1` `src/adapters/twenty-env.ts:137`, `:218`, `:251` | CONFIRMED (no scoped reset exists) |
@@ -141,7 +141,7 @@ Reframes and dispositions are named in the Note column. A "reframe" keeps the ID
 | P5-DOC-OIDC-002 | P1 | `email_verified=false` not auto-linked | L-DOC | Gated (D9) |
 | P5-MED-WH-001 | P0 | Missing signature: payment unchanged | L-MED | Independent valid control on a fresh order |
 | P5-MED-WH-002 | P0 | Invalid signature: payment unchanged | L-MED | Independent valid control on a fresh order |
-| P5-MED-AUTHZ-001 | P0 | Customer B cannot read customer A cart | L-MED | REFRAMED pending cart probe (fact 18): if cart GET is capability-by-id, the oracle becomes "B cannot mutate A's cart"; read-by-id goes to MI-5. No defect is assumed. |
+| P5-MED-AUTHZ-001 | P0 | Customer B cannot take over or mutate customer A's cart through a customer-authenticated route | L-MED | REFRAMED, no fallback oracle. Protected candidate: `POST /store/carts/:id/customer` (customer-authenticated at the pin, fact 18). Probe P-10/P-14 decides: B's session targeting A's cart is refused only if the handler checks ownership; if accepted, PRODUCT BUG (SUSPECTED) after a valid control and before/after state. Line-item and GET routes have no customer authentication: capability-by-ID, recorded as a design verdict (MI-5); no defect is assumed. |
 | P5-MED-AUTHZ-002 | P0 | Publishable key alone cannot act as admin | L-MED | |
 | P5-MED-AUTHZ-003 | P1 | Customer B cannot update customer A address | L-MED | Probe confirms the address route is protected first |
 | P5-MED-RBAC-001 | P2 | Role without order write cannot cancel | L-MED | Gated (D14) |
@@ -190,12 +190,12 @@ An ALIAS row claims only the scope stated. Anything outside it is a residual, wh
 | ID | Covered by (repo, ref, file) | Scope covered | Residual (uncovered) | Disposition |
 |---|---|---|---|---|
 | P5-CAL-WH-001 | P2-CAL-DLY-002: `api-webhook-db-test-suite` `99a2fde` `tests/webhooks/cal/cal-dly.spec.ts:38-80` (fact 17) | Signature acceptance and the observed 400/200 contract for an authenticated Daily-shaped request | Successful business processing (the original 2xx property). A new business-positive control in P5-CAL-WH-002 supplies it. | ALIAS-PARTIAL (authenticity only) |
-| P5-CAL-WH-004 | Same P2 file, same test | Signature acceptance | Business processing (as above) | ALIAS-PARTIAL (authenticity only) |
+| P5-CAL-WH-004 | P2 `tests/webhooks/cal/cal-dly.spec.ts:23-40` (negative signature validation: tampered body with the old signature returns 403) | Negative signature validation for a tampered body | Random or forged signature values not derived from the secret or body (not covered by that test); business processing | ALIAS-PARTIAL (negative validation for tampered body only) |
 | P5-CAL-CRON-002 | P2 framework check FC-1: `tests/integration/cal/cal-framework.spec.ts` (review-reported scope; not re-read in this revision) | The two routes FC-1 checks, as reported by the review | Every other cron route. P5-CAL-CRON-001 builds one row per route. | ALIAS-PARTIAL (two routes) |
 | P5-DOC-TOK-001 | P6-DOC-RACE-002: `k6-load-concurrency-suite` `0533e61` `tests/documenso/races/doc-race-002-double-submit.spec.ts:40-48` | Same-token ten-way race: one SIGNED, nine ALREADY_SIGNED, all 200, one seal (supported by fact 4) | None within the race property | ALIAS (supported) |
 | P5-DOC-RL-001 | P6-DOC-LOAD-009 `limiter-contract.ts:21-28` (authorize max 10 with max+1 probe) | Max+1 behaviour for its route | The slow 15-minute window-reset edge is UNCOVERED and DEFERRED to a later row | ALIAS-PARTIAL (max+1 only) |
-| P5-DOC-RL-002 | P6-DOC-LOAD-009 (same contract, forgot/reset routes) | Max+1 behaviour | Window-reset edge (as above) | ALIAS-PARTIAL |
-| P5-DOC-RL-003 | P6-DOC-LOAD-009 (same contract, verify/resend routes) | Max+1 behaviour | Window-reset edge (as above) | ALIAS-PARTIAL |
+| P5-DOC-RL-002 | P6-DOC-LOAD-009 (forgot-password max 3 at `limiter-contract.ts:29-35`; reset-password max 5 at `:50-57`) | Max+1 behaviour for those routes | Window-reset edge (as above) | ALIAS-PARTIAL |
+| P5-DOC-RL-003 | P6-DOC-LOAD-009 (file upload max 20 at `limiter-contract.ts:19`) | Max+1 behaviour for the upload route | Window-reset edge (as above) | ALIAS-PARTIAL |
 | P5-DOC-TOK-002 | held-private (section 4.7) | — | — | held-private (status only) |
 | P5-MED-WH-003 | P2-MED-WH-001: `tests/webhooks/med/signed-event.spec.ts` (supported by the inspected source) | Medusa signed-event handling for its covered case | Missing or invalid signatures (P5-MED-WH-001/002) | ALIAS (supported) |
 | P5-TW-TOK-001 | held-private (section 4.7) | — | — | held-private (status only) |
@@ -343,7 +343,7 @@ flowchart LR
 
 | Rule | Detail |
 |---|---|
-| File ownership | Lanes own `src/lanes/<code>/`, `tests/<kind>/<code>/` (kinds: `contracts`, `webhooks`, `integration`, `serial`, `ui`), `tests/unit/lanes/<code>/`, `.github/workflows/p5-<code>.yml`. L-TW-B owns `src/lanes/tw-iso/`, `tests/iso/tw/`, `.github/workflows/p5-tw-iso.yml`. L-PIPE owns `scripts/scan/`, `config/scan/`, `.github/workflows/p5-scans.yml`, `.github/workflows/p5-zap-nightly.yml`, `.github/workflows/codeql-reusable.yml`. X owns `docs/` closeout files, `src/lanes/x/`, `tests/**/closeout/`, `.github/workflows/p5-x.yml`. |
+| File ownership | Lanes own `src/lanes/<code>/`, `tests/<kind>/<code>/` (kinds: `contracts`, `webhooks`, `integration`, `serial`, `ui`), `tests/unit/lanes/<code>/`, `.github/workflows/p5-<code>.yml`. L-TW-B owns `src/lanes/tw-iso/`, `tests/iso/tw/`, `tests/limiter-last/tw/`, `.github/workflows/p5-tw-iso.yml`. L-PIPE owns `scripts/scan/`, `config/scan/` (except `config/scan/implementation-status.json`, which is foundation-owned and flipped by each implementing PR), `.github/workflows/p5-scans.yml`, `.github/workflows/p5-zap-nightly.yml`, `.github/workflows/codeql-reusable.yml`. X owns `docs/` closeout files, `src/lanes/x/`, `tests/closeout/medusa/`, `tests/closeout/twenty/`, `.github/workflows/p5-x.yml`. |
 | Foundation owns | `src/kit/`, `src/security/`, `scripts/` (except `scripts/scan/`), `package.json`, `package-lock.json`, `tsconfig.json`, `playwright.config.ts`, `eslint.config.mjs`, `.github/workflows/ci.yml`, `.github/workflows/foundation.yml`, `docs/SECURITY-SCOPE.md`, `docs/SEVERITY.md`, `docs/lane-ownership.md`, `docs/findings/`, `.github/pull_request_template.md`, `AGENTS.md`, `CLAUDE.md`. Changes go through a foundation PR. |
 | One product per job | A job starts at most one product stack. Stacks always end with `down`, in a `finally` step. |
 | Independent controls | Every negative mutation uses its own fixtures. A positive control never changes the state a negative check reads from an earlier step. Before/after state is captured for each mutation. |
@@ -432,7 +432,7 @@ No `includeCoAuthoredBy` key.
 4. `npm ci` exit 0.
 5. `npm run check:static` exit 0 (`prettier --check` prints `All matched files use Prettier code style!`).
 6. `npm run unit` exit 0 with `# tests 2`, `# pass 2`, `# fail 0`.
-7. `npx playwright test --list --project=__list_projects__ 2>&1 || true` contains `Available projects:` listing the eleven project names above.
+7. `npx playwright test --list --project=__list_projects__ 2>&1 || true` contains `Available projects:` listing the thirteen names `cal`, `cal-ui`, `doc`, `med`, `tw`, `tw-iso`, `tw-limiter-last`, `medusa-closeout`, `twenty-closeout`, `cal-serial`, `doc-serial`, `med-serial`, `tw-serial`. The thirteen count is what the command prints; it is not assumed.
 8. Toolchain check (run under the setup-phase procedure, section 10.2): `/opt/node24/bin/node --version` prints `v24.22.0`; `node --version` is 22.x.
 9. Attribution probe (required, record output): run `claude --version` and confirm it is at least `2.1.281`. In a fresh session in this repository, ask for a one-line commit to a scratch branch of this repo's docs only, then inspect the created commit message and any PR text for trailers, and confirm no session URL appears. Record exact output in the PR body. If the probe cannot run in this environment, the result is UNPROBED, not PASS.
 10. `git diff --name-only origin/main` equals the file table above.
@@ -474,7 +474,7 @@ No `includeCoAuthoredBy` key.
 | `src/kit/invariants/engine.ts` | `src/invariants/engine.ts` | `../run/prefix.ts`, `../db/select-guard.ts`, `../db/pg.ts` (type) | sweeps |
 | `src/kit/invariants/after-test.ts` | `src/invariants/after-test.ts` | `../db/pg.ts` (type), `./engine.ts` | sweep after each test |
 | `src/kit/env.ts` | NEW, trimmed from P2 `src/env.ts` (section 7.2.1) | `node:net`, `zod` | all |
-| `scripts/db-roles.ts` | `scripts/db-roles.ts` | `../src/env.ts`, `../src/kit/db/roles-admin.ts` (path adapted) | `npm run db:roles:provision` |
+| `scripts/db-roles.ts` | `scripts/db-roles.ts` | `../src/kit/env.ts` (`PRODUCT_IDS`, `ProductId`; P2 import was `../src/env.ts`, line 3), `../src/kit/db/roles-admin.ts` (`provisionProduct`, `teardownRoles`, `withAdmin`; P2 import was `../src/db/roles-admin.ts`, line 4) | `npm run db:roles:provision` |
 | `scripts/write-ci-job-summary.ts` | `scripts/write-ci-job-summary.ts` | `../src/kit/ci/playwright-json-summary.ts` (path adapted) | job summary |
 | `tests/unit/webhooks/vectors.ts` | same | none | sign and verify tests |
 
@@ -509,7 +509,7 @@ Anything not in this table is a STOP.
 `src/security/redact.ts`: `redactArtefact(text)` (Bearer tokens, `api_` keys, GitHub token prefixes, JWT-shaped strings, values after `password=`, `secret=`, `token=`, and `Authorization:` / `Set-Cookie` header values) and `redactTraceJson(value)` (deep copy redacting values under keys `authorization`, `cookie`, `set-cookie`, `password`, `secret`, `token`, `api_key`, `apiKey`). Patterns mirror P6 `scripts/evidence-token-scan.mjs` lines 14-27.
 
 **Exact unit tests (new)**
-- `tests/unit/security/budgets.test.ts`: "every budget is a number or a named object with a basis"; "BRUTE_FORCE_ATTEMPTS is 101"; "TOTP_BURST is 20"; "CAL_V2_KEY_LIMIT is 121"; "WEBHOOK_STALE_AGE_S is 3600"; "CAL_RESET_CONCURRENT_N is 5"; "TW_SPRAY_ACCOUNTS is 20" (6 tests; extend the list as budgets in section 8 are added, updating the expected count in the same PR).
+- `tests/unit/security/budgets.test.ts`: 7 tests: "every budget is a number or a named object with a basis"; "BRUTE_FORCE_ATTEMPTS is 101"; "TOTP_BURST is 20"; "CAL_V2_KEY_LIMIT is 121"; "WEBHOOK_STALE_AGE_S is 3600"; "CAL_RESET_CONCURRENT_N is 5"; "TW_SPRAY_ACCOUNTS is 20".
 - `tests/unit/security/burst.test.ts`: 5 tests: "burstCount returns the named value"; "burstCount refuses a raw number with BUDGET_NOT_NAMED"; "burstCount refuses an unknown name with BUDGET_NOT_NAMED"; "runBurst calls attempt exactly BRUTE_FORCE_ATTEMPTS times"; "runBurst returns statuses in call order".
 - `tests/unit/security/matrix.test.ts`: 4 tests: "assertCovered passes for a complete matrix"; "assertCovered names the first uncovered cell"; "assertCovered requires a control row per actor and resource"; "toCsv writes the header and quotes commas".
 - `tests/unit/security/findings.test.ts`: 4 tests: "isPrivateEntry accepts exactly id and status"; "isPrivateEntry rejects any extra key"; "assertNoPrivateExtras throws PRIVATE_FIELD_REJECTED for title"; "assertNoPrivateExtras throws for note".
@@ -523,7 +523,7 @@ Anything not in this table is a STOP.
 3. Write `src/kit/env.ts` and the `src/security/*` modules and tests.
 4. `npm ci` exit 0; `npm run typecheck` exit 0 with no errors (`tsc -p tsconfig.json` prints nothing and exits 0).
 5. `npm run check:static` exit 0.
-6. `npm run unit` exit 0 with `# fail 0`. Expected `# pass` = carried-over kit tests + 27 new tests + 2 F0-1 tests. The builder records the exact count in the PR body (the count is derived, not assumed).
+6. `npm run unit` exit 0 with `# fail 0`. Expected `# pass` = carried-over kit tests + 31 new tests (7 budgets + 5 burst + 4 matrix + 4 findings + 7 redact + 2 env + 2 import-closure) + 2 F0-1 tests. The builder records the measured count and checks it equals this sum plus the carried-over count. No count is assumed.
 7. Re-check every plan-section-2 fact at its pinned ref using the commands in the code-read record (CONFIRMED or CONTRADICTS, with file:line). STOP on CONTRADICTS.
 
 **Done criteria:** typecheck clean; unit `# fail 0`; import-closure test passes; every vendored file has its provenance line; the PR body lists every adaptation from section 7.2.2 and nothing else.
@@ -546,18 +546,19 @@ Anything not in this table is a STOP.
 | `.github/workflows/foundation.yml` | new (section 9.2) | `workflow_call`, `workflow_dispatch`: `check`, `unit`, `workflow-lint` |
 | `.github/workflows/p5-cal.yml`, `p5-doc.yml`, `p5-med.yml`, `p5-tw.yml`, `p5-tw-iso.yml`, `p5-scans.yml`, `p5-x.yml` | stubs (section 9.9) | Lane stubs with the stub marker |
 | `.github/workflows/security.yml` | DELETE | Empty file, 0 bytes, verified at planning |
-| `scripts/ci-changes.sh` | new (section 9.5) | Flags: cal, doc, med, tw, tw_iso, scans, x |
+| `scripts/ci-changes.sh` | new (section 9.5) | Flags: cal, doc, med, tw, tw_iso, x, codeql, scans |
+| `config/scan/implementation-status.json` | new (foundation-owned, section 9.13) | Scanner stub or implemented registry |
 | `scripts/lint-workflows.sh` | new (section 9.4) | Pinned actionlint, checksum-verified |
-| `tests/unit/ci/workflow.test.ts`, `tests/unit/ci/ci-changes.test.ts`, `tests/unit/ci/lint-workflows.test.ts` | new | Shape tests |
+| `tests/unit/ci/workflow.test.ts`, `tests/unit/ci/ci-changes.test.ts`, `tests/unit/ci/gate.test.ts`, `tests/unit/ci/lint-workflows.test.ts` | new | Shape, classifier, gate and lint tests (counts in the test lists below) |
 
 **Build steps**
 1. Branch after F0-2.
 2. Create files; `git rm .github/workflows/security.yml` after `git show origin/main:.github/workflows/security.yml | wc -c` prints `0`.
 3. `npm ci`, `npm run check:static`, `npm run unit` as in F0-2 (all exit 0; `# fail 0`).
 4. `bash scripts/lint-workflows.sh` exit 0, printing `actionlint <version> OK` and the checksum verified. The script fails closed if the checksum constant is empty or the download cannot be verified.
-5. Classifier by hand: `printf 'docs/x.md\n' | EVENT_NAME=pull_request bash scripts/ci-changes.sh` prints `p5_cal=false`, `p5_doc=false`, `p5_med=false`, `p5_tw=false`, `p5_tw_iso=false`, `p5_scans=false`, `p5_x=false`. `printf 'src/kit/x.ts\n' | EVENT_NAME=pull_request bash scripts/ci-changes.sh` prints all seven `true`.
+5. Classifier by hand (both must match exactly): `printf 'docs/x.md\n' | EVENT_NAME=pull_request bash scripts/ci-changes.sh` prints `p5_cal=false`, `p5_doc=false`, `p5_med=false`, `p5_tw=false`, `p5_tw_iso=false`, `p5_x=false`, `p5_codeql=false`, `p5_scans=true`. `printf 'src/kit/x.ts\n' | EVENT_NAME=pull_request bash scripts/ci-changes.sh` prints `p5_cal=true` through `p5_codeql=true` and `p5_scans=true`.
 
-**Done criteria:** all unit tests and lint pass locally; the two classifier outputs match; `git diff --name-only origin/main` equals the file table; `gate` `needs:` names exactly `changes`, `foundation`, `p5-cal`, `p5-doc`, `p5-med`, `p5-tw`, `p5-tw-iso`, `p5-scans`, `p5-x`. A live Actions run is UNPROBED until it runs; it is reported as such.
+**Done criteria:** all unit tests and lint pass locally; the expected count is 42 new tests (16 workflow + 16 classifier + 7 gate + 3 lint); the two classifier outputs match step 5; `git diff --name-only origin/main` equals the file table; `gate` `needs:` names exactly `changes`, `foundation`, `p5-cal`, `p5-doc`, `p5-med`, `p5-tw`, `p5-tw-iso`, `p5-scans`, `p5-x`. A live Actions run is UNPROBED until it runs.
 
 **Commit plan:** (1) `ci(f0): add foundation and workflow lint jobs`; (2) `ci(f0): add lane and closeout stub workflows`; (3) `ci(f0): add change classifier with the x flag`; (4) `ci(f0): add the caller workflow and the required gate`; (5) `ci(f0): remove the empty security workflow`.
 
@@ -583,7 +584,7 @@ Anything not in this table is a STOP.
 **Ledger schema (draft-07, runtime-validated with `ajv` default export).** Top level: `{ "schema": 1, "cases": [], "private": [], "findings": [], "accepted_risks": [] }`, `additionalProperties: false`.
 
 - `cases[]` (planned cases): `{ id, product, status, title, lane, severity: null, alias?, blocker?, reason? }`. `id` pattern `^(P5|PN|MI)-`; `product` enum `cal|documenso|medusa|twenty|repo|cross`. `status` enum `planned|gated|alias|dropped`. Conditional: `status=alias` requires `alias: { canonicalId, repo, ref, file, scopeCovered, residual, disposition }` (disposition enum `ALIAS|ALIAS-PARTIAL|ALIAS-supported`); `status=gated` requires `blocker`; `status=dropped` requires `reason`. `additionalProperties: false`.
-- `findings[]` (proven findings or run outcomes): `{ id, product, status, title, severity, evidence: { runId, artifact, file, line }, bugId? }`. `status` enum `open|product-bug-suspected|confirmed-product-bug|fixed`. `severity` enum `High|Medium|Low|Info`. `evidence` required. `test.fail` annotations require `bugId` and `confirmed-product-bug`. `additionalProperties: false`.
+- `findings[]` (proven findings or run outcomes): `{ id, product, status, title, severity, evidence: { runId, artifact, file, line }, bugId? }`. `status` enum `open|product-bug-suspected|confirmed-product-bug|fixed`. `severity` enum `Critical|High|Medium|Low|Info`. `evidence` required. `test.fail` annotations require `bugId` and `confirmed-product-bug`. `additionalProperties: false`.
 - `accepted_risks[]`: `{ id, product, status: "accepted-risk", title, severity, owner, reason, acceptedOn, expires }`. Required: `owner` (non-empty), `reason` (non-empty), `expires` (ISO date, at most `ACCEPTED_RISK_TTL_DAYS` = 90 days after `acceptedOn`). Expired entries fail the gate.
 - `private[]`: `{ id, status }` only. `status` const `held-private`. `additionalProperties: false`. Any extra key is rejected at runtime by `assertNoPrivateExtras`.
 
@@ -631,19 +632,19 @@ Classes: **CITED** = a source-backed value (the source is named); **INVESTIGATIV
 | CAL_V2_KEY_LIMIT | 121 requests in the window | CITED + verified | Source: Cal `throttler-guard.ts:36` (default 120) and the default 60 s TTL. The test first reads the effective `RATE_LIMIT_DEFAULT_LIMIT_API_KEY` and TTL from the running stack configuration; if they differ from the defaults, N = effective limit + 1 and the row records the override. The constant is the default-case value only. | P5-CAL-RL-002 |
 | DOC_ROUTE_LIMITS | authorize 10, forgot-password 3, resend-verify-email 3, verify-email 5, reset-password 5, upload 20, ai 3 | CITED only | P6 `limiter-contract.ts:14-58` (seven of its ten routes). Cited for alias scope; no P5 run repeats them. The slow window-reset edge is not covered by these values. | P5-DOC-RL-001..003 aliases; MI-19 |
 | TW_LIMITER_LAYERS | functional profile: API-key short 100 per 1000 ms; API-key long 3600 per 60000 ms; application 500 per 60000 ms | CITED (functional profile values) | P6 `limiter-profile.ts:10-17`; Twenty spender types `apiKey` and `application` (fact 20). Image-default values are UNPROBED. | P5-TW-GQL-004 |
-| TW_SPRAY_ACCOUNTS | 20 throwaway accounts, one attempt each | INVESTIGATIVE | Enumeration and spray analysis: one attempt per account, recorded per account. Not a per-user brute-force count. | P5-TW-RL-002 |
-| CAL_RESET_CONCURRENT_N | 5 parallel redemptions | INVESTIGATIVE | One reset token redeemed by 5 parallel requests; exactly one success is the property. | P5-CAL-TOK-001 |
+| TW_SPRAY_ACCOUNTS | 20 throwaway accounts, one attempt each (provisional) | INVESTIGATIVE (provisional) | Enumeration and spray analysis: one attempt per account, recorded per account. Not a per-user brute-force count. | P5-TW-RL-002 |
+| CAL_RESET_CONCURRENT_N | 5 parallel redemptions (provisional) | INVESTIGATIVE (provisional) | One reset token redeemed by 5 parallel requests; exactly one success is the property. | P5-CAL-TOK-001 |
 | WEBHOOK_STALE_AGE_S | 3600 | INVESTIGATIVE | An age for the stale-timestamp probe. It is NOT Stripe's rule (Stripe's default tolerance is 300 s, fact 14). Daily's tolerance is UNVERIFIED. | P5-CAL-WH-003 |
 | SND_FN_TIMEOUT_S | 5 | INVESTIGATIVE (configured function timeout) | The configured per-function timeout set in the test. It is not proof of driver termination (the driver default 900000 ms is a default parameter, fact 7). | P5-TW-SND-003 |
-| SND_TIMEOUT_MARGIN_S | max(10, ceil(1.5 × observed spawn overhead)) | OPERATIONAL | Set after the first probe; the probed value is recorded. | P5-TW-SND-003 |
-| GQL_DEPTH_PROBE | 64 | INVESTIGATIVE | A probe nesting depth. The configured product limit is read or measured first; the row records observed behaviour. | P5-TW-GQL-001 |
-| GQL_ALIAS_PROBE | 200 | INVESTIGATIVE | A probe alias count. Same rule as above. | P5-TW-GQL-003 |
-| GQL_BATCH_PROBE | 100 | INVESTIGATIVE | Batched operations per request, counted as operations (not requests) and as requests separately (fact 20; unit UNPROBED). | P5-TW-GQL-004 |
+| SND_TIMEOUT_MARGIN_S | max(10, ceil(1.5 × observed spawn overhead)) (provisional until probed) | OPERATIONAL | Set after the first probe; the probed value is recorded. | P5-TW-SND-003 |
+| GQL_DEPTH_PROBE | 64 (provisional) | INVESTIGATIVE (provisional) | A probe nesting depth. The configured product limit is read or measured first; the row records observed behaviour. | P5-TW-GQL-001 |
+| GQL_ALIAS_PROBE | 200 (provisional) | INVESTIGATIVE (provisional) | A probe alias count. Same rule as above. | P5-TW-GQL-003 |
+| GQL_BATCH_PROBE | 100 (provisional) | INVESTIGATIVE (provisional) | Batched operations per request, counted as operations and as requests separately (fact 20; counting unit UNPROBED). | P5-TW-GQL-004 |
 | FUZZ_MAX_EXAMPLES | 200 per product run | INVESTIGATIVE (provisional) | Schemathesis example budget per run; the CLI option name is confirmed at the pinned version before use (UNVERIFIED here). | P5-MED-FUZZ-001, P5-TW-FUZZ-001, PN-2, PN-3 |
 | FUZZ_WALL_MIN | 10 per product | OPERATIONAL (provisional) | Wall-clock cap for a fuzz job; revisit after the first run. | same |
-| MEM_ALLOC_FRACTION | 1.5 × verified configured limit, capped by MEM_MAX_ALLOC_MB = 512 | INVESTIGATIVE | Only when the sandbox's configured memory limit is verified. If not verified, SND-004 is gated with its blocker. A test is never assumed to have a limit. | P5-TW-SND-004 |
-| LANE_JOB_TIMEOUT_MIN | cal 30, doc 60, med 30, tw 30, tw_iso 30, tw_limiter_last 30, closeout 30, scans 20 | OPERATIONAL | P2 lanes at 30 (`p2-cal.yml:31`, `p2-tw.yml` tw-api). Doc at 60 for Documenso start-up. After three runs: 2 × p95. Never raised to get green. | every job |
-| ZAP_NIGHTLY_TIMEOUT_MIN | 30 | OPERATIONAL (estimate) | Revisit after the first run | P5-SCAN-004 |
+| MEM_ALLOC_FRACTION | 1.5 × verified configured limit; cap MEM_MAX_ALLOC_MB = 512 (provisional) | INVESTIGATIVE | Only when the sandbox's configured memory limit is verified. If not verified, SND-004 is gated with its blocker. A test is never assumed to have a limit. | P5-TW-SND-004 |
+| LANE_JOB_TIMEOUT_MIN | cal 30, doc 60 (provisional), med 30, tw 30, tw_iso 30, tw_limiter_last 30, closeout 30, scans 20 (provisional) | OPERATIONAL. The 30 values are the P2 lane value (`p2-cal.yml:31`, `p2-tw.yml` tw-api). The 60 and 20 values are UNMEASURED provisional estimates. After three measured runs: 2 × p95. Never raised to get green. | every job |
+| ZAP_NIGHTLY_TIMEOUT_MIN | 30 (provisional; unmeasured estimate) | OPERATIONAL | Estimate: 4 products × passive baseline plus stack start. Revisit after the first measured run. | P5-SCAN-004 |
 | ACCEPTED_RISK_TTL_DAYS | 90 | POLICY | Review interval for accepted scanner risks; not a disclosure deadline | ledger, gate |
 | Async waits | `expect.poll` with a named deadline; no sleeps | rule | P2 rule | every lane |
 
@@ -652,9 +653,9 @@ Classes: **CITED** = a source-backed value (the source is named); **INVESTIGATIV
 ### 9.1 `ci.yml` (caller)
 - Triggers: `pull_request`, `push` (branch `main`), `workflow_dispatch`.
 - Top-level `permissions: contents: read`. No top-level grant of `security-events`.
-- Jobs: `changes` (`timeout-minutes: 5`, outputs `p5_cal`, `p5_doc`, `p5_med`, `p5_tw`, `p5_tw_iso`, `p5_scans`, `p5_x`); `foundation` (calls `./.github/workflows/foundation.yml`); lane jobs `p5-cal`, `p5-doc`, `p5-med`, `p5-tw`, `p5-tw-iso`, `p5-x` (each `needs: [changes]`, `if:` the flag AND the same-repo check, `uses: ./.github/workflows/p5-<code>.yml`, `secrets: inherit` EXCEPT `p5-tw-iso` which has no secrets key); and `p5-scans`.
+- Jobs: `changes` (`timeout-minutes: 5`). Changed paths: on `pull_request`, `base.sha...head.sha`; on `push`, `github.event.before...github.sha`; an all-zero `before` (new branch) means every lane and CodeQL run. Outputs: `p5_cal`, `p5_doc`, `p5_med`, `p5_tw`, `p5_tw_iso`, `p5_x`, `p5_codeql`, `p5_scans` (section 9.5). `foundation` (calls `./.github/workflows/foundation.yml`); lane jobs `p5-cal`, `p5-doc`, `p5-med`, `p5-tw`, `p5-tw-iso`, `p5-x` (each `needs: [changes]`, `if:` its flag AND the same-repo check, `uses: ./.github/workflows/p5-<code>.yml`, `secrets: inherit` EXCEPT `p5-tw-iso`, which has no secrets key); `p5-scans` (`if:` `p5_scans` AND the same-repo check; outputs `codeql_verdict` and `scanner_status`, section 9.13).
 - **`p5-scans` job grants**: `permissions: { contents: read, security-events: write }` at THIS job only. This is the one caller grant that reaches the scanner reusable workflow (a reusable workflow cannot elevate beyond its caller's grant, fact 28). It is the only job in `ci.yml` with `security-events: write`.
-- `gate`: `needs: [changes, foundation, p5-cal, p5-doc, p5-med, p5-tw, p5-tw-iso, p5-scans, p5-x]`, `if: always()`, `timeout-minutes: 5`. Its logic: each flagged lane must be `success`; a skipped lane is allowed only when its flag is `false`; `p5-scans` must additionally output `codeql_verdict == "pass"` and `secret_scan == "pass"` when its flag is true.
+- `gate`: `needs: [changes, foundation, p5-cal, p5-doc, p5-med, p5-tw, p5-tw-iso, p5-scans, p5-x]`, `if: always()`, `timeout-minutes: 5`. Rules: (1) `changes` and `foundation` succeed; (2) every lane whose flag is true succeeds, and a skipped lane is allowed only when its flag is false; (3) when `p5_scans` is true, `p5-scans` succeeds and each scanner reports `pass`, `fail` or `not-implemented` under section 9.13; (4) when `p5_codeql` is true, `codeql_verdict` is `pass`, or `not-implemented` while CodeQL is a stub; `fail` blocks; (5) `p5-x` follows its flag. Tests: section 9.11.
 
 ### 9.2 `foundation.yml`
 Jobs `check` (`npm ci`, `npm run check:static`), `unit` (`npm run unit:ci`), `workflow-lint` (`bash scripts/lint-workflows.sh`). Each `timeout-minutes: 10`, `permissions: contents: read`. Actions pins: section 9.4.
@@ -683,7 +684,7 @@ Threshold semantics (D4 scope):
 - `scripts/lint-workflows.sh`: downloads the pinned actionlint release archive for the version constant, verifies the SHA-256 against a checksum constant in the script, and fails closed if the constant is empty or the checksum does not match. The builder fills the constant from the release's published checksum file in F0-3 and records the source line in the PR body. Until it is filled the script exits non-zero (this is intended).
 
 ### 9.5 Classifier (`scripts/ci-changes.sh`)
-Stdin: changed paths. `EVENT_NAME` decides. Rules (flag names): cal `^(src/lanes/cal/|tests/unit/lanes/cal/|tests/(contracts|webhooks|integration|serial|ui)/cal/|\.github/workflows/p5-cal\.yml$)`; doc, med, tw similarly; tw_iso `^(src/lanes/tw-iso/|tests/iso/|\.github/workflows/p5-tw-iso\.yml$)`; scans `^(scripts/scan/|config/scan/|\.github/workflows/(p5-scans|p5-zap-nightly|codeql-reusable)\.yml$)`; x `^(src/lanes/cal/csv-corpus\.ts$|src/lanes/x/|tests/[a-z]+/closeout/|\.github/workflows/p5-x\.yml$)`; neutral `^(docs/|README\.md$|AGENTS\.md$|CLAUDE\.md$)`; anything else, including `src/kit/`, `src/security/`, `scripts/` (except `scripts/scan/`), `package*.json`, `playwright.config.ts`, `tsconfig.json`, `.github/workflows/ci.yml`, `.github/workflows/foundation.yml`, runs ALL lanes. Empty list on `pull_request` runs all. `workflow_dispatch` runs all. Other events run none. Output keys: `p5_cal`, `p5_doc`, `p5_med`, `p5_tw`, `p5_tw_iso`, `p5_scans`, `p5_x`.
+Inputs: changed paths (one per line) and `EVENT_NAME`. Outputs: `p5_cal`, `p5_doc`, `p5_med`, `p5_tw`, `p5_tw_iso`, `p5_x`, `p5_codeql`, `p5_scans` (true or false). Lane regexes: cal `^(src/lanes/cal/|tests/unit/lanes/cal/|tests/(contracts|webhooks|integration|serial|ui)/cal/|\.github/workflows/p5-cal\.yml$)`; doc, med and tw likewise; tw_iso `^(src/lanes/tw-iso/|tests/iso/|tests/limiter-last/|\.github/workflows/p5-tw-iso\.yml$)`; x `^(src/lanes/cal/csv-corpus\.ts$|src/lanes/x/|tests/closeout/medusa/|tests/closeout/twenty/|\.github/workflows/p5-x\.yml$)`. `p5_codeql` is true when a path matches `^(src/|scripts/|tests/|config/scan/|\.github/)` or the shared list (`package.json`, `package-lock.json`, `tsconfig.json`, `playwright.config.ts`, `eslint.config.mjs`); it is false for `docs/`, `README.md`, `AGENTS.md`, `CLAUDE.md` only. Shared paths (`src/kit/`, `src/security/`, `scripts/` except `scripts/scan/`, `package*.json`, `tsconfig.json`, `playwright.config.ts`, `eslint.config.mjs`, `.github/workflows/ci.yml`, `.github/workflows/foundation.yml`) run every lane. Unknown paths: fail-safe, every lane and CodeQL. `p5_scans` is true for `pull_request` and `push` regardless of paths (no product stack needed). Event rules: `pull_request` with an empty list: every lane and CodeQL. `workflow_dispatch`: every lane and CodeQL. `push` with an empty diff: no lane and no CodeQL. `push` with an all-zero `before`: every lane and CodeQL. Unrelated product paths on `push` do not start a product stack. Test names: section 9.11.
 
 ### 9.6 GQL-004 last (`tw-limiter-last`)
 - A second job `tw-limiter-last` in `p5-tw-iso.yml` with `needs: [tw-iso]`, so it starts only after `tw-iso` completes. It starts its own FRESH Twenty stack with the functional limiter profile variables set, uses no reset capability, and runs only `limiter-last/tw/**` (GQL-004). `timeout-minutes: 30`. It has no `secrets:` key.
@@ -702,10 +703,10 @@ Stdin: changed paths. `EVENT_NAME` decides. Rules (flag names): cal `^(src/lanes
 - Every artefact passes the P6-derived secret scan (PN-7) before upload.
 
 ### 9.9 Lane stubs
-Each stub is `workflow_call` and `workflow_dispatch` only, contains the marker line `# P5-STUB: remove this line when the first real job lands`, one job `stub` with `timeout-minutes: 5` that echoes a message and exits 0. `tests/unit/ci/workflow.test.ts` checks that a stub has the marker exactly when its lane's test directory is absent.
+Each stub is `workflow_call` and `workflow_dispatch` only, contains the marker line `# P5-STUB: remove this line when the first real job lands`, and has one job `stub` (`timeout-minutes: 5`). The job writes `status=not-implemented` and a summary row `NOT IMPLEMENTED`. It never writes `pass`, never uploads results and never runs a scanner. Section 9.13 defines the status rules.
 
 ### 9.10 Schedules
-Only `p5-zap-nightly.yml` may declare `schedule`. `ci.yml` never calls it. Manual ZAP active scan is `workflow_dispatch` only, on a throwaway stack (D11). CodeQL runs on pull requests through `ci.yml` and on `push` to `main`; it has no schedule.
+Only `p5-zap-nightly.yml` may declare `schedule`. `ci.yml` never calls it. Manual ZAP active scan is `workflow_dispatch` only, on a throwaway stack (D11). CodeQL has no schedule: it runs through `ci.yml` on `pull_request` and on `push` to `main`, gated by `p5_codeql` (section 9.5).
 
 ### 9.11 Workflow tests (`tests/unit/ci/workflow.test.ts`, exact names)
 1. "ci.yml triggers are exactly pull_request, push to main and workflow_dispatch"
@@ -725,12 +726,30 @@ Only `p5-zap-nightly.yml` may declare `schedule`. `ci.yml` never calls it. Manua
 15. "every timeout-minutes is at most 120"
 16. "p5-x.yml has no secrets key"
 
-`tests/unit/ci/ci-changes.test.ts` (exact names): "a cal lane path flags cal only"; "a doc lane path flags doc only"; "a tw-iso path flags tw_iso only"; "a cal csv-corpus change flags cal and x"; "a docs-only change flags no lane"; "a shared src/kit path flags every lane"; "an unknown path flags every lane"; "an empty list on pull_request flags every lane"; "workflow_dispatch flags every lane"; "push flags no lane".
+`tests/unit/ci/ci-changes.test.ts` (16 tests, exact names): "a cal lane path flags cal only"; "a doc lane path flags doc only"; "a tw-iso path flags tw_iso only and not tw"; "a cal csv-corpus change flags cal and x"; "a tests/closeout/medusa path flags x only"; "a tests/closeout/twenty path flags x only"; "a docs-only pull_request flags no lane and no codeql and keeps scans"; "a shared src/kit path flags every lane and codeql"; "an unknown path flags every lane and codeql"; "an empty pull_request list flags every lane and codeql"; "workflow_dispatch flags every lane and codeql"; "a push touching only a cal lane path flags cal and codeql only"; "a push touching src/security flags every lane and codeql"; "a push with an empty diff flags no lane and no codeql and keeps scans"; "a push with an all-zero before flags every lane and codeql"; "a docs-only push flags no lane, no codeql and keeps scans".
 
-`tests/unit/ci/lint-workflows.test.ts`: "the actionlint checksum constant is 64 lowercase hex characters"; "the script fails closed on an empty checksum"; "the script reads the version constant".
+`tests/unit/ci/lint-workflows.test.ts` (3 tests): "the actionlint checksum constant is 64 lowercase hex characters"; "the script fails closed on an empty checksum"; "the script reads the version constant".
+
+`tests/unit/ci/gate.test.ts` (7 tests, exact names): "a lane skipped with its flag false passes the gate"; "a lane skipped with its flag true fails the gate"; "a stub scanner reporting not-implemented passes with a NOT IMPLEMENTED row"; "an implemented scanner reporting not-implemented fails the gate"; "a stub entry reporting pass is rejected"; "codeql not-implemented passes only while codeql is a stub"; "a codeql fail verdict blocks the gate".
 
 ### 9.12 Ruleset
 The required status check is `gate` only (owner step, section 12).
+
+### 9.13 Scanner status, stubs and enforcement
+
+Verdict set for every scanner: `pass`, `fail`, `not-implemented`. A stub never emits `pass`.
+
+`config/scan/implementation-status.json` (created by F0-3; foundation-owned; each implementing PR flips its own entry in that same PR) maps each scanner name to `stub` or `implemented`. Initial content at F0-3: `codeql`, `gitleaks`, `osv-npm`, `trivy`, `zap`, `syft`, `zizmor` = `stub`. (`actionlint` is not a scanner in this map; it runs in `foundation.yml` as a real check.)
+
+Rules:
+- `stub` + `not-implemented`: accepted; the summary shows `NOT IMPLEMENTED` for that scanner.
+- `implemented` + `not-implemented`: the gate fails.
+- `stub` + `pass` or `fail`: the registry test fails (no fabricated results).
+- `implemented` + `pass`: accepted. `implemented` + `fail`: the gate fails.
+- A stub-marker workflow and its registry entry must agree (tests in section 9.11).
+
+Consequence, stated plainly: until L-PIPE implements CodeQL, CodeQL does not enforce anything. The gate reports `not-implemented` for CodeQL when P5-owned source changes, and that is not a pass. The owner sees it in the summary and in the gate reason.
+
 
 ## 10. Cloud environments: planning now, implementation later, saved-environment limits
 
@@ -912,7 +931,7 @@ Waits on F0-4. Probes P-5, P-6, P-13 first. Job shape `p5-cal.yml`: `cal-api` (3
 | P5-CAL-HDR-001 | Booker response headers. Control: 200 response | throwaway booking | none | API | `tests/contracts/cal/booker-headers.spec.ts` | PASS or PRODUCT BUG (SUSPECTED) |
 | P5-CAL-CRON-002 | ALIAS-PARTIAL: P2 FC-1 covers its two actual routes (section 4.2) | — | — | — | — | alias |
 | P5-CAL-WH-001 | ALIAS-PARTIAL: P2-CAL-DLY-002 covers signature acceptance only (fact 17) | — | — | — | — | alias |
-| P5-CAL-WH-004 | ALIAS-PARTIAL: as WH-001 | — | — | — | — | alias |
+| P5-CAL-WH-004 | ALIAS-PARTIAL: negative validation for a tampered body (P2 `:23-40`). The random or forged signature residual is UNCOVERED; a forged-signature check is a named L-CAL build item (no new ID). | — | — | — | — | alias |
 | P5-CAL-RL-001 | DROP: D7 documented note; helper no-op without `UNKEY_ROOT_KEY`; booking call path UNVERIFIED | — | — | — | — | dropped |
 
 MI-10: reuse P2-CAL-DLY-003 for the behaviour it states; a new row only if P-6/P-15 names a residual (none is named now).
@@ -943,7 +962,7 @@ Waits on F0-4. Job shape `p5-med.yml`: `med-api` (30). No browser.
 |---|---|---|---|---|---|---|
 | P5-MED-WH-001 | Unsigned event. Control: a fresh order with a valid signature changes state. Before/after order state | fresh order | none | API webhook | `tests/webhooks/med/missing-signature.spec.ts` | PASS or PRODUCT BUG (SUSPECTED) |
 | P5-MED-WH-002 | Invalid signature. Control: fresh order, valid signature changes state | fresh order | none | API webhook | `tests/webhooks/med/invalid-signature.spec.ts` | PASS or PRODUCT BUG (SUSPECTED) |
-| P5-MED-AUTHZ-001 | REFRAMED pending P-10/P-14: cart-by-id semantics decide the oracle. If cart GET is protected: B cannot read A's cart (403/404). If capability-by-id: B cannot MUTATE A's cart; read-by-id goes to MI-5. Control: A reads/mutates own cart | two throwaway customers | none | API | `tests/integration/med/cart-other-customer.spec.ts` | gated by P-10 for the read oracle |
+| P5-MED-AUTHZ-001 | REFRAMED (section 4.1): probe target `POST /store/carts/:id/customer` with B's session on A's cart (fact 18). Control: A's session on A's cart succeeds. Before/after: the cart's customer field. Refused: PASS. Accepted: PRODUCT BUG (SUSPECTED) with evidence. Line-item and GET routes: design verdict (MI-5) only. | two throwaway customers | none | API | `tests/integration/med/cart-other-customer.spec.ts` | PASS, PRODUCT BUG (SUSPECTED) or design verdict after P-10 |
 | P5-MED-AUTHZ-002 | Publishable key alone on admin route. Control: admin token succeeds | key from env name | none | API | `tests/contracts/med/publishable-key-admin.spec.ts` | PASS or PRODUCT BUG (SUSPECTED) |
 | P5-MED-AUTHZ-003 | Customer B updates A's address (protected route only after P-14). Control: A updates own address | two customers | none | API | `tests/integration/med/address-other-customer.spec.ts` | PASS or PRODUCT BUG (SUSPECTED) |
 | P5-MED-RBAC-001 | Role without order write cancels. Control: role with write succeeds | throwaway roles | none | API | `tests/integration/med/rbac-order-cancel.spec.ts` | gated (D14) |
