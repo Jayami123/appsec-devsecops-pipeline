@@ -59,14 +59,31 @@ bash scripts/cloud-install.sh
 Full setup (later, after F0-2 and owner selection): toolchains, `npm ci`, then the four-product bootstrap
 with explicit names. Not run in F0-1.
 
-Repository commands use Node 22 first on `PATH`:
+Repository commands must run on the Node 22 that the contract selects. This handoff reads the absolute
+`NODE22` that `--toolchain-only` reports, then puts its directory first on `PATH`. It works from any starting
+`PATH`, including one with no Node 22, and with a `QA_TOOLCHAIN_ROOT` that contains spaces:
 
 ```bash
-export PATH=/opt/node22/bin:$PATH
+NODE22="$(bash scripts/cloud-install.sh --toolchain-only | sed -n 's/^\[cloud-install\] NODE22=\(.*\) (v[^)]*)$/\1/p')"
+[ -n "$NODE22" ] && [ -x "$NODE22" ] || echo "no NODE22 selected: fix the setup error first" >&2
+export NODE22
+export PATH="$(dirname "$NODE22"):$PATH"
 npm ci
 npm run check:static
 npm run unit
 ```
+
+- **Existing installation:** a compatible Node 22 already on `PATH` is selected as is (for example
+  `/opt/node22/bin/node`, v22.23.4). Nothing is downloaded.
+- **Fallback:** with no compatible Node 22 on `PATH`, Node 22.23.3 is provisioned side by side under
+  `QA_TOOLCHAIN_ROOT`, verified against its published SHA-256, and reused on later runs.
+- **Configurable root:** `QA_TOOLCHAIN_ROOT` must be an absolute path. Every expansion above is quoted, so
+  paths containing spaces work.
+- **Cloud sessions:** the SessionStart hook exports the same `NODE22` and `PATH` into `CLAUDE_ENV_FILE`
+  after setup. Sourcing that file gives the same handoff without running setup again. The hook never
+  provisions anything.
+- **Failure:** a relative `QA_TOOLCHAIN_ROOT` prints `ERROR` and selects nothing. If `NODE22` is empty,
+  do not run the repository commands.
 
 ## SessionStart hook (`.claude/hooks/session-start.sh`)
 
