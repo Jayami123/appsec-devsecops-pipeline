@@ -45,8 +45,8 @@ Status: CONFIRMED (checked here at the pin), CONFIRMED-REVIEW (checked by the re
 | 14 | Stripe default tolerance 5 minutes; stripe-node 300 s | docs.stripe.com/webhooks text "Our libraries have a default tolerance of 5 minutes"; stripe-node `v23.0.1` `src/Webhooks.ts:142` | CONFIRMED (Stripe). Daily tolerance UNVERIFIED. |
 | 15 | P2 reusable kit: Daily signer, verifier, reach, roles | P2 `src/webhooks/sign.ts:87`, `:105`; `verify.ts:102`; `reach.ts:25`, `:29`; `src/db/roles.ts:12-13` | CONFIRMED |
 | 16 | Rulesets empty; secret scanning and push protection stated; code scanning and Actions permissions unreadable without auth | `GET /repos/Jayami123/appsec-devsecops-pipeline/rulesets` → `[]` | Rulesets CONFIRMED; others UNREAD |
-| 17 | P2 CAL-DLY-002 tests: a valid-signature Daily-shaped body → 400 `Invalid Payload` (accepted by signature, not processed); unknown type with valid signature → 200 | P2 `99a2fde` `tests/webhooks/cal/cal-dly.spec.ts:38-80` | CONFIRMED (authenticity, not business success) |
-| 18 | Medusa cart GET has no customer-auth middleware | Medusa core `api/store/carts/middlewares.ts:26-36` (`GET /store/carts/:id` with only `validateAndTransformQuery`) | CONFIRMED (cart semantics UNPROBED) |
+| 17 | P2 CAL-DLY tests: `:23-40` negative (tampered body with old signature → 403 `Signature does not match`); `:42-60` valid signature accepted by signature check, downstream 400 `Invalid Payload`; `:63-79` unknown type with valid signature → 200 | P2 `99a2fde` `tests/webhooks/cal/cal-dly.spec.ts:23-40, 42-60, 63-79` (lines read in r2 and r3) | CONFIRMED (authenticity only; residual random/forged signature values UNCOVERED) |
+| 18 | Medusa cart middlewares: `GET /store/carts/:id` only query validation; `POST /store/carts/:id/customer` the only cart matcher with customer `authenticate` (line 63); line-item, promotion, tax, shipping and complete routes show no authenticate in the grep | Medusa core `v2.21.2` `api/store/carts/middlewares.ts` (matchers and `authenticate` grep, r3) | CONFIRMED for middleware; handler ownership UNPROBED |
 | 19 | Cal normal seed inherits env | harness `src/adapters/cal.adapter.ts:977-981` (`runCapture(resolveYarn(), ["db-seed"], …)`); `src/internal/run.ts:100-102` (`env: { ...process.env, ...options.env }`) | CONFIRMED (no pass-through needed for seed vars). Whether the harness sets `SEED_OAUTH2_*`: UNPROBED. |
 | 20 | Twenty limiter layers and spender scope | Twenty `usage-limit-definitions.constant.ts:9-46` (API-key speed windows via `API_RATE_LIMITING_SHORT_*` and `API_RATE_LIMITING_LONG_*`; application window via `APPLICATION_API_RATE_LIMITING_*`; `allowedSpenderTypes: ['apiKey','application']`; `spenderId: ''`); `constants/try-consume-token-buckets-script.constant.ts:7-15` (token-bucket try-consume script); P6 `limiter-profile.ts:6-8` (binding claim) | CONFIRMED (structure). Request-versus-operation counting under GraphQL batching: UNPROBED. Setup consumption and window rollover: UNPROBED. |
 | 21 | Harness has only a whole-stack volume reset | harness `src/adapters/twenty-env.ts:137` (`twentyVolumeResetCommand`, `down -v`), `:218`, `:251` (`TWENTY_DOWN_VOLUMES=1`). No product-scoped reset in `src/adapters/*.ts` reset grep. | CONFIRMED (no scoped reset exists) |
@@ -91,7 +91,10 @@ Status: CONFIRMED (checked here at the pin), CONFIRMED-REVIEW (checked by the re
 | PR body: "checklist says no footer" | The live body contains a generated-attribution/session footer (review); removal requires authorization. |
 | Cal seed "solves OAuth" | Normal seed inherits env (fact 19), but its client has PKCE off (fact 9); OAUTH-002 cannot rely on it |
 | Medusa cart GET 403/404 assumed | Protected-operation semantics unproven; cart GET lacks customer auth at the pin (fact 18). The oracle waits for probe P-10. |
-| RL-002 as 101 per user | Restored as one attempt per throwaway account plus a separate enumeration analysis |
+| RL-002 as 101 per user | Restored as one attempt per throwaway account plus a separate enumeration analysis (r2) |
+| DOC-RL-003 cited as verify/resend routes | Corrected to file upload max 20 (`limiter-contract.ts:19`) (r3) |
+| CAL-WH-004 cited as acceptance | Corrected to negative tampered-body validation `:23-40` (r3) |
+| MED-AUTHZ-001 fallback 'B cannot mutate A's cart' | Removed. Protected candidate is `POST /store/carts/:id/customer`; probe decides (r3) |
 
 ## 5. UNREAD and UNPROBED (carried into the plan's probe-first list)
 
@@ -114,3 +117,15 @@ Status: CONFIRMED (checked here at the pin), CONFIRMED-REVIEW (checked by the re
 ## 6. Private detail withheld
 
 Yes. Private items are recorded only as IDs and status (plan section 4.7). No title, mechanism, route, payload, literal, test name, fixture or commit text from any private item is present in this record.
+
+## 7. Checks performed in revision r3 (docs-only; no product, harness, CI or settings action)
+
+| Check | How | Result |
+|---|---|---|
+| P2 Cal webhook negative and acceptance tests | `git show 99a2fde:tests/webhooks/cal/cal-dly.spec.ts`, lines 1-40 read; lines 38-80 read in r2 | Negative tampered-body 403 test in `:23-40`; acceptance test in `:42-60`; unknown-type test in `:63-79`. CONFIRMED. |
+| P6 limiter route table | `git show 0533e61:src/load/spike/limiter-contract.ts`, lines 14-22 read | `upload` at line 19 (max 20); `ai` at line 20 (max 3). CONFIRMED. |
+| Medusa cart route protection | `grep` of matchers and `authenticate` in `packages/medusa/src/api/store/carts/middlewares.ts` at `v2.21.2` (sparse fetch from r2) | Only `POST /store/carts/:id/customer` (line 60-63) has customer authenticate. CONFIRMED for middleware only; handler ownership UNPROBED. |
+| P2 db-roles imports | `git show 99a2fde:scripts/db-roles.ts`, lines 1-4 | Imports `../src/env.ts` (line 3) and `../src/db/roles-admin.ts` (line 4); the closure now names the kit paths. CONFIRMED. |
+| Plan and record arithmetic | Mechanical counts over the edited files | KEEP 64, ALIAS 10, DROP 2, Playwright projects 13, F0-2 unit tests 31, F0-3 unit tests 42, F0-4 ledger tests 8. Derived from listed names; not a test run. |
+
+Not performed in r3: no product stack, no harness run, no CI or scanner run, no settings or account change, no send, no merge, no PR-body edit. Live CI status for the existing PR is not re-read here.
