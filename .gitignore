@@ -1,0 +1,13 @@
+# Vendored from Jayami123/api-webhook-db-test-suite ref 99a2fde .gitignore. Change here only with a reason in the PR.
+node_modules/
+.env
+.env.*
+!.env.example
+products/
+test-results/
+playwright-report/
+results/*
+!results/.gitkeep
+receiver-logs/
+fixture-logs/
+*.log
