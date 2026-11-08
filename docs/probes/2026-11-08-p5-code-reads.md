@@ -1,88 +1,116 @@
-# P5 code-read record (2026-11-08, Asia/Colombo)
+# P5 code-read record (revision r2, 2026-11-08, Asia/Colombo)
 
-Session: planning only. No product stack was started. No product, harness or fork file was edited.
-Every fact in section 1 of the P5 master plan was re-checked at its pinned ref (or at the newer
-ref where the plan names one). Status is one of CONFIRMED, CONTRADICTS, UNREAD.
+Scope: re-checks of every fact the master plan cites, at the pinned refs, plus the facts added by the review of PR #1 (head `cd4f9675287c2e2dc5040b646f93ba9ee1df61ca`). This revision performed NO runtime probe: no product stack, no harness run, no account or settings action, no send, no merge, no history rewrite. Where a fact needs a live run, it is marked UNPROBED with the probe that will settle it (plan section 13).
 
-Scope of the record: the facts the master plan cites, nothing else. Private-first items were not
-read in detail; where a file named a private item, only its ID is recorded here. Private detail
-withheld.
+Private detail: private-first items appear only as IDs and status. Nothing from them was read beyond identity confirmation.
 
 ## 1. Read methods and inventory completeness
 
 | Source | Ref | Method | Inventory completeness |
 |---|---|---|---|
-| Jayami123/appsec-devsecops-pipeline (write target) | origin/main = `06ac98808964854b62e2e7699783bc86c9b23e20` | `git fetch origin`, `git rev-parse origin/main`, `git ls-tree -r --name-only origin/main` | Complete: exactly `.github/workflows/security.yml` (0 bytes) and `README.md` (one line). Hard-stop check passed. |
-| Jayami123/api-webhook-db-test-suite (P2) | `99a2fde` (P2 main at study: `ffa9fd3`) | Full anonymous `git clone` into a scratch directory outside this repo, then `git checkout` | Complete for the plan's wildcard list: `git ls-tree -r --name-only 99a2fde` returns 356 files. The `src/`, `tests/unit/`, `scripts/`, `.github/`, `.cursor/`, `.claude/`, `docs/` trees were enumerated from that list (not from raw files). |
-| Jayami123/qa-portfolio-harness (harness) | `v0.3.1` | Full anonymous `git clone`, `git checkout v0.3.1` | Specific files only. The plan names no directory wildcard for the harness. Absence claims ("not passed", "not set") are grep results over `src/` and `scripts/`. |
-| Jayami123/k6-load-concurrency-suite (P6) | `0533e61` | Full anonymous `git clone`, `git checkout 0533e61` | Specific files named by the plan only. `findings.json` read for key shape only (no text copied). |
-| Jayami123/cal | `c2b7ac44c66f24ffef1662b276f0653988a609a3` | Shallow fetch by SHA (`git fetch --depth 1 origin <sha>`) | Specific paths only. |
-| Jayami123/documenso | `f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c` | Shallow fetch by SHA | Specific paths only. |
-| Jayami123/medusa-dtc-starter | `f677db438f27294fc50e4c7c6612e71ff38eeff5` | Shallow fetch by SHA | Specific paths only (`apps/backend/package.json`, `pnpm-lock.yaml`). |
-| Jayami123/twenty-crm (plan: `twenty-CRM`) | `7cbdfec6f346b43715bc2056932f4fad5886f733` | Shallow fetch by SHA | Specific paths only. |
-| medusajs/medusa (Medusa core) | tag `v2.21.2`, commit `020565398e436a2bc65777a3b1ad347b4735d6df` (from the starter lockfile pin) | Blobless sparse fetch of the tag (`--filter=blob:none`, sparse cone) | Sparse: `packages/medusa/src/feature-flags` and `packages/medusa/src/api/store/orders` only. |
-| stripe/stripe-node | tag `v23.0.1` (the version in P2 `package-lock.json` dev dependency) | Public raw file via `https://raw.githubusercontent.com/...` | Single file `src/Webhooks.ts`. |
-| docs.stripe.com/webhooks | live page | Public HTTPS GET, text search | Single page. |
-| api.github.com rulesets | `Jayami123/appsec-devsecops-pipeline` | Public REST GET `/repos/.../rulesets` | Returned `[]`. Code-scanning setup and Actions permissions are NOT readable without auth. |
+| This repo | `origin/main` = `06ac98808964854b62e2e7699783bc86c9b23e20` | `git ls-tree -r --name-only origin/main` (r1 hard-stop check) | Complete: two files |
+| P2 `Jayami123/api-webhook-db-test-suite` | `99a2fde` | full anonymous clone (scratch, outside this repo); `git show 99a2fde:<path>` | Complete for the plan's wildcard list: 356 files (`git ls-tree -r`) |
+| Harness `Jayami123/qa-portfolio-harness` | `v0.3.1` | full anonymous clone | Specific files only; absence = grep over `src/` |
+| P6 `Jayami123/k6-load-concurrency-suite` | `0533e61` | full anonymous clone | Specific files only |
+| Cal `Jayami123/cal` | `c2b7ac44c66f24ffef1662b276f0653988a609a3` | shallow fetch by SHA | Specific paths |
+| Documenso `Jayami123/documenso` | `f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c` | shallow fetch by SHA | Specific paths |
+| Medusa starter `Jayami123/medusa-dtc-starter` | `f677db438f27294fc50e4c7c6612e71ff38eeff5` | shallow fetch by SHA | Specific paths (`apps/backend/package.json`, lock) |
+| Twenty `Jayami123/twenty-crm` | `7cbdfec6f346b43715bc2056932f4fad5886f733` | shallow fetch by SHA | Specific paths |
+| Medusa core `medusajs/medusa` | tag `v2.21.2` = commit `020565398e436a2bc65777a3b1ad347b4735d6df` | blobless sparse fetch (`packages/medusa/src/feature-flags`, `packages/medusa/src/api/store/orders`, `packages/medusa/src/api/store/carts`) | Sparse |
+| docs.stripe.com/webhooks; stripe-node `v23.0.1` `src/Webhooks.ts` | live / tag | public HTTPS GET | Single page / single file |
+| code.claude.com `docs/en/settings-reference` | live | public HTTPS GET (this revision) | Single page; attribution text found |
+| GitHub REST `rulesets` for this repo | live | public GET | `[]` |
 
-Access notes: the add_repo tool reported all listed repositories as public with anonymous git read available.
-No token, credential or non-public API was used. Scratch clones live outside this repo (session scratchpad).
+Access: all repositories read anonymously as public. No token, credential, internal API, proxy change or alternate transport was used. A denial would have been a STOP; none occurred.
 
-## 2. Facts (plan section 1)
+## 2. Facts (plan section 2)
 
-Each row: fact number as in the plan, what was checked, the evidence at the pinned ref, and status.
+Status: CONFIRMED (checked here at the pin), CONFIRMED-REVIEW (checked by the review, not re-read here), UNREAD, UNPROBED (needs a runtime probe), CONTRADICTS (none outstanding).
 
-| # | Plan fact | Evidence (repo, ref, file:line) | Status |
+| # | Fact | Evidence | Status |
 |---|---|---|---|
-| 1 | Documenso harness forwards the rate-limit bypass only when the caller env sets it to the string `"true"`; default limits ON; P2 roadmap line "v0.3.0 turns limits off" is stale | harness `v0.3.1` `src/adapters/documenso-env.ts:297-298`: `...(process.env.DANGEROUS_BYPASS_RATE_LIMITS === "true" ? { DANGEROUS_BYPASS_RATE_LIMITS: "true" } : {})`. Variable name is `DANGEROUS_BYPASS_RATE_LIMITS`. P2 `docs/plans/2026-10-20-p2-phase1-roadmap.md:211` says "harness `v0.3.0` turns rate limits off by default" (the stale line). | CONFIRMED (plan cited ~297-299; the code is at 297-298). Stale P2 roadmap line CONFIRMED. |
-| 2 | Documenso per-route limits measured by P6-DOC-LOAD-009 (authorize 10, forgot 3, reset 5, verify 5, upload 20); cited, not re-run | P6 `0533e61` `src/load/spike/limiter-contract.ts:19` (upload max 20), `:21-28` (authorize max 10), `:29-35` (forgot-password max 3), `:43-49` (verify-email max 5), `:50-57` (reset-password max 5). Also in the same table, not in the plan's budget row: `resend-verify-email` max 3 (`:36-42`) and `ai` max 3 (`:20`). | CONFIRMED, with a note: the plan's DOC_ROUTE_LIMITS row omits `resend-verify-email` (3) and P6's `ai` route (3). The master plan adds them. |
-| 3 | Documenso upstream e2e: "password update invalidates other sessions but keeps current" (~171) and "reset invalidates all sessions" (~113); why P5-DOC-SESS-001 is dropped | Documenso `f4105e4` `packages/app-tests/e2e/user/password.spec.ts:113` (`[USER] password reset invalidates all sessions`), `:171` (`[USER] password update invalidates other sessions but keeps current`). | CONFIRMED |
-| 4 | P6-DOC-RACE-002 sends one signing token 10 times in parallel; oracle is one SIGNED, nine ALREADY_SIGNED, one seal, one audit row, one email, one webhook (P6 task-7 row P11); an idempotent 200 is correct | P6 `0533e61` `tests/documenso/races/doc-race-002-double-submit.spec.ts:40-48` (`statusCounts` all 200; `signedResponses` = trials; `alreadySignedResponses` = 9 × trials; `clientErrorResponses` 0; `serverErrorResponses` 0; `trialsSingleSeal` = trials). P6 `docs/plans/2026-10-21-p6-phase1-task7-doc-races.md` row for "Race 002, same recipient ×10" (table row P11): "every response is 200; one SIGNED and nine ALREADY_SIGNED; 1 seal, 1 audit row, 1 email, 1 webhook". | CONFIRMED. The other P6 race row is not used by P5. |
-| 5 | Twenty: the harness passes only listed env names (includes `IS_MULTIWORKSPACE_ENABLED`, `OUTBOUND_HTTP_ALLOWED_INTERNAL_HOSTS`) plus six limiter names; unset limiter names keep image defaults; `LOGIC_FUNCTION_TYPE` NOT passed | harness `v0.3.1` `src/adapters/twenty-passthrough.ts:5-12` (names, including the two listed); `src/adapters/twenty-rate-limits.ts:7-14` (six names: `API_RATE_LIMITING_SHORT_TTL_IN_MS`, `API_RATE_LIMITING_SHORT_LIMIT`, `API_RATE_LIMITING_LONG_TTL_IN_MS`, `API_RATE_LIMITING_LONG_LIMIT`, `APPLICATION_API_RATE_LIMITING_TTL_IN_MS`, `APPLICATION_API_RATE_LIMITING_LIMIT`). `grep -rn LOGIC_FUNCTION_TYPE src scripts` in the harness: no match. | CONFIRMED |
-| 6 | Twenty captcha: `captcha.service.ts` returns success when no driver is configured; harness sets no `CAPTCHA_DRIVER` | Twenty `7cbdfec6` `packages/twenty-server/src/engine/core-modules/captcha/captcha.service.ts:12-18` (`if (!driver) { return { success: true }; }`). Harness: `grep -rln CAPTCHA src` no match. | CONFIRMED on source. Image `v2.44.0` behaviour is UNPROBED (probe-first item, F0 or L-TW-A). |
-| 7 | Twenty logic functions: default timeout 300 s; per-function `timeoutSeconds` 1 to 900 (create DTO `@Min(1) @Max(900)`); local driver cap 900 000 ms | Twenty `7cbdfec6` `…/metadata-modules/logic-function/logic-function.entity.ts:23` (`DEFAULT_LOGIC_FUNCTION_TIMEOUT_SECONDS = 300`), `:64-65` (CHECK `timeoutSeconds` 1..900). `…/dtos/create-logic-function-from-source.input.ts:51-52` (`@Min(1)` `@Max(900)`). `…/core-modules/logic-function/logic-function-drivers/drivers/local.driver.ts:114` (`timeoutMs = 900_000` default parameter). | CONFIRMED. Note: line 114 is a default parameter value, not a separately named hard cap. The plan's "hard cap" wording should read "driver default 900 000 ms"; the cap is UNPROBED until the driver runs. |
-| 8 | Twenty API key cannot create or activate a workflow version (P2 probe B-P21), so workflow SSRF needs a user session | P2 `99a2fde` `docs/probes/2026-11-03-p2-lane-tw-probes.md:42` (row B-P21: `createWorkflowVersion` returns `FORBIDDEN`; the core mutations are absent from an API-key schema). | CONFIRMED (probe-doc evidence, not a live run in this session) |
-| 9 | Cal OAuth: `viewer.oAuth.createClient` is `authedAdminProcedure` and creates an APPROVED client; non-admins submit for review (PENDING); production ADMIN without strong password and 2FA becomes INACTIVE_ADMIN unless `NEXT_PUBLIC_IS_E2E`; seed creates admin and an OAuth client (PKCE off) only when `SEED_OAUTH2_CLIENT_ID` and `SEED_OAUTH2_CLIENT_SECRET_HASHED` are set; `generateAuthCode` is session; token at `POST /v2/auth/oauth2/token` | Cal `c2b7ac44` `packages/trpc/server/routers/viewer/oAuth/_router.tsx:23` (`createClient: authedAdminProcedure`), `:32` (`generateAuthCode: authedProcedure`), `:41` (`submitClientForReview`). `packages/features/auth/lib/next-auth-options.ts:254` (`if (process.env.NEXT_PUBLIC_IS_E2E)`), `:264` (`return "INACTIVE_ADMIN"`), `:270` (`if (role === "INACTIVE_ADMIN")`). `scripts/seed.ts:1015-1016` (env names), `:1018` (`if (clientId && clientSecret)`), `:1019` (`createOAuthClientForUser`), `:1026` (`enablePkce: false`). Token route: `apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.e2e-spec.ts:52` uses `/api/v2/auth/oauth2/token` (the global prefix is `/api`). | CONFIRMED. Token path: the plan's `/v2/auth/oauth2/token` is the controller route; the reachable path carries the `/api` prefix (`/api/v2/auth/oauth2/token`). Seed credentials are not copied into this repo. |
-| 10 | Cal CSV export is a client-side download in the ORGANIZATION members table (`export-members-button`), built by `generateCsvRawForMembersTable` and `downloadAsCsv`, with `sanitizeValue` | Cal `c2b7ac44` `apps/web/modules/users/components/UserTable/UserListTable.tsx:657` (`generateCsvRawForMembersTable(...)`), `:760` (`data-testid="export-members-button"`). `packages/lib/csvUtils.ts:1` (`export const downloadAsCsv`), `:33` and `:40` (`sanitizeValue` used on headers and values), `:49` (`export const sanitizeValue`). | CONFIRMED |
-| 11 | Cal public-booking limiter needs Unkey (SaaS), harness does not set it, so it is a no-op; API v2 throttler is 120 requests per 60 s per key (P2 probe P13) | Cal `apps/api/v2/src/lib/throttler-guard.ts:36` (`RATE_LIMIT_DEFAULT_LIMIT_API_KEY`, default 120); TTL default 60 s (`defaultTttl` from `sixtySecondsMs`). P2 `docs/probes/2026-11-02-p2-lane-cal-probes.md:254-259` (P13: throttle ON by default, 120 per 60 s per key). Unkey: `packages/lib/rateLimit.ts` exists; the no-op claim for the public-booking path was NOT traced. | CONFIRMED for the throttler. Public-booking Unkey no-op: UNREAD (the file exists; path not traced). |
-| 12 | Medusa RBAC: flag `rbac`, default false, env `MEDUSA_FF_RBAC`; harness gives backend only its `.env` plus fixed switches (`backendProcessEnv`); no RBAC switch | Medusa core `v2.21.2` `packages/medusa/src/feature-flags/rbac.ts:3-7` (`key: "rbac"`, `default_val: false`, `env_key: "MEDUSA_FF_RBAC"`). Harness `v0.3.1` `src/adapters/medusa.adapter.ts:276-282` (`backendProcessEnv()` reads only the backend `.env`). Harness grep for `MEDUSA_FF`: not read in this session (see medusa-env.ts, UNREAD). | CONFIRMED on the flag and the process env. The harness' env builder `medusa-env.ts` was UNREAD. |
-| 13 | Medusa `GET /store/orders/:id` has no authenticate middleware; the route says the order id is the authentication mechanism | Medusa core `v2.21.2` `packages/medusa/src/api/store/orders/middlewares.ts:30-37` (matcher `/store/orders/:id` with only `validateAndTransformQuery`; no `authenticate`). Contrast `:19-21` (`/store/orders` uses `authenticate("customer", ["session","bearer"])`). `…/orders/[id]/route.ts` doc comment (first lines): "intentionally unauthenticated as the order ID is a UUID …". | CONFIRMED (design choice per the code's own comment; capability-id verdict MI-5) |
-| 14 | Stripe: libraries default tolerance 5 minutes; stripe-node `DEFAULT_TOLERANCE: 300` | docs.stripe.com/webhooks page text: "Our libraries have a default tolerance of 5 minutes between the timestamp and the current time". stripe-node `v23.0.1` `src/Webhooks.ts:142` (`DEFAULT_TOLERANCE: 300, // 5 minutes`). | CONFIRMED |
-| 15 | Cal Daily inbound signature, Cal/Documenso/Twenty outbound schemes, receiver reach (`host.docker.internal`), per-run credentials, `qa_ro` / `qa_fixture` roles: as built and documented in P2 | P2 `99a2fde` `src/webhooks/sign.ts:87` (`computeDailySignature`), `:105` (`signDaily`); `src/webhooks/verify.ts:102` (`verifyDaily`); `src/webhooks/sign.ts:24` (`X-Cal-Signature-256`), `:38` (`X-Documenso-Secret`), `:49-51` (Twenty timestamp/signature/nonce headers); `src/webhooks/reach.ts:25` (`DOCUMENSO_RECEIVER_HOSTNAME = "p2-receiver.test"`), `:29` (`TWENTY_RECEIVER_NAME = "host.docker.internal"`); `src/db/roles.ts:12-13` (`RO_ROLE = "qa_ro"`, `FIXTURE_ROLE = "qa_fixture"`). Cal throttle default in P2: `docs/probes/2026-11-02-p2-lane-cal-probes.md:259`. | CONFIRMED (reference only; reuse, not re-discovery) |
-| 16 | This repo: public rulesets API returns an empty list; secret scanning and push protection are on; code scanning default setup and Actions permissions cannot be read without auth | `curl https://api.github.com/repos/Jayami123/appsec-devsecops-pipeline/rulesets` returned `[]`. Secret scanning / push protection status: not readable anonymously. Code scanning and Actions permissions: not readable anonymously. | Rulesets: CONFIRMED (empty). Secret scanning and push protection: UNREAD (the plan's "on" is taken from the owner's report, not re-verified). Code scanning and Actions permissions: UNREAD (owner steps). |
+| 1 | Documenso bypass only when `DANGEROUS_BYPASS_RATE_LIMITS === "true"`; P2 roadmap line stale | harness `src/adapters/documenso-env.ts:297-298`; P2 `docs/plans/2026-10-20-p2-phase1-roadmap.md:211` | CONFIRMED |
+| 2 | Ten P6 routes; seven Documenso values cited (authorize 10, forgot 3, resend 3, verify 5, reset 5, upload 20, ai 3) | P6 `src/load/spike/limiter-contract.ts:14-58`; `:19` upload 20; `:20` ai 3; `:21-28` authorize; `:29-35` forgot; `:36-42` resend; `:43-49` verify; `:50-57` reset | CONFIRMED (cited; not re-run). The plan's earlier six-value list omitted `ai`; corrected. |
+| 3 | Documenso session tests | Documenso `packages/app-tests/e2e/user/password.spec.ts:113`, `:171` | CONFIRMED |
+| 4 | P6 race 002 oracle | P6 `tests/documenso/races/doc-race-002-double-submit.spec.ts:40-48` | CONFIRMED |
+| 5 | Twenty passthrough names; `LOGIC_FUNCTION_TYPE` absent | harness `src/adapters/twenty-passthrough.ts:5-12`; `twenty-rate-limits.ts:7-14`; grep `LOGIC_FUNCTION_TYPE` in `src/`: none | CONFIRMED |
+| 6 | Twenty captcha with no driver returns success | Twenty `7cbdfec6` `packages/twenty-server/src/engine/core-modules/captcha/captcha.service.ts:12-18`; grep `CAPTCHA` in harness `src/`: none | CONFIRMED on source; image UNPROBED |
+| 7 | Twenty logic timeouts | `logic-function.entity.ts:23` (300), `:64-65` (1..900); `create-logic-function-from-source.input.ts:51-52`; `local.driver.ts:114` (`timeoutMs = 900_000` default parameter) | CONFIRMED; termination UNPROBED |
+| 8 | B-P21: API key cannot create or activate a workflow version | P2 `docs/probes/2026-11-03-p2-lane-tw-probes.md:42` | CONFIRMED (doc evidence) |
+| 9 | Cal OAuth: admin-only `createClient`; INACTIVE_ADMIN; seed client only from env with `enablePkce: false` | Cal `_router.tsx:23`, `:32`; `next-auth-options.ts:254`, `:264`, `:270`; `scripts/seed.ts:1015-1016`, `:1018` (`if (clientId && clientSecret)`), `:1019`, `:1026` (`enablePkce: false`) | CONFIRMED |
+| 10 | Cal members CSV is client-side in org members table | Cal `UserListTable.tsx:657`, `:760`; `csvUtils.ts:1`, `:33`, `:40`, `:49` | CONFIRMED |
+| 11 | Cal throttle 120 per 60 s per key; public-booking helper no-op without `UNKEY_ROOT_KEY` | Cal `apps/api/v2/src/lib/throttler-guard.ts:36` (default 120), default TTL 60 s; Cal `packages/lib/rateLimit.ts:35-43` (returns success when `UNKEY_ROOT_KEY` unset) | CONFIRMED for throttler and helper; booking call path UNREAD |
+| 12 | Medusa RBAC flag and harness backend env | Medusa core `packages/medusa/src/feature-flags/rbac.ts:3-7` (`default_val: false`, `env_key: "MEDUSA_FF_RBAC"`); harness `src/adapters/medusa.adapter.ts:276-282` | CONFIRMED; `medusa-env.ts` UNREAD |
+| 13 | `GET /store/orders/:id` unauthenticated by design | Medusa core `api/store/orders/middlewares.ts:30-37` (only `validateAndTransformQuery`); `:19-21` (list route authenticated); `[id]/route.ts` header comment | CONFIRMED |
+| 14 | Stripe default tolerance 5 minutes; stripe-node 300 s | docs.stripe.com/webhooks text "Our libraries have a default tolerance of 5 minutes"; stripe-node `v23.0.1` `src/Webhooks.ts:142` | CONFIRMED (Stripe). Daily tolerance UNVERIFIED. |
+| 15 | P2 reusable kit: Daily signer, verifier, reach, roles | P2 `src/webhooks/sign.ts:87`, `:105`; `verify.ts:102`; `reach.ts:25`, `:29`; `src/db/roles.ts:12-13` | CONFIRMED |
+| 16 | Rulesets empty; secret scanning and push protection stated; code scanning and Actions permissions unreadable without auth | `GET /repos/Jayami123/appsec-devsecops-pipeline/rulesets` → `[]` | Rulesets CONFIRMED; others UNREAD |
+| 17 | P2 CAL-DLY-002 tests: a valid-signature Daily-shaped body → 400 `Invalid Payload` (accepted by signature, not processed); unknown type with valid signature → 200 | P2 `99a2fde` `tests/webhooks/cal/cal-dly.spec.ts:38-80` | CONFIRMED (authenticity, not business success) |
+| 18 | Medusa cart GET has no customer-auth middleware | Medusa core `api/store/carts/middlewares.ts:26-36` (`GET /store/carts/:id` with only `validateAndTransformQuery`) | CONFIRMED (cart semantics UNPROBED) |
+| 19 | Cal normal seed inherits env | harness `src/adapters/cal.adapter.ts:977-981` (`runCapture(resolveYarn(), ["db-seed"], …)`); `src/internal/run.ts:100-102` (`env: { ...process.env, ...options.env }`) | CONFIRMED (no pass-through needed for seed vars). Whether the harness sets `SEED_OAUTH2_*`: UNPROBED. |
+| 20 | Twenty limiter layers and spender scope | Twenty `usage-limit-definitions.constant.ts:9-46` (API-key speed windows via `API_RATE_LIMITING_SHORT_*` and `API_RATE_LIMITING_LONG_*`; application window via `APPLICATION_API_RATE_LIMITING_*`; `allowedSpenderTypes: ['apiKey','application']`; `spenderId: ''`); `constants/try-consume-token-buckets-script.constant.ts:7-15` (token-bucket try-consume script); P6 `limiter-profile.ts:6-8` (binding claim) | CONFIRMED (structure). Request-versus-operation counting under GraphQL batching: UNPROBED. Setup consumption and window rollover: UNPROBED. |
+| 21 | Harness has only a whole-stack volume reset | harness `src/adapters/twenty-env.ts:137` (`twentyVolumeResetCommand`, `down -v`), `:218`, `:251` (`TWENTY_DOWN_VOLUMES=1`). No product-scoped reset in `src/adapters/*.ts` reset grep. | CONFIRMED (no scoped reset exists) |
+| 22 | P2 bootstrap writes Cal `.env` with generated secrets | P2 `99a2fde` `scripts/bootstrap.sh:139-149` (`prepare_cal_env`: copies `.env.example`, writes `NEXTAUTH_SECRET`, `CALENDSO_ENCRYPTION_KEY`) | CONFIRMED. The revised plan does not vendor this function; fork `.env` provisioning is harness-owned (plan section 10.4). |
+| 23 | P2 Documenso CI dual runtime | P2 `99a2fde` `.github/workflows/p2-doc.yml:57-96`: Node 22 via `.nvmrc` with `NODE22=$(command -v node)` in `GITHUB_ENV`; Node 24 via setup-node `node-version: 24` with `NODE24=$(command -v node)`; `bootstrap.sh documenso` run with `NODE24` set | CONFIRMED |
+| 24 | P2 bootstrap needs a usable Node 24 before Documenso `npm ci` | P2 `99a2fde` `scripts/bootstrap.sh:117-128` (`install_documenso_deps`: `NODE24` default `/opt/node24/bin/node`; exits 1 if not executable) | CONFIRMED |
+| 25 | P2 Cursor start calls receiver-hostname script and `npm run qa:passwords` with warning fallbacks | P2 `99a2fde` `.cursor/environment.json` (`start` value) | CONFIRMED |
+| 26 | Claude attribution: `sessionUrl: false` documented; requires Claude Code ≥ 2.1.281; official text says to use empty `commit` and `pr` plus `sessionUrl: false` rather than `includeCoAuthoredBy` | `https://code.claude.com/docs/en/settings-reference` (fetched this revision; attribution section contains `sessionUrl` and the 2.1.281 note) | CONFIRMED (documented). Effective behaviour in this environment: UNPROBED (plan step F0-1.9). |
+| 27 | CodeQL advanced setup vs default setup; public SARIF; public permissions | GitHub documentation as reported by the review (advanced-setup and SARIF pages) | CONFIRMED-REVIEW (not re-read here) |
+| 28 | Reusable workflows cannot elevate token permissions | GitHub documentation as reported by the review | CONFIRMED-REVIEW |
 
-## 3. Additional checks made while reading (not in plan section 1)
+## 3. Additional checks (not plan section 2)
 
 | Check | Evidence | Status |
 |---|---|---|
-| P2 `main` at study differs from `99a2fde` only in three files | `git diff --stat 99a2fde ffa9fd3`: README.md, docs/technical-guide.md, docs/cloud-environments.md | CONFIRMED |
-| P2 cloud-environments precedent: `PRODUCTS_ROOT=/home/user/products` set by hand in both environments; Claude setup script = `bash scripts/cloud-install.sh` | P2 `ffa9fd3` `docs/cloud-environments.md` (lines 1-40, "Pasted by hand") | CONFIRMED |
-| `PRODUCTS_ROOT` default in the harness is `HARNESS_ROOT/../products`, which resolves inside `node_modules` when installed as a dependency; P2 CI sets it to `${{ github.workspace }}/../products` | harness `v0.3.1` `src/config.ts:151` (`path.resolve(parsed.PRODUCTS_ROOT ?? path.join(HARNESS_ROOT, "..", "products"))`). P2 `99a2fde` `.github/workflows/p2-tw.yml` env block (`PRODUCTS_ROOT: ${{ github.workspace }}/../products`). | CONFIRMED. The plan's "set by hand until the harness ships a default" stands; the CI workflow needs the workspace-relative value (P2 precedent). |
-| P2 Node pins: `.nvmrc` = `22`; `package.json` engines `>=22.22.0`; Cursor image Node 22.23.3 on PATH; Documenso Node 24.22.0 via `$NODE24`; Medusa pnpm 10.11.1 | P2 `.nvmrc`, `package.json:5-7`, `.cursor/Dockerfile` (ARG NODE_VERSION=22.23.3, NODE24_VERSION=24.22.0, pnpm@10.11.1) | CONFIRMED. The plan must carry the Node 24 requirement for Documenso. |
-| P2 action pins to reuse (full SHA with version comment) | P2 `.github/workflows/ci.yml`, `api.yml`: `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`, `actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0` | CONFIRMED |
-| P2 gate pattern and ruleset | P2 `ci.yml` `gate` job (`if: ${{ always() }}`, `needs: [changes, api, env-check, p2-cal, p2-doc, p2-med, p2-tw]`); P2 `docs/lane-ownership.md` "Gate for lane workflows" (ruleset `protect-main` requires only `gate`, verified 2026-11-06 in P2) | CONFIRMED |
-| P2 Documenso bypass check precedent | P2 `docs/plans/2026-11-02-p2-lane-documenso.md` FC-2 (unit test asserting `DANGEROUS_BYPASS_RATE_LIMITS` is absent from the lane) | CONFIRMED (doc); test file not re-read |
-| P2 lane job timeouts | P2 `p2-cal.yml:31` (`timeout-minutes: 30`), `p2-tw.yml` tw-api `timeout-minutes: 30`, `api.yml` check/unit 10, checkout steps 5 | CONFIRMED |
-| Harness PRODUCTS_ROOT / `OUTBOUND_HTTP_ALLOWED_INTERNAL_HOSTS` used by P2 CI | P2 `p2-tw.yml` env `OUTBOUND_HTTP_ALLOWED_INTERNAL_HOSTS: host.docker.internal,172.17.0.1` | CONFIRMED |
-| P6 evidence-release workflow permissions | P6 `0533e61` `.github/workflows/evidence-release.yml:19-20` (workflow `contents: read`), `:29-30` (job `contents: write`), `:25` (`timeout-minutes: 30`) | CONFIRMED. The reused workflow grants write at job level; P5 must scope it (plan CI section). |
-| P6 `docs/findings.json` shape (keys only) | P6 `0533e61` `docs/findings.json`: top-level `schema` (value 1) and `rows` (24 entries); row keys: `id, aliases, product, label, severity, upstream, tests, evidence, provenance` | CONFIRMED (shape only; no finding text copied) |
-| Medusa core lock pin | starter `f677db4` `apps/backend/package.json:32` (`"@medusajs/medusa": "2.21.2"`), `pnpm-lock.yaml:1672` (`'@medusajs/medusa@2.21.2'`) | CONFIRMED |
-| P2 `.cursor/environment.json` and cloud-install | `.cursor/environment.json` (install `bash scripts/cloud-install.sh`; start: docker + receiver hostname + qa:passwords); `scripts/cloud-install.sh` default products `medusa twenty documenso cal` | CONFIRMED |
-| `.claude/settings.json` attribution in P2 | P2 `99a2fde` `.claude/settings.json`: `"attribution": {"commit": "", "pr": ""}` and `"includeCoAuthoredBy": false` (no `sessionUrl` key) | CONFIRMED. The plan's `sessionUrl: false` key is NOT in P2 and its schema support is UNREAD (see Open decision OD-10 in the plan). |
-| Cal seed admin and OAuth client exist behind env vars only | `cal/scripts/seed.ts:1015-1026` | CONFIRMED. The seed admin's credentials are in the fork seed file and are not copied into this repo. |
+| Harness `PRODUCTS_ROOT` default is inside the installed package | harness `src/config.ts:151` (`path.join(HARNESS_ROOT, "..", "products")`) | CONFIRMED |
+| P2 CI `PRODUCTS_ROOT` workspace-relative | P2 `99a2fde` `.github/workflows/p2-tw.yml` env (`${{ github.workspace }}/../products`) | CONFIRMED |
+| P2 kit import edges (for the closure in plan section 7.2) | P2 `99a2fde` `src/db/pg.ts:2` (`dbStatementTimeoutMs`, `roleDbUrl`, `ProductId` from `../env.ts`); `src/readiness/checks.ts:4` (`ProductId`); `src/db/roles-admin.ts:2` (`dbUrl`, `loadEnv`, `ProductId`); `src/db/fixture-allowlist.ts:1` (`ProductId` type); `src/webhooks/reach.ts:1`; `src/invariants/engine.ts:1-3`; `src/webhooks/receiver.ts:6` (`RUN_PREFIX_PATTERN`) | CONFIRMED |
+| P2 env exports used by the closure | P2 `src/env.ts:4` (`ProductId`), `:54-84` (`CAL_BASE_URL`, `CAL_API_BASE_URL`, `*_DB_URL`, `P2_RECEIVER_HOSTS`, `P2_RECEIVER_PORT`, `P2_QA_RO_PASSWORD`, `P2_QA_FIXTURE_PASSWORD`, `P2_DB_STATEMENT_TIMEOUT_MS`), `:102-109` (maps), `:116-150` (`apiBaseUrl`, `dbUrl`, `dbStatementTimeoutMs`, `receiverConfig`, `roleDbUrl`) | CONFIRMED |
+| P2 known-defect guard exemption | P2 `src/ci/known-defect-guard.ts:9` (`EXEMPT_FILE = "src/ci/known-defect.ts"`), `:125` (filter) | CONFIRMED (plan adapts to `src/kit/ci/known-defect.ts`) |
+| P2 known-defect test imports | P2 `tests/unit/ci/known-defect.test.ts:4`, `:10`, `:128` (imports of `src/ci/known-defect*.ts`); `:65`, `:74`, `:100`, `:116` are string literals used as guard inputs, not imports | CONFIRMED |
+| P2 script import | P2 `scripts/write-ci-job-summary.ts:10` (`../src/ci/playwright-json-summary.ts`) | CONFIRMED |
+| P2 prefix pattern | P2 `src/run/prefix.ts:4-5` (`p2-qa-…`, `P2_RUN_ID`) | CONFIRMED |
+| P2 action pins | P2 `ci.yml`, `api.yml`, `p2-doc.yml`: `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`; `actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0` | CONFIRMED |
+| P2 timeouts | P2 `p2-cal.yml:31` (30); `p2-tw.yml` tw-api (30); `api.yml` check/unit (10) | CONFIRMED |
+| P6 evidence-release permissions | P6 `.github/workflows/evidence-release.yml:19-20` (workflow read), `:25` (`timeout-minutes: 30`), `:29-30` (job write) | CONFIRMED |
+| P6 findings shape | P6 `docs/findings.json`: `schema` (1), 24 rows, row keys `id, aliases, product, label, severity, upstream, tests, evidence, provenance` (shape only; no text copied) | CONFIRMED |
+| Medusa core lock pin | starter `apps/backend/package.json:32`, `pnpm-lock.yaml:1672` (`@medusajs/medusa` 2.21.2) | CONFIRMED |
+| PR #1 body footer | The live PR body ends with a generated-attribution/session footer (found by the review) | CONFIRMED-REVIEW. This revision does not edit the body; removal needs owner authorization. |
+| P1 master-plan identity for MI-14 | Recorded by the review at its original line; not present in this repository | UNREAD in this revision |
 
-## 4. UNREAD / unresolved items (carried into the plan as UNPROBED or probe-first)
+## 4. Stale or corrected statements in the PR #1 body and plan r1
 
-- Secret scanning and push protection are "on": UNREAD (no auth). Owner to confirm.
-- Code scanning default setup and Actions default token permissions: UNREAD (no auth). Owner steps.
-- Harness `src/adapters/medusa-env.ts` (what the backend env contains): UNREAD.
-- Cal public-booking Unkey no-op path: the file `packages/lib/rateLimit.ts` exists; the call path was not traced.
-- Twenty image `v2.44.0` runtime behaviour (captcha, limiter defaults, workspace sign-up): UNPROBED (requires a stack).
-- Cal `.../oAuth` route runtime behaviour (seeded admin 2FA, OAuth client creation in production mode): UNPROBED.
-- Documenso OIDC mock IdP reach: UNPROBED.
-- `sessionUrl` key in Claude attribution settings: UNREAD against the schema.
-- MI-6 target identifier: not stated in the plan inputs (see plan Open decisions).
+| Earlier statement | Correct statement |
+|---|---|
+| "Six budget values" for Documenso | Seven cited values, including `ai` 3 (fact 2) |
+| Cal OAuth route `/v2/auth/oauth2/token` | The correct route is `/api/v2/auth/oauth2/token` (fact 9; e2e spec `oauth2.controller.e2e-spec.ts:52`). The plan's route text is corrected. |
+| "Twenty `local.driver` hard cap 900000 ms" | A default parameter (fact 7). Effective termination is UNPROBED. |
+| "`sessionUrl` not in P2 and unverified" | Documented by the official settings reference (fact 26). The P2 file lacks the key; the plan adds it and verifies effective output. |
+| "Documenso bypass at ~297-299" | `297-298` (fact 1) |
+| "Harness `v0.3.0` turns limits off" (P2 roadmap) | Stale (fact 1) |
+| PR body: "checklist says no footer" | The live body contains a generated-attribution/session footer (review); removal requires authorization. |
+| Cal seed "solves OAuth" | Normal seed inherits env (fact 19), but its client has PKCE off (fact 9); OAUTH-002 cannot rely on it |
+| Medusa cart GET 403/404 assumed | Protected-operation semantics unproven; cart GET lacks customer auth at the pin (fact 18). The oracle waits for probe P-10. |
+| RL-002 as 101 per user | Restored as one attempt per throwaway account plus a separate enumeration analysis |
 
-## 5. Private detail withheld
+## 5. UNREAD and UNPROBED (carried into the plan's probe-first list)
 
-Yes. Where a file or probe named a private-first item, only its ID is recorded in this file. No title, mechanism, route, payload or literal from a private-first item was copied into this record or into the master plan.
+- Secret scanning and push protection effective state; code scanning default setup; Actions default token permissions (owner step; not readable anonymously).
+- Harness `src/adapters/medusa-env.ts` contents (P-11).
+- Cal booking call path for the Unkey helper (P-6).
+- Twenty `v2.44.0` runtime: captcha, layer values, workspace sign-up for throwaway users (P-4).
+- Twenty counting unit under GraphQL batching, setup consumption per key, and window rollover (P-9).
+- Twenty per-function termination with the harness opt-in (P-7).
+- Cal normal-seed OAuth client creation and PKCE-client creation through normal routes (P-5); organisation for CSV; `NEXT_PUBLIC_IS_E2E` not set.
+- Documenso OIDC mock IdP reachability (P-8).
+- Medusa cart and address route protection and admin/customer creation paths (P-10, P-14).
+- Cal mail catcher (P-13). Canary presence proof (P-12). Harness `.env` provisioning path for Cal (P-15).
+- Claude attribution effective output with the minimum version (P-2). Node 24 provisioning from the approved host (P-3).
+- Multi-repository hook and settings loading order (plan section 10.5).
+- NIST SP 800-63B-4 section and wording behind the 100-attempt ceiling (plan section 8): not verified in this revision.
+- Schemathesis CLI option names at the pinned version (plan section 8).
+- Actions pins for CodeQL, SARIF upload, gitleaks, OSV, Trivy, Syft, ZAP, zizmor and actionlint's checksum (plan section 9.4): resolved at build time.
+
+## 6. Private detail withheld
+
+Yes. Private items are recorded only as IDs and status (plan section 4.7). No title, mechanism, route, payload, literal, test name, fixture or commit text from any private item is present in this record.
