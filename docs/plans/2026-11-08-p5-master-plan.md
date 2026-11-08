@@ -493,8 +493,14 @@ Not vendored, with reason: P2 lane-specific code under `src/lanes/`, `src/client
 | `P5_RUN_ID` and run prefix | `RUN_PREFIX_PATTERN` becomes `/^p5-qa-\d{8}t\d{6}z-[0-9a-f]{8}$/` and `RUN_ID_ENV` becomes `P5_RUN_ID`. Recorded change. |
 | Env | Only `src/kit/env.ts` (section 7.2.1). Other P2 env keys are not vendored. |
 | Typecheck | `tsc -p tsconfig.json` passes with `src/kit/**` and the listed tests. |
+| Known-defect migration audit (P2 K6) | **Approved exclusion (F0-2, owner decision).** K6 asserted exactly 16 `expectedDefect` call sites in P2's product-test corpus. That corpus is not imported, so K6 is excluded from F0-2: not passed, not skipped, not rewritten to a count. K1-K5 and the portable guard and parser tests are kept. **Tracked as K6-P5:** before the first real `expectedDefect` usage merges, add a P5 corpus-policy audit that checks actual calls for resolvable arguments and required ID and evidence descriptions, with valid and invalid fixture controls. Do not restore an arbitrary fixed count. Evidence and setup assertions still need review. |
 
 Anything not in this table is a STOP.
+
+**F0-2 implementation notes (non-table changes; PENDING owner approval, not yet approved):**
+- Run-prefix shape: `makeRunPrefix` now emits `p5-qa-`, and the reaper (`PREFIX_IN_NAME`) and sweep engine (run-start parser) match `p5-qa-`. Without this, generated and parsed P5 prefixes would disagree with the row's `RUN_PREFIX_PATTERN`.
+- P2 literals kept on purpose and not in the table: `application_name` labels (`p2-qa-oracle-*`, `p2-qa-roles-*`) and the receiver hostname `p2-receiver.test`. They are labels, not run prefixes.
+- `scripts/db-roles.ts` is vendored, but no `db:roles:*` npm script exists: F0-1 excluded those scripts. The table's `npm run db:roles:provision` reference is therefore unrunnable until an owner-approved script change.
 
 **7.2.3 P5 security modules (new, unit-tested)**
 
