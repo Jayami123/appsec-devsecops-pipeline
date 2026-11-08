@@ -1,36 +1,65 @@
-# Cloud environments: owner handoff (F0-1)
+# Cloud environments: owner handoff (F0-1 correction)
 
-This page lists the manual steps the repository owner performs for the two cloud providers. The
-builder does not select, save or activate any environment. Nothing here is a claim that a provider
-ran a committed command unless the status line says PASS.
+This page lists the steps for the two cloud providers. The builder does not select, save or activate
+any environment, and nothing here is a claim that a provider ran a committed command unless the status
+says PASS. Status keys: **PASS** = observed in a real run in this build; **SIMULATED** = exercised
+locally with fake runtimes, not in a provider session; **UNPROBED** = not observed; **ENV** = an
+observed blocker with its sanitized cause.
 
-Status keys: **PASS** = observed by a real run in this build. **UNPROBED** = not observed.
-**ENV** = observed blocker, with the sanitized cause.
+## Runtime selection contract
+
+Every runtime is selected through one contract, shared by `scripts/cloud-install.sh`,
+`scripts/bootstrap.sh`, `.claude/hooks/session-start.sh` and `.cursor/Dockerfile`.
+
+| Item | Rule |
+|---|---|
+| Toolchain root | `QA_TOOLCHAIN_ROOT` if set (must be absolute), else `$HOME/.cache/qa-portfolio/toolchains` |
+| Node 24 (Documenso only) | exact `24.22.0` at `$root/node/24.22.0/bin/node`; exported as absolute `NODE24` |
+| Node 22 (repository runtime) | compatible runtime first on `PATH` (`>= 22.22.0`, family 22); else `$root/node/22.23.3` |
+| Validity | a side-by-side install is valid only with `.qa-toolchain-manifest` and an exact reported version |
+| Provisioning | download to a private staging directory; verify the archive SHA-256 against its published SHASUMS256 entry; extract; verify the reported version; write the manifest; promote with an atomic rename |
+| Reuse | a valid installation is reused without download |
+| Conflict | a non-valid, symlinked or otherwise conflicting target fails the run and is not modified |
+| Legacy `/opt/node24` | never selected, never overwritten. It is reported as informational only |
+
+**Bounded deviation from the master plan (record):** §10.2 described extraction to `/opt/node24`. This
+build selects a side-by-side path under the contract root instead, so an unexpected system installation
+at `/opt/node24` cannot be selected or replaced silently. The pin is unchanged. A future CI workflow must
+export the same absolute `NODE24` from the same contract; no CI is implemented here.
+
+**Pin rationale:** `24.22.0` is kept exactly for reproducibility. Documenso requires Node `>= 24` and
+npm `>= 11.17.0`; the exact patch is this project's approved pin, not a product requirement. The check
+is therefore exact-version plus npm minimum, never a looser range.
 
 ## Observed on the build host (2026-11-08)
 
-| Item | Observed | Required | Status |
-|---|---|---|---|
-| Node 22 (`/opt/node22/bin/node`) | v22.23.4, npm 10.9.9 | family 22, `>=22.22.0` | PASS (Cursor Dockerfile pins 22.23.3; host is a later 22.x patch) |
-| Node 24 (`/opt/node24/bin/node`) | **v24.22.1**, npm 11.19.1 | exactly v24.22.0 | **ENV**: unexpected installation at the approved path; not overwritten |
-| Official Node 24.22.0 archive | downloaded to scratch, SHA-256 matches its published SHASUMS256 entry; bundled npm 11.19.1 | checksum-verified | PASS (provisioning path verified without touching `/opt`) |
-| `curl`, `tar`, `xz`, `sha256sum` | present | required by setup | PASS |
-| `claude --version` | 2.1.319 | `>= 2.1.281` for `sessionUrl: false` | PASS |
-| `docker info` | failed (daemon not reachable) | later product-lane prerequisite | ENV for product lanes; not an F0-1 prerequisite |
+| Item | Observed | Status |
+|---|---|---|
+| Node 22 on `PATH` (`/opt/node22/bin/node`) | v22.23.4, npm 10.9.9 | PASS (family 22, meets `>= 22.22.0`; the Cursor Dockerfile pins 22.23.3) |
+| Node 24 selected (`$HOME/.cache/qa-portfolio/toolchains/node/24.22.0/bin/node`) | v24.22.0, npm 11.19.1 | PASS (provisioned by `--toolchain-only`, checksum verified; reused on the second run) |
+| Legacy `/opt/node24/bin/node` | v24.22.1, npm 11.19.1 | Not selected; sha256 unchanged before and after the runs |
+| Official Node 24.22.0 archive | downloaded and SHA-256 matched against its published entry | PASS (inside the setup run) |
+| `curl`, `tar`, `xz`, `sha256sum`, `mv`, `mktemp` | present | PASS |
+| `claude --version` | 2.1.319 | PASS (`>= 2.1.281` for `sessionUrl: false`) |
+| Docker (`docker info`) | not reachable on this host | ENV for product lanes only; not an F0-1 prerequisite |
 
-The Node 24 row is a conflict, not a success. `scripts/cloud-install.sh` refuses to replace it and
-exits 1 with a clear message. The owner decides whether to replace that installation or to change
-the approved pin. Until then, every full setup and Documenso step stops here.
+## Setup commands
 
-## Claude Code
+```bash
+bash scripts/cloud-install.sh --toolchain-only
+```
 
-### A. NOW (this F0-1 build): lean planning and code environment
+Product-free: provisions and verifies the two runtimes, exports nothing outside its own process, starts no
+product and clones nothing. Exits 0 on success.
 
-- Use the lean environment that already works for planning and code: normal source access, bash,
-  git, curl, checksum and tar tools, and a Node 22 runtime for `npm`.
-- No product credentials, no product services, no saved setup script. Do not select a saved
-  environment that runs scripts which do not yet exist on `main`.
-- Repository install and checks, Node 22 only (run after this branch's files exist):
+```bash
+bash scripts/cloud-install.sh
+```
+
+Full setup (later, after F0-2 and owner selection): toolchains, `npm ci`, then the four-product bootstrap
+with explicit names. Not run in F0-1.
+
+Repository commands use Node 22 first on `PATH`:
 
 ```bash
 export PATH=/opt/node22/bin:$PATH
@@ -39,126 +68,122 @@ npm run check:static
 npm run unit
 ```
 
-- Product-free runtime check (after this branch's files exist). Expected today: exits 1 with the
-  Node 24 ENV conflict above:
+## SessionStart hook (`.claude/hooks/session-start.sh`)
 
-```bash
-bash scripts/cloud-install.sh --toolchain-only
-```
+- **Outside a Claude Code cloud session** (`CLAUDE_CODE_REMOTE` is not `true`): it skips with exit 0 and
+  writes nothing.
+- **In a cloud session:** it validates everything first (Node 22 on `PATH` or the provisioned 22.23.3,
+  the selected Node 24 with manifest and exact version, an absolute `PRODUCTS_ROOT` that is not inside
+  `node_modules`, an existing `CLAUDE_ENV_FILE`). Only then does it write one block of shell-quoted
+  exports: `PATH` (Node 22 first), `NODE22`, `NODE24`, `QA_TOOLCHAIN_ROOT`, `PRODUCTS_ROOT`. Any failed
+  validation exits 1 and leaves `CLAUDE_ENV_FILE` byte-identical.
+- It installs nothing, clones nothing, starts no product and does not require Docker. Docker is a later
+  product-lane prerequisite.
 
-- Status: `npm ci`, `check:static`, `unit` **PASS** on this build (2 unit tests). `--toolchain-only`
-  **ENV** (Node 24 conflict). SessionStart hook **ENV** on this host for the same Node 24 reason;
-  hook behaviour in a fresh session **UNPROBED**.
+**Lifecycle caution:** the hook only exports. It never provisions. In a cloud session where setup has not
+run, the hook fails clearly; run the setup command first.
 
-### B. AFTER F0-1 MERGES: scripts and configuration exist on `main`
+## Claude Code
 
-- The committed files are present, but the full provider setup, the saved-environment hook order and
-  the fresh-session hook are **not certified** by syntax or unit checks. Keep the lean environment for
-  F0-2.
-- An owner-selected product-free setup command is permitted after merge:
+### A. NOW (this F0-1 build): lean planning and code environment
 
-```bash
-bash scripts/cloud-install.sh --toolchain-only
-```
-
-  This mode has no F0-2 dependency and does not activate the default full bootstrap.
-- Repository install (separate Node 22 command):
-
-```bash
-export PATH=/opt/node22/bin:$PATH
-npm ci
-```
-
-- The committed `.claude/settings.json` runs `.claude/hooks/session-start.sh` in **every session of
-  this repository**. Until the Node 24 conflict is resolved, that hook exits 1 with a clear message.
-  Owner decision required before merge: accept the conflict as ENV or change the approved pin.
-- Status: fresh-session hook **UNPROBED**; Docker availability in a fresh session **UNPROBED**.
-- Full provider activation (`bash scripts/cloud-install.sh` as the saved setup command) is
-  **deferred until after F0-2**, when the dependency closure and setup review are done. Do not
-  activate it before then.
-
-### C. AFTER F0-2 and BEFORE THE FIRST LANE: owner review and selection
-
-- Saved setup command: `bash scripts/cloud-install.sh`. The script sets its own defaults for
-  `PRODUCTS_ROOT` and provisions Node 22 and Node 24 before `npm ci` and the four-product bootstrap.
-- Owner-only manual selection and variables (never automatic):
-  - Select this repository's saved environment and paste the setup command above.
-  - Set the non-secret variable for later sessions:
-
-```bash
-PRODUCTS_ROOT=/home/user/products
-```
-
-  - Do not enter any product secret, token or password here. Credentials, if ever needed, go
-    through a separate secure credential path.
-- Automatically executed by the provider once selected: the setup command and the SessionStart hook.
-  The hook exports `NODE22`, `NODE24`, `PRODUCTS_ROOT` and a Node 22-first `PATH` through
-  `CLAUDE_ENV_FILE`. It starts no product.
-- Network hosts needed: `github.com` and `raw.githubusercontent.com` (permitted source access only),
-  `registry.npmjs.org`, `nodejs.org` (official archives and their SHASUMS256 files). Package-manager,
-  Docker and image hosts are added only when full product preparation is authorized. A blocked host
-  stops the setup; there is no workaround.
-
-## Cursor
-
-Cursor cloud is kept on the existing lean selection until the owner activates the committed
-configuration.
-
-### A. NOW
-
-- Keep the existing lean selection. Do not select this repository's committed `.cursor/environment.json`
-  or `.cursor/Dockerfile` yet.
-- No product credentials. No product services.
+- Use the existing lean environment with normal source access. No saved setup script, no product
+  credentials, no product services.
+- Owner check (product-free): `bash scripts/cloud-install.sh --toolchain-only`.
+- Status: `npm ci`, `check:static`, `unit` **PASS** on this build (9 tests). `--toolchain-only`
+  **PASS** with the contract. Hook in a real cloud session **UNPROBED**; the hook is **SIMULATED**
+  locally (fake runtimes, sourced in a child shell).
 
 ### B. AFTER F0-1 MERGES
 
-- The committed `.cursor/environment.json` is an adapted file (not verbatim P2):
-  - `install`: `bash scripts/cloud-install.sh` (full mode). Do not select it until F0-2 (see C).
-  - `start`: `sudo service docker start && docker info >/dev/null`. The P2 receiver-hostname call and
-    the `qa:passwords` call are removed.
-- The committed `.cursor/Dockerfile` (verbatim P2 base, Node 22.23.3, Node 24.22.0 at `/opt/node24`,
-  pnpm 10.11.1, Docker) is not selected by merging.
-- Status: Cursor selection **UNPROBED**; the install and start commands **UNPROBED**; Docker start
-  **ENV** on this host (`docker info` failed).
+- Committed files exist on `main`. Full provider activation is **not** certified by syntax or unit checks.
+- Owner-selected product-free setup command, if chosen: `bash scripts/cloud-install.sh --toolchain-only`.
+  Automatic: nothing else. The default full setup is not activated.
+- Owner-only, manual: none required for this step. Do not set `PRODUCTS_ROOT` yet.
+- **Caution:** `.claude/settings.json` runs the hook in every session of this repository. A cloud session
+  without a provisioned Node 24 at the contract path fails the hook with a clear message.
 
 ### C. AFTER F0-2 and BEFORE THE FIRST LANE
 
-- The owner selects this repository's committed environment file and Dockerfile in the saved Cursor
-  environment settings. Install and start run automatically only once that selection is active. A
-  committed file does not activate itself.
-- Verify the writable product root on the actual Cursor host, then pass the same explicit value to
-  setup and later sessions:
+- Saved setup command (owner selects it): `bash scripts/cloud-install.sh`. The script sets its own default
+  `PRODUCTS_ROOT=/home/user/products` and provisions the runtimes before `npm ci` and the bootstrap.
+- Owner-only, manual (non-secret; never a product secret):
 
 ```bash
+QA_TOOLCHAIN_ROOT=/home/user/.cache/qa-portfolio/toolchains
 PRODUCTS_ROOT=/home/user/products
 ```
 
-  (Replace the path with the verified writable location on that host.)
+  Set these only if the defaults are not wanted; otherwise the defaults apply. The same values must be used
+  for setup and later sessions.
+- Automatic once selected: the setup command, and the hook exports for each session.
+- Network hosts: `github.com` and `raw.githubusercontent.com` (permitted source access), `codeload.github.com`
+  and `registry.npmjs.org` (dependencies; see the lock notes), `nodejs.org` (official archives and their
+  SHASUMS256 files). Docker and image hosts only when product preparation is authorized.
+
+## Cursor
+
+Cursor stays on its existing lean selection until the owner selects this repository's committed files.
+
+### A. NOW
+
+- Keep the existing lean selection. Do not select the committed `.cursor/environment.json` or
+  `.cursor/Dockerfile`.
+
+### B. AFTER F0-1 MERGES
+
+- `.cursor/environment.json` is adapted (not verbatim P2): `install` runs `bash scripts/cloud-install.sh`
+  (full mode; not selected until F0-2) and `start` runs `sudo service docker start && docker info >/dev/null`.
+  The receiver-hostname and `qa:passwords` calls are removed.
+- `.cursor/Dockerfile` installs Node 22.23.3 to `/usr/local` and Node 24.22.0 side by side under
+  `/opt/qa-portfolio/toolchains/node/24.22.0`, each archive verified against its SHASUMS256 before
+  extraction, with a manifest. It does not use `/opt/node24`. The image is **UNPROBED**: no Docker daemon
+  was available here, so the build was not run.
+- Automatic: nothing until the owner selects the file and Dockerfile in the saved settings.
+
+### C. AFTER F0-2 and BEFORE THE FIRST LANE
+
+- Owner selects this repository's environment file and Dockerfile in the saved Cursor settings. Install and
+  start run automatically only once that selection is active; a committed file does not activate itself.
+- Verify the writable product root on the actual Cursor host, then pass the same explicit values to setup
+  and later sessions (replace the example paths with the verified ones):
+
+```bash
+QA_TOOLCHAIN_ROOT=/opt/qa-portfolio/toolchains
+PRODUCTS_ROOT=/home/user/products
+```
+
 - The same network hosts as the Claude Code section apply.
 
-## Adaptations and deliberate call-site choices (F0-1)
+## Lockfile and transport evidence (`qa-portfolio-harness`)
 
-- `scripts/cloud-install.sh` is new. It has a `--toolchain-only` diagnostic mode that provisions and
-  verifies the toolchains and then exits before `npm ci` and bootstrap. Full mode is the default and
-  is unchanged in intent.
-- Full mode calls bootstrap with all four product names explicitly (`medusa twenty documenso cal`).
-  The P2 bootstrap's no-argument default is medusa only; this is not a claim that a no-argument call
-  prepares four products.
-- `scripts/bootstrap.sh` (adapted from P2 at `99a2fde`):
-  - The Cal `.env` writer `prepare_cal_env` and its call are removed. Fork `.env` provisioning is
-    harness-owned.
-  - A pin mismatch on an existing checkout is a hard error (P2 only warned). Nothing is reset.
-  - Documenso checks an absolute `NODE24`, exact v24.22.0, and an npm of at least 11.17.0 before any
-    install.
-  - The fallback that wrote `PRODUCTS_ROOT` into a repository `.env` is removed.
-- `.claude/hooks/session-start.sh` is new: post-setup only, no install and no product start. Docker is
-  reported, not required, in F0-1.
-- `.cursor/environment.json` is adapted (start command), as above.
+- The lock records the harness as `git+ssh://git@github.com/Jayami123/qa-portfolio-harness.git#7d4a3ae36100a0150397eeac1c6fefefe5e64c15`.
+- A fresh scratch `npm ci` (npm 10.9.9, empty npm cache, inherited sandbox CA and proxy variables kept,
+  injected Git rewrites removed with `GIT_CONFIG_COUNT=0`, `GIT_CONFIG_GLOBAL=/dev/null`,
+  `GIT_CONFIG_NOSYSTEM=1`, and SSH forced to fail with `GIT_SSH=/bin/false`) **exited 0** and installed the
+  harness at version 0.3.1.
+- The Git trace shows npm fetching the harness with `git clone https://github.com/Jayami123/qa-portfolio-harness.git`
+  over HTTPS. No SSH process ran. The anonymous codeload tarball returned HTTP 403, so the Git fallback supplied the
+  bytes.
+- Conclusion for this environment: the `git+ssh` spelling was fetched over HTTPS with SSH disabled. **SSH was
+  not required here.** The lock is preserved byte-identical; the transport is not changed. The sandbox's
+  injected `url.https://github.com/.insteadOf` rewrites were disabled for this test, so the result does not
+  depend on them.
+
+## npm audit (dev-only; not fixed)
+
+- `npm audit` reports 10 moderate findings, all reaching one advisory: **GHSA-g3hv-75wg-m249**
+  (`minimatch` denial of service via globparts amplification; affected range `>=7.0.0 <11.0.1`).
+- Installed `minimatch` is 10.2.6, reached only through `eslint@10.12.0` and `typescript-eslint@8.71.2`
+  (both devDependencies). It is absent from the production tree (`npm ls --omit=dev`).
+- npm's suggested fix is a semver-major change to `eslint 9.39.5` / `typescript-eslint 8.36.0`. Applying it
+  would break the pins, so it is not applied. No risk acceptance is recorded: the finding is open, dev-only,
+  and unfixed until a pin change is approved.
 
 ## Explicitly UNPROBED or deferred
 
-- Fresh-session SessionStart hook behaviour and its exports.
-- The `sessionUrl: false` footer suppression on a real pull request: not run, because this task
-  creates no pull request.
-- Full provider activation of the setup command and the Cursor selection: deferred until after F0-2.
+- Hook behaviour in a real hosted Claude Code session (SIMULATED only here).
+- Cursor build of `.cursor/Dockerfile` (no Docker daemon on this host).
+- Full setup, product bootstrap, product start or stop: not run in F0-1.
+- Attribution footer on a real pull request: not run; no PR was created.
 - Attached multiple repositories' hook ordering: not verified.
