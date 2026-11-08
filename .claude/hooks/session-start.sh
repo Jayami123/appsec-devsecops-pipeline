@@ -30,6 +30,7 @@ node_version_of() { "$1" -p 'process.versions.node' 2>/dev/null; }
 valid_install() {
   local dir="$1" ver="$2" bin m got
   bin="$dir/bin/node"; m="$dir/$MANIFEST_NAME"
+  [ -d "$dir" ] && [ ! -L "$dir" ] || return 1
   [ -f "$m" ] && [ ! -L "$m" ] && [ -x "$bin" ] || return 1
   grep -qx "version=$ver" "$m" || return 1
   grep -qE '^archive_sha256=[0-9a-f]{64}$' "$m" || return 1
