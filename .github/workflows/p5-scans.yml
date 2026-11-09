@@ -302,6 +302,25 @@ jobs:
           ZIZMOR_EXIT: ${{ steps.audit.outputs.zizmor_exit }}
         run: node --experimental-strip-types scripts/scan/zizmor-threshold.ts "$RUNNER_TEMP/scan-out/zizmor/zizmor.sarif" "$ZIZMOR_EXIT" >> "$GITHUB_OUTPUT"
 
+  syft: # report-only SBOM per pinned image; skipped (policy) unless decide.report is true
+    needs: [decide]
+    if: needs.decide.outputs.report == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      verdict: ${{ steps.sbom.outputs.verdict }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install syft
+        run: bash scripts/scan/fetch-tool.sh syft
+      - id: sbom
+        env:
+          SYFT_BIN: ${{ runner.temp }}/tools/syft
+        run: bash scripts/scan/sbom.sh "$RUNNER_TEMP/scan-out/syft" >> "$GITHUB_OUTPUT"
+
   summary: # the aggregator (section 5.9)
     needs:
       [
@@ -316,6 +335,7 @@ jobs:
         trivy-forks,
         codeql,
         zizmor,
+        syft,
       ]
     if: always()
     runs-on: ubuntu-latest
