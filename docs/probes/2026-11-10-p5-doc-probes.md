@@ -175,7 +175,7 @@ Consequence for PN-1 and NEW-DOC-6: the create-time and execute-time guards refu
 
 | # | Item | Expected (plan) | Observed | Status |
 |---|---|---|---|---|
-| R1 | Ledger status of `P5-DOC-OIDC-001` and `P5-DOC-OIDC-002` | `gated` with a blocker (MP:334; MP:140-141 and MP:958-959 at 298ae29; OD-16 MP:107) | `planned` (`ledger.json:173`, `:181`), which matches MP:296 (section 4.8 says all 64 KEEP rows are `planned`) | **CONTRADICTS.** The master plan is internally inconsistent here. Stop item for the two rows. Owner decision (plan section 6, item L-2). |
+| R1 | Ledger status of `P5-DOC-OIDC-001` and `P5-DOC-OIDC-002` | `gated` with a blocker (MP:334; MP:140-141 and MP:958-959 at 298ae29; OD-16 MP:107) | `planned` (`ledger.json:173`, `:181`), which matches MP:296 (section 4.8 says all 64 KEEP rows are `planned`) | **CONTRADICTS.** The master plan is internally inconsistent here. Stop item for the two rows. Owner decided: gated (plan section 6, item L-1). |
 | R2 | Fact 1 wording "default ON" (MP:34) | The bypass is on by default | Bypass honoured only for the exact string `"true"` (B1-B3). Unset means off, the limiter is enforced. | Recorded correction. The fact's mechanism is CONFIRMED; the word "default" is wrong. |
 | R3 | Brief step 1.1 (`bootstrap.sh documenso` alone) | Enough to run `up.mjs documenso` | Harness validates all four product roots (H2) | Recorded finding. Clone all four. MP:388 already says bootstrap clones four forks. |
 | R4 | Node 24 runtime for the probe | The setup-recorded NODE24 (`cloud-install.sh:179`) | First attempt used `/opt/node24` (v24.22.1). Not selected by the contract (S5). Refused by bootstrap (exit 1). | Recorded as my error. The contract NODE24 was used for every later step. Nothing else depends on the first attempt. |
@@ -196,18 +196,18 @@ Consequence for PN-1 and NEW-DOC-6: the create-time and execute-time guards refu
 | NEW-DOC-4 team API token scope | Harness mints no token; manual step (H5). | BLOCKED: API token minting through a harness route not in harness v0.3.1 |
 | PN-1 webhook URL guard live (delivery and allowed control) | No stack; owner canary absent. | Owner canary (MP:249, gated) |
 | NEW-DOC-6 live delivery to a receiver | No stack; a receiver reachable from the container is private under F1-F3 without an owner canary. | Owner canary (gated) |
-| PN-3 Schemathesis | Tool version and CLI option names unverified (`budgets.ts:91` basis says so); no Schemathesis in the repository. | UNPROBED: Schemathesis CLI at the pinned version not established |
+| PN-3 Schemathesis | Tool version and CLI option names unverified (`budgets.ts:91` basis says so); no Schemathesis in the repository. | UNVERIFIED: hashed transitive lock not generated (F-5); flags verified at 4.33.1 |
 | MI-15 TOTP burst live | No stack; needs a throwaway actor with 2FA enabled. | ENV (Docker); actors (above) |
 
 ## 6. Ledger effect and owner decisions raised by this probe
 
 | Item | Decision needed from the owner |
 |---|---|
-| L-1 (R1) | Set OIDC-001 and OIDC-002 to `gated` with `blocker: "BLOCKED: mock IdP not in harness v0.3.1"` by foundation PR, or accept `planned` and say why. Until then both rows stop here. |
-| L-2 | Whether to request a mock IdP route from the harness owner (not in the MP:819-824 request list). |
-| L-3 | Whether a non-private owner canary exists for PN-1 and NEW-DOC-6 (MP:249). |
-| L-4 | Where verdict documents live. The master plan names none; `docs/` closeout files are X-owned (MP:346). |
-| L-5 | Whether to add a Schemathesis pin (a foundation change to `package.json`) for PN-3. |
+| L-1 (R1) | Set OIDC-001 and OIDC-002 to `gated` with `blocker: "BLOCKED: mock IdP not in harness v0.3.1"` in the P5 docs PR. DECIDED by the owner: gated (MP:140-141, MP:334, MP:958-959, OD-16). |
+| L-2 | DECIDED: the owner requests a mock OIDC IdP from the harness for the next release (pinned image, seeded client, seeded user). |
+| L-3 | DECIDED: the canary is the local kit receiver at `host.docker.internal`, with a per-run nonce and an allowed-network control profile. Reachability and Documenso's allowlist variable are UNVERIFIED (MP:249). |
+| L-4 | DECIDED: `docs/verdicts/doc/<id>.md`, with ownership by a foundation PR to `docs/lane-ownership.md`. The master plan names none; `docs/` closeout files are X-owned (MP:346). |
+| L-5 | DECIDED: PN-3 in `doc-serial`, with the shared pin `schemathesis==4.33.1` as a fully hashed foundation lock (not `package.json`). |
 
 ## 7. Session notes
 
