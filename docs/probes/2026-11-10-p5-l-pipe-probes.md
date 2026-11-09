@@ -2,7 +2,7 @@
 
 Scope: read-only probes for the DevSecOps scanner lane (L-PIPE). This record performs no build. It runs no product, starts no stack, seeds nothing, changes no setting or ruleset, and makes no outbound change other than the plan branch. Each probe ran in a scratch directory outside this repository (`/home/user/scratch-p5-probe`). Nothing from the scratch directory is committed.
 
-Base: `origin/main` = `298ae297f12878037912672c38b98cfaa1bb764e` (PR #3 merged, F0-1 and F0-2 on main). Master plan references are `MP:<line>` at that SHA. The plan this record supports is `docs/plans/2026-11-10-p5-l-pipe.md`.
+Base: `origin/main` = `5a3a1d9a5c2a63e1f262e3a1e7e4b01cf423e2ec` (F0-3 and F0-4 merged). The first results below were taken at `298ae29`; section 2h re-runs the decisive checks at `5a3a1d9`. Master plan references are `MP:<line>` at `5a3a1d9` (lines 562 and after are +14 from `298ae29`). The plan this record supports is `docs/plans/2026-11-10-p5-l-pipe.md`.
 
 Redaction: no secret, token or credential value appears in this record. Finding output is shown as counts, rule IDs, file and line only. Where a value would be needed, the record names the line and says so.
 
@@ -44,15 +44,15 @@ Status key: **CONFIRMED** (observed, matches the master plan or the stated expec
 | zizmor | v1.32.0 | `21bd300700d43d9ba04b0c1fce72a89391ac80b4` (lightweight) | `zizmor-1.32.0-py3-none-manylinux_2_28_x86_64.whl` (PyPI) | `84a6acb975accc13408786a2bd274b572537ca19c933ebbc13e78f3988562071` | PyPI JSON digest at `https://pypi.org/pypi/zizmor/1.32.0/json`; the downloaded wheel's SHA-256 matches | MIT (wheel METADATA) | Linux x86_64 wheel; the GitHub release checksum asset was not found (UNPROBED) |
 | actionlint | v1.7.12 | `914e7df21a07ef503a81201c76d2b11c789d3fca` (lightweight) | `actionlint_1.7.12_linux_amd64.tar.gz` | `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8` | `actionlint_1.7.12_checksums.txt` at `https://github.com/rhysd/actionlint/releases/download/v1.7.12/` | MIT (LICENSE read) | Linux amd64 |
 | CodeQL action (also provides `upload-sarif`) | v4.39.3 | `33d7b85da1a04171e211befe2c739303b9a4c066` (peeled from annotated tag `f3bbb056…`) | `uses: github/codeql-action/init@<sha>`, `analyze`, `upload-sarif` | n/a (action SHA) | git tag resolution | UNVERIFIED (action licence not read) | Runs on the GitHub-hosted runner |
-| CodeQL CLI bundle | bundle `codeql-bundle-v2.27.4` (CLI 2.27.4, from the action's `src/defaults.json` at v4.39.3) | n/a | `codeql-bundle-linux64.tar.zst`, 559,484,083 bytes (matches the HEAD `Content-Length`) | local: `da3e952c7fe978a0b6b93e75d9cbabbdf8535667ca0810bd4b2ae37bc840ffee` | No published checksum asset found; local hash only (UNVERIFIED source) | CodeQL CLI terms; bundled notices read | Extracted size 1.4 GB |
-| ZAP baseline image | `ghcr.io/zaproxy/zaproxy:stable` (moving tag). ZAP release tag v2.17.0 is the highest semver tag, commit `04c5d8be093eb050f4f4444883b950efd9afd0f7` | n/a | image index digest `sha256:9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af` | n/a (digest pin) | Registry manifest HEAD (ghcr.io) | Apache-2.0 (UNVERIFIED here) | Docker |
+| CodeQL CLI bundle | bundle `codeql-bundle-v2.27.4` (CLI 2.27.4, from the action's `src/defaults.json` at v4.39.3) | n/a | `codeql-bundle-linux64.tar.zst`, 559,484,083 bytes (matches the HEAD `Content-Length`) | local: `da3e952c7fe978a0b6b93e75d9cbabbdf8535667ca0810bd4b2ae37bc840ffee` | CONFIRMED: `codeql-bundle-linux64.tar.zst.checksum.txt` in release `codeql-bundle-v2.27.4` (`https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.4/codeql-bundle-linux64.tar.zst.checksum.txt`) lists `da3e952c…`, which matches the local hash (section 2h) | CodeQL CLI terms; bundled notices read | Extracted size 1.4 GB |
+| ZAP baseline image | `ghcr.io/zaproxy/zaproxy:stable` (moving tag). ZAP release tag v2.17.0 is the highest semver tag; peeled commit `8a1bff313f4d183dba5aa154ecbe89ad751c9153` (tag object `04c5d8be…`). The image tag `2.17.0` resolves to the same index digest (section 2h) | n/a | image index digest `sha256:9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af` | n/a (digest pin) | Registry manifest HEAD (ghcr.io) | Apache-2.0 (UNVERIFIED here) | Docker |
 
 Already pinned P2 actions, checked against their tags with `git ls-remote`:
 
 | Action | Tag | Tag commit | Plan pin | Result |
 |---|---|---|---|---|
-| `actions/checkout` | v7.0.1 | `3d3c42e5aac5ba805825da76410c181273ba90b1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` (MP:691) | CONFIRMED |
-| `actions/setup-node` | v7.1.0 | `949feb2413d6458794dcd2491c4babbbce0c15c1` | `949feb2413d6458794dcd2491c4babbbce0c15c1` (MP:691) | CONFIRMED |
+| `actions/checkout` | v7.0.1 | `3d3c42e5aac5ba805825da76410c181273ba90b1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` (MP:705) | CONFIRMED |
+| `actions/setup-node` | v7.1.0 | `949feb2413d6458794dcd2491c4babbbce0c15c1` | `949feb2413d6458794dcd2491c4babbbce0c15c1` (MP:705) | CONFIRMED |
 
 Harness image references at harness tag `v0.3.1` (commit `7d4a3ae36100a0150397eeac1c6fefefe5e64c15`, read by shallow clone; `docker/*.compose.yml`):
 
@@ -224,7 +224,7 @@ Classification: all 10 are true advisories on dev dependencies. They do not bloc
 | `.cursor/Dockerfile` (misconfig) | `DS-0026` LOW (no HEALTHCHECK); `DS-0029` HIGH ×3 (`apt-get` without `--no-install-recommends`) |
 | Secret scanner | 0 |
 
-RECORDED coverage gap: Trivy 0.76.2 reports 0 npm vulnerabilities on the root lockfile, while npm audit reports 10 and OSV reports 1 (the same minimatch advisory is in both). The plan therefore does not rely on Trivy alone for npm dependencies, which matches D5 (OSV-Scanner and npm audit). The `.cursor/Dockerfile` misconfigurations are the P2 base image file and are outside P5-owned paths; they are true findings, recorded, and not blocking.
+RECORDED coverage gap (cause corrected): Trivy's default scan leaves out dev dependencies. With `--include-dev-deps` on `5a3a1d9` it reports the minimatch advisory (`CVE-2026-118764`), which npm audit's 10 entries and OSV's one entry also trace to. The plan's root Trivy job therefore uses `--include-dev-deps`, and OSV and npm audit stay (D5). The `.cursor/Dockerfile` misconfigurations are the P2 base image file and are outside P5-owned paths; they are true findings, recorded, and not blocking.
 
 ### CodeQL (`javascript-security-and-quality.qls`, repo, 61 JS/TS files and 1 Actions file)
 
@@ -293,7 +293,7 @@ Pages read on 2026-11-10 (WebFetch of the documentation pages).
 | Fork pull request token | "The `GITHUB_TOKEN` has read-only permissions in pull requests from forked repositories." | `https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows` (pull_request section) | CONFIRMED (docs) |
 | Fork pull request secrets | "With the exception of `GITHUB_TOKEN`, secrets are not passed to the runner when a workflow is triggered from a forked repository." | same page | CONFIRMED (docs) |
 | `pull_request_target` | Runs in the base-repository default-branch context. The page warns about "granting unintended access to write privileges or secrets". | same page | CONFIRMED (docs); the plan does not use it (9.11 test 6) |
-| Effect of the same-repo `if:` on a fork pull request | A job whose `if:` checks `head.repo.full_name == github.repository` is skipped on a fork PR. The gate then sees a skipped scan job. Under MP:667 rule (3), `p5_scans` is true for every PR, so the gate fails. | Derived from the two rows above and MP:665-667 | Documented inputs CONFIRMED; the live outcome on a fork PR is UNPROBED (no fork PR was opened) |
+| Effect of the same-repo `if:` on a fork pull request | A job whose `if:` checks `head.repo.full_name == github.repository` is skipped on a fork PR. The gate then sees a skipped scan job. Under MP:681 rule (3), `p5_scans` is true for every PR, so the gate fails. | Derived from the two rows above and MP:679-681 | Documented inputs CONFIRMED; the live outcome on a fork PR is UNPROBED (no fork PR was opened) |
 
 ## 2f. Runner fit (disk, time, network)
 
@@ -310,7 +310,7 @@ Measured on the probe host (not the GitHub-hosted runner; the runner's own limit
 | CodeQL bundle | `github.com` (release download; complete at 559 MB) | about 2 min for the download (background) | bundle 559 MB; extracted 1.4 GB |
 | CodeQL database create and analyze | local (no network needed once the bundle is present) | create 7 s; analyze 20 s (javascript-security-and-quality, repo) | database size not recorded |
 | zizmor | `files.pythonhosted.org` (wheel, 9.7 MB, about 2 min); `pypi.org` (JSON); online audit needs a GitHub API token (the `known-vulnerable-actions` audit failed without one; see section 2b) | wheel 2 min | 9.7 MB wheel |
-| Node 24 (setup phase, not used by this probe) | `nodejs.org` (redirects; plan MP:773) | not run | not run |
+| Node 24 (setup phase, not used by this probe) | `nodejs.org` (redirects; plan MP:787) | not run | not run |
 
 Domains the lane needs (exact hostnames; wildcards are not permitted in environment allowlists):
 
@@ -329,15 +329,42 @@ Domains the lane needs (exact hostnames; wildcards are not permitted in environm
 
 Note: the probe needed no Docker daemon. Trivy and Syft pull images directly from the registry.
 
+## 2h. Re-run at 5a3a1d9 (this revision)
+
+Commands run from the repository root unless stated. "Scratch" means a copy under `/home/user/scratch-p5-probe` (`git archive 5a3a1d9`, with `node_modules` linked from the repository). No file in the repository was edited by these runs.
+
+| Check | Command | Expected | Observed |
+|---|---|---|---|
+| gitleaks default, root, exit code 2 | `gitleaks dir . --no-banner --redact -f json -r <out> --exit-code 2` | 2, 2 hits | 2, 2 hits (`tests/unit/security/redact.test.ts`, `tests/unit/webhooks/vectors.ts`) |
+| fixture form, concatenated (scratch) | file line `redactArtefact("key=" + "api_" + "9f8e7d6c5b4a3210zz");` | 0 | 0, 0 hits |
+| fixture form, join (scratch) | file line `redactArtefact(["key=api", "9f8e7d6c5b4a3210zz"].join("_"));` | 1 | 1, 1 hit |
+| fixture form, plain literal (scratch) | file line `redactArtefact("key=api_9f8e7d6c5b4a3210zz");` | 1 | 1, 1 hit |
+| gitleaks git, PR range | `gitleaks git . --log-opts="5a3a1d9..HEAD" --exit-code 2` | 0 | 0, 0 hits |
+| allowlist uniqueness | count of each verbatim PR #3 line in the file at HEAD | 1 each | 1 each, 16 of 16 |
+| Trivy default, root | `trivy fs --scanners vuln --format json` | 0 vulnerabilities | 0 |
+| Trivy with dev deps, root | `trivy fs --include-dev-deps --scanners vuln --format json` | one MEDIUM, minimatch | `CVE-2026-118764`, minimatch, MEDIUM, fix 11.0.1 |
+| zizmor offline, workflows | `zizmor --no-online-audits --format sarif .github/workflows` | exit 0, 13 results, 0 error | exit 0, 13 results: 5 `secrets-inherit` (warning), 8 `self-repository` (note), 0 error |
+| classifier, `tests/unit/scan` path | `printf 'tests/unit/scan/x.test.ts\n' \| EVENT_NAME=pull_request BEFORE_SHA= bash scripts/ci-changes.sh` | codeql only | every lane `true` (`ci-changes.sh:56-57`) |
+| node type stripping | `node --experimental-strip-types t.ts` (`const x: number = 2`) | prints 2, exit 0 | 2, exit 0 |
+| scratch tree, F0-5a edits, gitleaks | as the first row, on the scratch tree | 1 hit (`vectors.ts`) | 1 hit (`tests/unit/webhooks/vectors.ts`), exit 1 without `--exit-code 2` |
+| scratch tree, F0-5a edits, CodeQL | `codeql database create` then `analyze` with `javascript-security-and-quality.qls` | 0 results | 0 results (escapeCell and import-closure edits applied) |
+| scratch tree, F0-5a edits, unit | `node --test "tests/unit/**/*.test.ts"` | all pass | 335 pass, 0 fail (main 334; one separate `escapeCell` test added) |
+| scratch tree, F0-5a edits, typecheck | `tsc -p tsconfig.json` | exit 0 | exit 0 |
+| CodeQL bundle checksum | `curl` of `codeql-bundle-linux64.tar.zst.checksum.txt` (URL in section 2a) | `da3e952c…` | `da3e952c7fe978a0b6b93e75d9cbabbdf8535667ca0810bd4b2ae37bc840ffee` (matches the local hash) |
+| ZAP image tag | ghcr manifest HEAD for `zaproxy/zaproxy:2.17.0` | `sha256:9624669d…` | `sha256:9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af` (same as `stable`) |
+| harness commands (read-only, `qa-portfolio-harness` at `v0.3.1`) | read `package.json` `scripts` and `scripts/up.mjs`, `down.mjs`, `smoke.mjs` | up, down and smoke commands | `npm run up -- <id>` → `node scripts/up.mjs <id>`; `npm run down -- <id>` → `node scripts/down.mjs <id>`; `npm run smoke -- <id> [--dry-run]` → `node scripts/smoke.mjs`. Product ids from `parseProductId` (`scripts/lib.mjs`). No stack was started. |
+
+The scratch fixture line used in the rows above is the synthetic value from the redaction test; it is built from parts in the fixed form and is not committed in its final form.
+
 ## 3. Contradictions, stops and recorded corrections
 
 ### STOP-A (owner decision needed before the build): default gitleaks flags a line the PR #3 allowlist omits
 
-- Master plan expectation (P5-SCAN-002, MP:1037): blocking gitleaks, with a clean tree passing.
+- Master plan expectation (P5-SCAN-002, MP:1051): blocking gitleaks, with a clean tree passing.
 - PR #3 record (its body, "Secret-gate allowlist" and "Verification at head"): "Secret gate over all 17 commits, with the 16-line allowlist: 0 unreviewed hits."
 - Observed on main 298ae29 with gitleaks 8.30.1 default rules: 2 hits. `tests/unit/webhooks/vectors.ts:28` is allowlist entry 16. `tests/unit/security/redact.test.ts:12` is not in the allowlist.
 - Why it matters: the scanner gate would fail on main with the default rules until either an exact-line entry is added or the fixture line is changed.
-- Proposed (owner decides): add a 17th exact-line, path-scoped entry for `tests/unit/security/redact.test.ts:12` with reason "synthetic redaction input, test fixture", and record it in PR #3's allowlist table. The alternative is to change the fixture so it no longer triggers the rule. The plan states both; it does not choose. Under AGENTS.md, a foundation file change goes through a foundation PR.
+- Superseded (plan correction 15): F0-5a changes the redaction fixture so default gitleaks exits 0 on that line (section 2h). No 17th entry is needed. The F0-5a fixture form is in section 11.1 of the plan.
 - Note: PR #3's own gate was a custom check, not gitleaks. Its "0 unreviewed hits" claim is accurate for that gate and does not show that default gitleaks passes.
 
 ### RECORDED-1: CodeQL true positive in foundation-owned code
@@ -348,13 +375,15 @@ Note: the probe needed no Docker daemon. Trivy and Syft pull images directly fro
 
 zizmor 1.32.0 exits 0 with 4 findings on the control file. The threshold must read the SARIF (any result at level `error`), not the exit code. The plan's PN-6 rule ("blocking on errors") uses the SARIF level.
 
-### RECORDED-3: gitleaks exit 1 means both findings and tool error
+### RECORDED-3: gitleaks exit codes (resolved with `--exit-code 2`)
 
-Observed: a missing path gives exit 1, the same as a leak. The threshold must check that the SARIF or JSON file exists, parses, and has `invocations[0].executionSuccessful` set (for SARIF) before it trusts a `fail`. A missing or unparseable output is `fail` by fail-closed rule (NEW-PIPE-2).
+With `--exit-code 2`: 0 clean, 2 leaks, 1 tool error (section 2h; a missing path gives 1). Without the flag, leaks exit 1, the same as a missing path (section 2b).
 
-### RECORDED-4: Trivy does not cover the root npm lockfile in this version
+Earlier wording, kept for the record: a missing path gives exit 1, the same as a leak. The threshold must check that the SARIF or JSON file exists, parses, and has `invocations[0].executionSuccessful` set (for SARIF) before it trusts a `fail`. A missing or unparseable output is `fail` by fail-closed rule (NEW-PIPE-2).
 
-Trivy 0.76.2 reports 0 npm vulnerabilities where npm audit reports 10 and OSV reports 1. D5 (OSV-Scanner and npm audit) is kept. Trivy's npm output is not a basis for a gate decision on the root lockfile.
+### RECORDED-4: Trivy's default scan leaves out dev dependencies
+
+Trivy 0.76.2 leaves out dev dependencies by default. On `5a3a1d9`, `--include-dev-deps` reports `CVE-2026-118764` (minimatch, MEDIUM, fix 11.0.1). npm audit's 10 moderate entries and OSV's one entry all trace to the same advisory, `GHSA-g3hv-75wg-m249`. The root Trivy job therefore runs with `--include-dev-deps` (plan 5.4). OSV is the primary dependency gate; npm audit is the D5 cross-check (section 2h).
 
 ### RECORDED-5: Trivy SARIF has no partialFingerprints
 
@@ -380,13 +409,12 @@ Because STOP-A applies, a clean-tree control cannot pass on main as the tree sta
 
 | Item | Reason | Settles it |
 |---|---|---|
-| ZAP baseline run (P5-SCAN-004) | Running it needs a harness stack. The probe does not start a product by hand, and the harness route was not run. | A throwaway-stack run through the harness at v0.3.1 with `down` in `finally`, in the build (MP:1039, MP:348). |
+| ZAP baseline run (P5-SCAN-004) | Running it needs a harness stack. The probe does not start a product by hand, and the harness route was not run. | A throwaway-stack run through the harness at v0.3.1 with `down` in `finally`, in the build (MP:1053, MP:348). |
 | ZAP image version inside the pinned digest | Not run. | The same run; `zap-baseline.py --version` inside the pinned image. |
 | Live SARIF upload behaviour (free public upload; out-of-repo alerts) | No upload to this repository was made. The probe did not open a PR with SARIF. | A draft build PR with one scanner upload, checked against the code-scanning page. |
 | Live fork PR behaviour (same-repo `if:` skip, gate result) | No fork PR was opened (no fork exists in this session and the probe does not change the repo's PRs). | Owner-run fork PR on the built gate (NEW-PIPE-6). |
 | GitHub Releases `latest` flag for each tool | The GitHub API route for these repositories is denied for this session. Highest semver tag used instead. | The build re-reads each tag and release; recorded in the PR body. |
 | zizmor GitHub release checksum asset | Not found (`zizmor-x86_64-unknown-linux-gnu.tar.gz.sha256` returned 404). The PyPI digest is the source. | Build confirms against the release page at build time. |
-| CodeQL bundle published checksum | No checksum asset found. The local SHA-256 is recorded and the source is UNVERIFIED. | Build cross-checks the bundle with the action's `src/defaults.json` and the release page. |
 | Licences for OSV-Scanner, ZAP, CodeQL CLI | Binary or image only; licence files not read. | Build reads the licence file in the release or repository. |
 | zizmor online audit root cause | The audit failed without a token; the probe did not supply one. | Build tests `GH_TOKEN` read-only; the plan uses `--no-online-audits` unless the owner decides otherwise. |
 | Trivy DB host actually used | Not recorded by the probe. | Build records `trivy version --format json` DB metadata. |
