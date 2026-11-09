@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
+import { KEY_JOBS } from "../../../scripts/scan/aggregate.ts";
 import { REPO } from "./fixtures/index.ts";
 
 // The scan workflows present at this PR (L2): p5-scans.yml. codeql-reusable.yml and p5-zap-nightly.yml land later.
@@ -41,15 +42,55 @@ test("scan job timeouts are at most 20", () => {
   assert.ok(checked > 0, "expected timeout-minutes values");
 });
 
-test("report-only jobs are gated by the decide job", () => {
+// The text of one top-level job of p5-scans.yml: from its "  <job>:" header to the next top-level job header
+// (or to the end of the file). A job that lost its own needs or if line cannot borrow another job's text.
+const JOB_HEADER = /^ {2}[a-z0-9-]+:\s*(#.*)?$/;
+function jobBlock(text: string, job: string): string | undefined {
+  const lines = text.split("\n");
+  const start = lines.findIndex((line) => line.startsWith(`  ${job}:`) && JOB_HEADER.test(line));
+  if (start < 0) return undefined;
+  let end = start + 1;
+  while (end < lines.length && !JOB_HEADER.test(lines[end] ?? "")) end += 1;
+  return lines.slice(start, end).join("\n");
+}
+
+// Report-only jobs: KEY_JOBS report entries that exist as jobs here, minus trivy-upload (ungated by design, plan 5.0).
+function reportOnlyJobs(text: string): string[] {
+  const reportJobs = Object.values(KEY_JOBS).flatMap((jobs) => jobs.report);
+  return [...new Set(reportJobs)]
+    .filter((job) => job !== "trivy-upload")
+    .filter((job) => jobBlock(text, job) !== undefined);
+}
+
+// Jobs whose own block lacks the decide gate. Each block must carry both lines itself.
+function ungatedReportJobs(text: string): string[] {
+  return reportOnlyJobs(text).filter((job) => {
+    const block = jobBlock(text, job) ?? "";
+    return (
+      !/^ {4}needs: \[decide\]$/m.test(block) ||
+      !/^ {4}if: needs\.decide\.outputs\.report == '(true)'$/m.test(block)
+    );
+  });
+}
+
+test("report-only jobs are gated by the decide job, per job", () => {
   const text = read("p5-scans.yml");
-  for (const job of ["gitleaks-forks", "osv-forks", "syft"]) {
-    const start = text.indexOf(`  ${job}:`);
-    const end = text.indexOf("\n  summary:", start);
-    const block = text.slice(start, end);
-    assert.match(block, /needs: \[decide\]/, job);
-    assert.match(block, /if: needs\.decide\.outputs\.report == 'true'/, job);
+  const jobs = reportOnlyJobs(text);
+  assert.ok(jobs.length > 0, "report-only jobs are present");
+  for (const job of ["gitleaks-forks", "osv-forks", "trivy-images", "trivy-forks", "syft"]) {
+    assert.ok(jobs.includes(job), `${job} is covered`);
   }
+  assert.deepEqual(ungatedReportJobs(text), []);
+});
+
+test("a report job without its own decide gate is caught", () => {
+  const text = read("p5-scans.yml");
+  const block = jobBlock(text, "osv-forks");
+  assert.ok(block !== undefined, "osv-forks block exists");
+  const withoutIf = block.replace(/\n {4}if: needs\.decide\.outputs\.report == 'true'/, "");
+  assert.notEqual(withoutIf, block, "the if line was removed from the copy");
+  const broken = text.replace(block, withoutIf);
+  assert.deepEqual(ungatedReportJobs(broken), ["osv-forks"]);
 });
 
 test("gitleaks exit codes are captured, not left to bash -e", () => {

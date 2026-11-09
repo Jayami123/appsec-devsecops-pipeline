@@ -20,25 +20,62 @@ interface SarifRule {
   readonly id?: string;
   readonly properties?: { readonly "security-severity"?: string };
 }
+// The action writes rule references as { id, index, toolComponent: { index } } (rules grouped by pack).
+interface SarifRuleRef {
+  readonly id?: string;
+  readonly index?: number;
+  readonly toolComponent?: { readonly index?: number };
+}
 interface SarifResult {
-  readonly ruleId: string;
+  readonly ruleId?: string;
   readonly ruleIndex?: number;
+  readonly rule?: SarifRuleRef;
   readonly locations?: readonly {
     readonly physicalLocation?: { readonly artifactLocation?: { readonly uri?: string } };
   }[];
   readonly partialFingerprints?: { readonly primaryLocationLineHash?: string };
 }
+interface SarifRun {
+  readonly invocations?: readonly { readonly executionSuccessful?: boolean }[];
+  readonly tool: {
+    readonly driver: { readonly rules?: readonly SarifRule[] };
+    readonly extensions?: readonly { readonly rules?: readonly SarifRule[] }[];
+  };
+  readonly results?: readonly SarifResult[];
+}
 interface Sarif {
-  readonly runs?: readonly {
-    readonly invocations?: readonly { readonly executionSuccessful?: boolean }[];
-    readonly tool: { readonly driver: { readonly rules?: readonly SarifRule[] } };
-    readonly results?: readonly SarifResult[];
-  }[];
+  readonly runs?: readonly SarifRun[];
 }
 
 export interface CodeqlScan {
   readonly outcome: ScanOutcome;
   readonly current: ReadonlySet<string>;
+}
+
+// Resolves a result's rule. (a) rule.toolComponent.index picks an extension, then rule.index picks its rule;
+// (b) rule.index or ruleIndex picks a driver rule. (a) and (b) are accepted only when the rule's id equals the
+// result's ruleId. Otherwise (c) looks the id up across the driver and every extension. Undefined = unresolvable.
+export function resolveRule(
+  run: SarifRun,
+  ruleId: string,
+  result: SarifResult,
+): SarifRule | undefined {
+  const driverRules = run.tool.driver.rules ?? [];
+  const extensions = run.tool.extensions ?? [];
+  const ref = result.rule;
+  const componentIndex = ref?.toolComponent?.index;
+  if (typeof componentIndex === "number" && typeof ref?.index === "number") {
+    const candidate = extensions[componentIndex]?.rules?.[ref.index];
+    if (candidate !== undefined && candidate.id === ruleId) return candidate;
+  }
+  const direct = typeof ref?.index === "number" ? ref.index : result.ruleIndex;
+  if (typeof direct === "number") {
+    const candidate = driverRules[direct];
+    if (candidate !== undefined && candidate.id === ruleId) return candidate;
+  }
+  return [...driverRules, ...extensions.flatMap((extension) => extension.rules ?? [])].find(
+    (rule) => rule.id === ruleId,
+  );
 }
 
 // Fingerprint: ruleId|uri|primaryLocationLineHash (plan 6.5).
@@ -59,15 +96,18 @@ export function scanCodeql(
   if (!run || run.invocations?.[0]?.executionSuccessful !== true) {
     return { outcome: failClosed("SARIF without a successful invocation"), current: none };
   }
-  const rules = run.tool.driver.rules ?? [];
   const current = new Set<string>();
   const blocking: string[] = [];
   for (const result of run.results ?? []) {
-    const rule = rules[result.ruleIndex ?? -1] ?? rules.find((r) => r.id === result.ruleId);
-    const severity = Number(rule?.properties?.["security-severity"]);
+    const ruleId = result.ruleId ?? result.rule?.id ?? "";
     const uri = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri ?? "";
-    const fp = `${result.ruleId}|${uri}|${result.partialFingerprints?.primaryLocationLineHash ?? ""}`;
+    const fp = `${ruleId}|${uri}|${result.partialFingerprints?.primaryLocationLineHash ?? ""}`;
     current.add(fp);
+    const rule = resolveRule(run, ruleId, result);
+    if (rule === undefined) {
+      return { outcome: failClosed(`result rule not resolvable: ${ruleId}`), current };
+    }
+    const severity = Number(rule.properties?.["security-severity"]);
     const owned = OWNED_PREFIXES.some((prefix) => uri.startsWith(prefix));
     if (!(severity >= 7.0) || !owned) continue; // High is 7.0 or above (plan 6.5)
     if (active.has(fp)) continue;

@@ -120,3 +120,15 @@ test("fetch-tool installs a raw binary after the same checksum check, and refuse
   assert.equal(refused.status, 2);
   assert.match(refused.stderr, /checksum mismatch/);
 });
+
+test("every commit id in a tools.json source is 40 hex", () => {
+  // A source records its commit as "commit <id>" or "tag object <id>". Each id must be a full SHA-1 (40 hex).
+  let checked = 0;
+  for (const [name, tool] of Object.entries(manifest.tools)) {
+    for (const match of (tool.source ?? "").matchAll(/(?:commit|object) ([0-9a-zA-Z]+)/g)) {
+      checked += 1;
+      assert.match(match[1] ?? "", /^[0-9a-f]{40}$/, `${name}: ${match[1] ?? ""}`);
+    }
+  }
+  assert.ok(checked > 0, "expected commit ids in tool sources");
+});

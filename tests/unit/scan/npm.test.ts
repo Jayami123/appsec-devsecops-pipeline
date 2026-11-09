@@ -83,3 +83,58 @@ test("a via string is followed to its advisory object", () => {
   assert.equal(scan.outcome.verdict, "fail");
   assert.deepEqual([...scan.current], ["900001|<2.0.0"]);
 });
+
+// Writes a synthetic npm audit report built at runtime. Each advisory object is { source, severity, range }.
+function auditDoc(vulnerabilities: Record<string, unknown>): string {
+  const file = join(scratch("npm-multi"), "audit.json");
+  writeFileSync(file, JSON.stringify({ auditReportVersion: 2, vulnerabilities, metadata: {} }));
+  return file;
+}
+
+test("an npm entry with a moderate and a high advisory blocks", () => {
+  const file = auditDoc({
+    "pkg-a": {
+      name: "pkg-a",
+      severity: "high",
+      via: [
+        { source: 1, severity: "moderate", range: "<2" },
+        { source: 2, severity: "high", range: "<3" },
+      ],
+      fixAvailable: true,
+    },
+  });
+  assert.equal(evaluateNpmAudit(file, NONE).verdict, "fail");
+});
+
+test("two advisories on one package give two fingerprints", () => {
+  const file = auditDoc({
+    "pkg-a": {
+      name: "pkg-a",
+      severity: "high",
+      via: [
+        { source: 1, severity: "moderate", range: "<2" },
+        { source: 2, severity: "high", range: "<3" },
+      ],
+      fixAvailable: true,
+    },
+  });
+  assert.equal(scanNpmAudit(file, NONE).current.size, 2);
+});
+
+test("a via chain to an entry with two advisories reaches both", () => {
+  const file = auditDoc({
+    "pkg-top": { name: "pkg-top", severity: "high", via: ["pkg-mid"], fixAvailable: true },
+    "pkg-mid": {
+      name: "pkg-mid",
+      severity: "high",
+      via: [
+        { source: 1, severity: "moderate", range: "<2" },
+        { source: 2, severity: "high", range: "<3" },
+      ],
+      fixAvailable: true,
+    },
+  });
+  const scan = scanNpmAudit(file, NONE);
+  assert.deepEqual([...scan.current].sort(), ["1|<2", "2|<3"]);
+  assert.equal(scan.outcome.verdict, "fail");
+});
