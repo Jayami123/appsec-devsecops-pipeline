@@ -1,0 +1,23 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "synthetic-moderate": {
+      "name": "synthetic-moderate",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 900002,
+          "name": "synthetic moderate advisory",
+          "severity": "moderate",
+          "range": "<3.0.0"
+        }
+      ],
+      "effects": [],
+      "range": "<3.0.0",
+      "nodes": [],
+      "fixAvailable": true
+    }
+  },
+  "metadata": {}
+}

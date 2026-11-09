@@ -75,3 +75,8 @@ export function runGitleaksDir(cwd: string, config: string): GitleaksRun {
 }
 
 export const REPO_CONFIG = join(REPO, "config/scan/gitleaks.toml");
+
+// Synthetic scanner outputs live beside this file (no real secrets, no real advisories beyond the repo's own).
+export function fixturePath(name: string): string {
+  return join(dirname(fileURLToPath(import.meta.url)), name);
+}

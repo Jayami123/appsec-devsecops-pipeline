@@ -43,7 +43,7 @@ test("scan job timeouts are at most 20", () => {
 
 test("report-only jobs are gated by the decide job", () => {
   const text = read("p5-scans.yml");
-  for (const job of ["gitleaks-forks"]) {
+  for (const job of ["gitleaks-forks", "osv-forks"]) {
     const start = text.indexOf(`  ${job}:`);
     const end = text.indexOf("\n  summary:", start);
     const block = text.slice(start, end);
