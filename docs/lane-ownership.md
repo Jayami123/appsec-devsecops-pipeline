@@ -51,6 +51,8 @@ Each row names the P2 source at `99a2fde`. Only the changes in plan section 7.2.
 
 Not vendored, with reason: P2 lane-specific code under `src/lanes/`, `src/clients/`, `src/contracts/`, `src/slo/`, `src/fixtures/`, `src/db/fixture.ts`, `src/auth/reaper-run.ts`, `src/auth/reaper-revoke.ts` (they revoke P2 keys; P5's revocation rows are separate), `src/auth/lifecycle.ts`, `src/auth/*` product clients.
 
+Recorded adaptation (F0-5a, L-PIPE plan section 11.1 and 5.5.1): `src/kit/ci/playwright-json-summary.ts` `escapeCell` escapes a backslash before the pipe escape (CodeQL `js/incomplete-sanitization`, a true positive, probe 2c). The matching row in master-plan section 7.2.2 lands in foundation PR F0-5b (d).
+
 ## Gate rules (plan 9.1 and 9.13)
 
 - The required status check is `gate` only (owner step, plan section 12).
