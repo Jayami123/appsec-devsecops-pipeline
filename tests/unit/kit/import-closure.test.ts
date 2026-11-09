@@ -56,7 +56,8 @@ test("no file in src/kit or scripts imports from src/ci, src/db, src/webhooks, s
     for (const spec of specifiers(file)) {
       if (!spec.startsWith(".")) continue;
       const target = resolve(dirname(file), spec);
-      if (forbiddenDir.test(target) || forbiddenEnv.test(target)) offenders.push(`${file} -> ${spec}`);
+      if (forbiddenDir.test(target) || forbiddenEnv.test(target))
+        offenders.push(`${file} -> ${spec}`);
     }
   }
   assert.deepEqual(offenders, []);
