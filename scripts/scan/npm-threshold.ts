@@ -1,6 +1,6 @@
 // npm audit verdict (plan 6.4). A D5 cross-check on the root lockfile only. Fingerprints key on the advisory:
-// every via chain (strings that point at another entry) is followed to the advisory object, so one advisory
-// reached from ten packages is one fingerprint.
+// every via list is collected (direct objects and the objects reached through via strings), so one advisory
+// reached from ten packages is one fingerprint and two advisories on one package are two.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
@@ -27,24 +27,23 @@ interface AuditDoc {
   readonly vulnerabilities?: Readonly<Record<string, AuditEntry>>;
 }
 
-// Follows a via chain to its advisory object. An unresolvable chain returns undefined (fail closed).
-function resolveAdvisory(
+// Collects every advisory object reachable from an entry: the objects in its own via list, plus the objects
+// reached through via strings (each string names another entry). Cycle-safe: each entry is visited once.
+function collectAdvisories(
   name: string,
   vulns: Readonly<Record<string, AuditEntry>>,
   seen: Set<string>,
-): AuditAdvisory | undefined {
-  if (seen.has(name)) return undefined;
-  seen.add(name);
-  const entry = vulns[name];
-  for (const via of entry?.via ?? []) {
-    if (typeof via === "string") {
-      const found = resolveAdvisory(via, vulns, seen);
-      if (found !== undefined) return found;
-    } else {
-      return via;
+): AuditAdvisory[] {
+  const found: AuditAdvisory[] = [];
+  for (const via of vulns[name]?.via ?? []) {
+    if (typeof via !== "string") {
+      found.push(via);
+    } else if (!seen.has(via)) {
+      seen.add(via);
+      found.push(...collectAdvisories(via, vulns, seen));
     }
   }
-  return undefined;
+  return found;
 }
 
 export interface NpmScan {
@@ -70,16 +69,18 @@ export function scanNpmAudit(jsonPath: string, active: ReadonlySet<string>): Npm
   const current = new Set<string>();
   const blocking: string[] = [];
   for (const name of Object.keys(vulns)) {
-    const advisory = resolveAdvisory(name, vulns, new Set());
-    if (advisory === undefined) {
+    const advisories = collectAdvisories(name, vulns, new Set([name]));
+    if (advisories.length === 0) {
       return { outcome: failClosed(`npm audit: '${name}' has no advisory object`), current };
     }
-    const fp = `${String(advisory.source)}|${String(advisory.range)}`;
-    current.add(fp);
-    const severity = normalizeSeverity(advisory.severity);
     const fixAvailable = Boolean(vulns[name]?.fixAvailable);
-    if (!active.has(fp) && (severity === "HIGH" || severity === "CRITICAL") && fixAvailable)
-      blocking.push(fp);
+    for (const advisory of advisories) {
+      const fp = `${String(advisory.source)}|${String(advisory.range)}`;
+      current.add(fp);
+      const severity = normalizeSeverity(advisory.severity);
+      if (!active.has(fp) && (severity === "HIGH" || severity === "CRITICAL") && fixAvailable)
+        blocking.push(fp);
+    }
   }
   const outcome: ScanOutcome =
     blocking.length === 0
