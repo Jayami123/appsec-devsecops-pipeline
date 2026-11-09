@@ -43,8 +43,8 @@ test("an implemented entry with a stub-marker workflow fails", () => {
 });
 
 test("an implemented entry whose job is missing fails", () => {
-  const problems = checkRegistry({ zizmor: "implemented" }, scanWorkflow, true);
-  assert.ok(problems.some((p) => p.includes("job zizmor is missing")));
+  const problems = checkRegistry({ syft: "implemented" }, scanWorkflow, true);
+  assert.ok(problems.some((p) => p.includes("job syft is missing")));
 });
 
 test("a stub entry reporting pass is rejected", () => {

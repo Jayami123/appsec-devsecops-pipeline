@@ -275,6 +275,33 @@ jobs:
       security-events: write
     uses: ./.github/workflows/codeql-reusable.yml
 
+  zizmor: # blocking on error-level results; offline (--no-online-audits, O-9)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install zizmor (pinned wheel, hash-checked)
+        run: |
+          set -eu
+          python3 -m venv "$RUNNER_TEMP/zizmor-venv"
+          "$RUNNER_TEMP/zizmor-venv/bin/pip" install --require-hashes -r config/scan/zizmor-requirements.txt
+      - id: audit
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out/zizmor"; mkdir -p "$out"
+          code=0
+          "$RUNNER_TEMP/zizmor-venv/bin/zizmor" --no-online-audits --format sarif .github/workflows > "$out/zizmor.sarif" || code=$?
+          echo "zizmor_exit=$code" >> "$GITHUB_OUTPUT"
+      - id: verdict
+        env:
+          ZIZMOR_EXIT: ${{ steps.audit.outputs.zizmor_exit }}
+        run: node --experimental-strip-types scripts/scan/zizmor-threshold.ts "$RUNNER_TEMP/scan-out/zizmor/zizmor.sarif" "$ZIZMOR_EXIT" >> "$GITHUB_OUTPUT"
+
   summary: # the aggregator (section 5.9)
     needs:
       [
@@ -288,6 +315,7 @@ jobs:
         trivy-images,
         trivy-forks,
         codeql,
+        zizmor,
       ]
     if: always()
     runs-on: ubuntu-latest

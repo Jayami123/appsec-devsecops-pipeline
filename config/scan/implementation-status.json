@@ -5,5 +5,5 @@
   "trivy": "implemented",
   "zap": "stub",
   "syft": "stub",
-  "zizmor": "stub"
+  "zizmor": "implemented"
 }
