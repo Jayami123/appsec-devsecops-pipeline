@@ -41,7 +41,8 @@ export const BUDGETS = {
     formula:
       "{ apiKeyShort: 100 per 1000 ms, apiKeyLong: 3600 per 60000 ms, application: 500 per 60000 ms }",
     class: "CITED",
-    basis: "P6 limiter-profile.ts:10-17 functional profile; image defaults UNPROBED",
+    basis:
+      "P6 0533e61 src/twenty/limiter-profile.ts:10-17 (functional profile). Fork defaults at 7cbdfec6 (config-variables.ts:1713,1722,1730,1739,1748,1757) are not this budget. Image defaults UNPROBED.",
   },
   // Throwaway accounts, one attempt each (provisional).
   TW_SPRAY_ACCOUNTS: {
