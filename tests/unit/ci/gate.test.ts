@@ -165,3 +165,42 @@ test("a codeql fail verdict blocks the gate", () => {
   assert.equal(verdict.ok, false);
   assert.ok(verdict.reasons.some((reason) => reason.startsWith("codeql:")));
 });
+
+test("skipped is accepted only for report-only keys", () => {
+  const status = SCANNERS.map((name) =>
+    `${name}=${name === "syft" || name === "zap" ? "skipped" : "not-implemented"}`,
+  ).join(",");
+  const registry = { ...baseRegistry(), syft: "implemented", zap: "implemented" };
+  const verdict = evaluateGate({ needs: withStatus(baseNeeds(), status), registry });
+  assert.equal(verdict.ok, true, verdict.reasons.join("; "));
+  assert.ok(verdict.rows.includes("SKIPPED: syft (report-only, not run on this event)"));
+  assert.ok(verdict.rows.includes("SKIPPED: zap (report-only, not run on this event)"));
+});
+
+test("skipped for gitleaks fails", () => {
+  const registry = { ...baseRegistry(), gitleaks: "implemented" };
+  const verdict = evaluateGate({ needs: withScanner(baseNeeds(), "gitleaks", "skipped"), registry });
+  assert.equal(verdict.ok, false);
+  assert.ok(verdict.reasons.includes("gitleaks: skipped is allowed only for report-only scanners"));
+});
+
+test("a missing syft key fails", () => {
+  const status = SCANNERS.filter((name) => name !== "syft")
+    .map((name) => `${name}=not-implemented`)
+    .join(",");
+  const registry = { ...baseRegistry(), syft: "implemented" };
+  const verdict = evaluateGate({ needs: withStatus(baseNeeds(), status), registry });
+  assert.equal(verdict.ok, false);
+  assert.ok(verdict.reasons.some((reason) => reason.startsWith("syft: missing")));
+});
+
+test("skipped on a stub key fails", () => {
+  const verdict = evaluateGate({
+    needs: withScanner(baseNeeds(), "syft", "skipped"),
+    registry: baseRegistry(),
+  });
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.reasons.includes("syft: stub reports 'skipped'; a stub reports not-implemented only"),
+  );
+});

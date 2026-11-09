@@ -13,7 +13,9 @@ const LANES = [
   ["p5-tw-iso", "p5_tw_iso"],
   ["p5-x", "p5_x"],
 ];
-const VERDICTS = new Set(["pass", "fail", "not-implemented"]);
+const VERDICTS = new Set(["pass", "fail", "not-implemented", "skipped"]);
+// Report-only scanners (L-PIPE O-15): may report skipped when their job did not run; never absent.
+const REPORT_ONLY_KEYS = new Set(["syft", "zap"]);
 
 // Parses "name=verdict,name=verdict". Returns null for anything malformed.
 function parseScannerStatus(text) {
@@ -36,6 +38,16 @@ function judge(name, verdict, registry, reasons, rows) {
   }
   if (!VERDICTS.has(verdict)) {
     reasons.push(`${name}: unknown verdict '${verdict}'`);
+    return;
+  }
+  if (verdict === "skipped") {
+    if (!REPORT_ONLY_KEYS.has(name)) {
+      reasons.push(`${name}: skipped is allowed only for report-only scanners`);
+    } else if (state === "stub") {
+      reasons.push(`${name}: stub reports 'skipped'; a stub reports not-implemented only`);
+    } else {
+      rows.push(`SKIPPED: ${name} (report-only, not run on this event)`);
+    }
     return;
   }
   if (state === "stub") {
