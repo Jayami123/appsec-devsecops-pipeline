@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { assertNoPrivateExtras, isPrivateEntry } from "../../../src/security/findings.ts";
+import { validateAcceptedRisks, type AcceptedRisk } from "../../../src/security/accepted-risk.ts";
 
 const read = (relative: string): string =>
   readFileSync(fileURLToPath(new URL(`../../../${relative}`, import.meta.url)), "utf8");
@@ -90,4 +91,8 @@ test("accepted_risks is empty (no risk is fabricated)", () => {
 
 test("findings is empty until a run produces evidence", () => {
   assert.deepEqual(ledger.findings, []);
+});
+
+test("accepted_risks passes the accepted-risk date validator", () => {
+  assert.deepEqual(validateAcceptedRisks(ledger.accepted_risks as AcceptedRisk[]), []);
 });
