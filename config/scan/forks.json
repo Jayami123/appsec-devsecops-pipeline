@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "forks": {
+    "cal": {
+      "ref": "c2b7ac44c66f24ffef1662b276f0653988a609a3",
+      "url": "https://github.com/Jayami123/cal.git"
+    },
+    "documenso": {
+      "ref": "f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c",
+      "url": "https://github.com/Jayami123/documenso.git"
+    },
+    "medusa": {
+      "ref": "f677db438f27294fc50e4c7c6612e71ff38eeff5",
+      "url": "https://github.com/Jayami123/medusa-dtc-starter.git"
+    },
+    "twenty": {
+      "ref": "7cbdfec6f346b43715bc2056932f4fad5886f733",
+      "url": "https://github.com/Jayami123/twenty-CRM.git"
+    }
+  }
+}
