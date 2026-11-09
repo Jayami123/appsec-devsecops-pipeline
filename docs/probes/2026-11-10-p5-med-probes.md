@@ -256,7 +256,7 @@ Scope: source reads and scratch computations only. No stack, no Docker, no secre
 ### 10g. Schemathesis shared lock (D-MED-5)
 
 - Generated in scratch with `pip-compile --generate-hashes` for `schemathesis==4.33.1` (Python 3.13, scratch virtualenv outside the repo).
-- Result: not yet generated at this commit (pip-compile still resolving in scratch). The digest is recorded in a follow-up commit when it finishes.
+- Result: NOT GENERATED. Attempt 1 was terminated before it wrote a lock. Attempt 2 (`timeout 1700`, verbose log) exited 124 (timed out) with no lock written. The resolution through the package proxy did not complete in this session. Status: UNVERIFIED that hashed resolution completes here. D-MED-5 stays open until the foundation PR generates `requirements/p5-tools.lock` with `pip-compile --generate-hashes` on a host where it completes. No digest is recorded.
 - The lock file is not committed here. The foundation PR adds `requirements/p5-tools.lock`.
 
 ### 10h. Stripe key handling (D-MED-1)
