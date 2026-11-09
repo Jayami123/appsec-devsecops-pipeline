@@ -32,6 +32,22 @@ test("every relative import in src/kit resolves to a file", () => {
   assert.deepEqual(missing, []);
 });
 
+test("every relative import in scripts/ resolves to a file", () => {
+  const missing: string[] = [];
+  for (const file of SCRIPT_FILES) {
+    for (const spec of specifiers(file)) {
+      if (!spec.startsWith(".")) continue;
+      if (!existsSync(resolve(dirname(file), spec))) missing.push(`${file} -> ${spec}`);
+    }
+  }
+  assert.deepEqual(missing, []);
+});
+
+test("the scanned file lists are not empty", () => {
+  assert.ok(KIT_FILES.length > 0, "src/kit scan found no files");
+  assert.ok(SCRIPT_FILES.length > 0, "scripts/ scan found no files");
+});
+
 test("no file in src/kit or scripts imports from src/ci, src/db, src/webhooks, src/run, src/readiness, src/auth, src/invariants, src/shared, or src/env.ts", () => {
   const forbidden =
     /\/src\/(ci|db|webhooks|run|readiness|auth|invariants|shared)\/|\/src\/env\.ts$/;
