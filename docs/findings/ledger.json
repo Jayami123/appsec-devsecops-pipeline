@@ -524,7 +524,7 @@
         "canonicalId": "P2-CAL-DLY-002",
         "repo": "api-webhook-db-test-suite",
         "ref": "99a2fde",
-        "file": "tests/webhooks/cal/cal-dly.spec.ts",
+        "file": "tests/webhooks/cal/cal-dly.spec.ts:38-80",
         "scopeCovered": "Signature acceptance and the observed 400/200 contract for an authenticated Daily-shaped request",
         "residual": "Successful business processing (the original 2xx property). A new business-positive control in P5-CAL-WH-002 supplies it.",
         "disposition": "ALIAS-PARTIAL"
@@ -538,10 +538,10 @@
       "lane": "L-CAL",
       "severity": null,
       "alias": {
-        "canonicalId": "unnamed: cal-dly.spec.ts:23-40 (no ID in plan)",
+        "canonicalId": "P2-CAL-DLY-002",
         "repo": "api-webhook-db-test-suite",
         "ref": "99a2fde",
-        "file": "tests/webhooks/cal/cal-dly.spec.ts",
+        "file": "tests/webhooks/cal/cal-dly.spec.ts:23-40",
         "scopeCovered": "Negative signature validation for a tampered body",
         "residual": "Random or forged signature values not derived from the secret or body (not covered by that test); business processing",
         "disposition": "ALIAS-PARTIAL"
@@ -558,7 +558,7 @@
         "canonicalId": "FC-1",
         "repo": "api-webhook-db-test-suite",
         "ref": "99a2fde",
-        "file": "tests/integration/cal/cal-framework.spec.ts",
+        "file": "tests/integration/cal/cal-framework.spec.ts:32-41",
         "scopeCovered": "The two routes FC-1 checks, as reported by the review",
         "residual": "Every other cron route. P5-CAL-CRON-001 builds one row per route.",
         "disposition": "ALIAS-PARTIAL"
@@ -575,7 +575,7 @@
         "canonicalId": "P6-DOC-RACE-002",
         "repo": "k6-load-concurrency-suite",
         "ref": "0533e61",
-        "file": "tests/documenso/races/doc-race-002-double-submit.spec.ts",
+        "file": "tests/documenso/races/doc-race-002-double-submit.spec.ts:40-48",
         "scopeCovered": "Same-token ten-way race: one SIGNED, nine ALREADY_SIGNED, all 200, one seal (supported by fact 4)",
         "residual": "None within the race property",
         "disposition": "ALIAS-supported"
@@ -592,7 +592,7 @@
         "canonicalId": "P6-DOC-LOAD-009",
         "repo": "k6-load-concurrency-suite",
         "ref": "0533e61",
-        "file": "src/load/spike/limiter-contract.ts",
+        "file": "src/load/spike/limiter-contract.ts:21-28",
         "scopeCovered": "Max+1 behaviour for its route",
         "residual": "The slow 15-minute window-reset edge is UNCOVERED and DEFERRED to a later row",
         "disposition": "ALIAS-PARTIAL"
@@ -609,7 +609,7 @@
         "canonicalId": "P6-DOC-LOAD-009",
         "repo": "k6-load-concurrency-suite",
         "ref": "0533e61",
-        "file": "src/load/spike/limiter-contract.ts",
+        "file": "src/load/spike/limiter-contract.ts:29-35,50-57",
         "scopeCovered": "Max+1 behaviour for those routes",
         "residual": "Window-reset edge (as above)",
         "disposition": "ALIAS-PARTIAL"
@@ -626,7 +626,7 @@
         "canonicalId": "P6-DOC-LOAD-009",
         "repo": "k6-load-concurrency-suite",
         "ref": "0533e61",
-        "file": "src/load/spike/limiter-contract.ts",
+        "file": "src/load/spike/limiter-contract.ts:19",
         "scopeCovered": "Max+1 behaviour for the upload route",
         "residual": "Window-reset edge (as above)",
         "disposition": "ALIAS-PARTIAL"
