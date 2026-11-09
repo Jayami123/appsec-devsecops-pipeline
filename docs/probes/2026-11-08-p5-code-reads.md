@@ -139,7 +139,7 @@ Legend: CONFIRMED = cited lines support the claim. UNREAD = not re-checked here 
 | # | Re-check status | Evidence at pin (file:line) | Note |
 |---|---|---|---|
 | 1 | CONFIRMED | harness `v0.3.1` `src/adapters/documenso-env.ts:297-298` | Exact condition |
-| 2 | CONFIRMED | P6 `0533e61` `src/load/spike/limiter-contract.ts:19` (upload 20), `:20` (ai 3), `:26` (authorize 10), `:31-33`, `:38-40`, `:45-47`, `:52-54` | Values match the cited ranges |
+| 2 | CONFIRMED | P6 `0533e61` `src/load/spike/limiter-contract.ts:19` (upload 20), `:20` (ai 3), `:26` (authorize 10), `:34` (forgot-password 3), `:41` (resend-verify-email 3), `:48` (verify-email 5), `:55` (reset-password 5) | Values match the cited ranges |
 | 3 | CONFIRMED | Documenso `f4105e47` `packages/app-tests/e2e/user/password.spec.ts:113`, `:171` | Test titles at the cited lines |
 | 4 | CONFIRMED | P6 `0533e61` `tests/documenso/races/doc-race-002-double-submit.spec.ts:40-48` | Oracle lines |
 | 5 | UNREAD (absence part) | harness `v0.3.1` `src/adapters/twenty-passthrough.ts:5-12`, `twenty-rate-limits.ts:7-14` read; `LOGIC_FUNCTION_TYPE` absent from the listed names | Absence from `src/` not checked: code search control failed |
