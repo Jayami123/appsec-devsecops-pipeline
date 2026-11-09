@@ -56,6 +56,7 @@ Status key: **CONFIRMED** (observed; matches the master plan or the stated expec
 - CONFIRMED: the backend `.env` is written at `src/adapters/medusa.adapter.ts:272`. `buildMedusaBackendEnvFile` (`medusa-env.ts:241-250`) upserts `DATABASE_URL`, `REDIS_URL`, `STRIPE_API_KEY` and `STRIPE_WEBHOOK_SECRET` into the template. The read-back is `backendProcessEnv` at `medusa.adapter.ts:276-282`.
 - Correction to the brief: `medusa.adapter.ts:527` is the storefront `.env.local` writer (`medusa.adapter.ts:526-527`), not the backend `.env`. Recorded in section 7.
 - Result: RBAC-001 is `BLOCKED: harness item 2 not in harness v0.3.1` (MP:803). The D14 gate holds.
+- Second pass (section 10): the flag is present on harness `main` at commit `519dfba` (`src/adapters/medusa-env.ts:206-217`, `:271`; test at `medusa.adapter.test.ts:11`). It is merged on `main` and unreleased. The owner's wording is "BLOCKED: MEDUSA_FF_RBAC not in harness v0.3.1 (merged on harness main, unreleased)".
 
 ### 2b. P-10: throwaway actors through normal routes
 
@@ -207,3 +208,57 @@ Because no stack was started, there is no readiness output, no `up` exit code an
 - **CONTRADICTS (against the L-MED contract):** none. Facts 12, 13, 14 and 18 are CONFIRMED.
 - **STOP (live):** the live stack was not started. Docker is not running (STOP item 8), and the harness admin credentials and webhook secret are not present (STOP item 3). P5 may not generate seed secrets (`AGENTS.md:27`). The source work and the plan proceed because they do not depend on the live stack.
 - **Recorded, not L-MED:** `/opt/node24` reports `v24.22.1` against the approved `24.22.0`. The contract is `docs/cloud-environments.md:23-28`; the bootstrap check is `scripts/bootstrap.sh:145-146`. Affects L-DOC only.
+
+## 10. Second pass: owner decisions D-MED-1 to D-MED-9 (source checks, no live run)
+
+Scope: source reads and scratch computations only. No stack, no Docker, no secret read. Every value below is a path and line at the pin named.
+
+### 10a. RBAC on harness main (owner item 12)
+
+- Harness `main` at `519dfba` (shallow clone, outside the repo). `MEDUSA_FF_RBAC` is read by `src/adapters/medusa-env.ts:206-217` (`MEDUSA_FF_RBAC_VALUES`, parser with `MEDUSA_FF_RBAC_INVALID`) and written at `:271`. The test is at `src/adapters/medusa.adapter.test.ts:11`.
+- Tag `v0.3.1` (`7d4a3ae`) has no reference. Status: merged on harness main, unreleased.
+
+### 10b. Core v2.21.2 routes for D-MED-3, D-MED-4, D-MED-6 (method names confirmed; body enums UNVERIFIED)
+
+| Need | Route (file) | Method |
+|---|---|---|
+| Create publishable key | `api/admin/api-keys/route.ts:38` | POST |
+| Link sales channel | `api/admin/api-keys/[id]/sales-channels/route.ts:10` | POST |
+| Revoke key | `api/admin/api-keys/[id]/revoke/route.ts:9` | POST |
+| Delete key | `api/admin/api-keys/[id]/route.ts:57` | DELETE |
+| Create invite | `api/admin/invites/route.ts:38` | POST; body `email`, `roles` (`admin/invites/validators.ts:41-42`) |
+| Accept invite | `api/admin/invites/accept/route.ts:9` | POST; `AUTHENTICATE = false` (`:42`); token from query (`filterableFields.token`, `:16`); user from body (`:18`) |
+| Delete admin user | `api/admin/users/[id]/route.ts:74` | DELETE |
+| Delete customer (admin) | `api/admin/customers/[id]/route.ts:69` | DELETE |
+| Logout session | `api/auth/session/route.ts:16` | DELETE |
+
+- API key `type` is `z.nativeEnum(ApiKeyType)` (`api/admin/api-keys/validators.ts:35`). The enum value `publishable` is **UNVERIFIED** (the enum definition was not read).
+- Invite token appears in the query config (`api/admin/invites/query-config.ts:9`). Whether the create response returns it is UNVERIFIED.
+- Accept flow: the invitee must hold an authenticated identity (`auth_context.auth_identity_id`, `accept/route.ts:17`). The register step that creates it is not traced: UNVERIFIED.
+
+### 10c. System payment provider (D-MED-1 fixture option)
+
+- `modules/payment/src/providers/system.ts:38`: `static identifier = "system"`. The class exists in the payment module.
+- Whether a seeded region exposes it, and the provider ID string, are **UNVERIFIED** (live P-10 needed).
+
+### 10d. Session hook (owner item 11 correction)
+
+- `.claude/hooks/session-start.sh:3`: "POST-SETUP ONLY. It never installs, repairs, downloads, clones, or starts a product or Docker." A search of the file finds no Docker check. The earlier plan text that said the hook checks Docker was wrong and is corrected in the plan (section 3g).
+
+### 10e. Harness export surface for the lane (D-MED-2, D-MED-6)
+
+- Harness `main` `src/index.ts` exports `getAdapter` (registry), `NotImplementedError`, `createPgClient`, data factories, and a Twenty helper. It does not export `MedusaAdapter` or `authenticate()` by name. Whether `getAdapter("medusa")` exposes `authenticate()` to a lane is **UNVERIFIED**. Fallback: harness request H3 in the plan.
+
+### 10f. Playwright CLI (owner item 10)
+
+- The installed `@playwright/test` (from `npm ci`) lists `--no-deps  Do not run project dependencies` (`npx playwright test --help`). CONFIRMED for the pinned version. Recheck at build.
+
+### 10g. Schemathesis shared lock (D-MED-5)
+
+- Generated in scratch with `pip-compile --generate-hashes` for `schemathesis==4.33.1` (Python 3.13, scratch virtualenv outside the repo).
+- Result: not yet generated at this commit (pip-compile still resolving in scratch). The digest is recorded in a follow-up commit when it finishes.
+- The lock file is not committed here. The foundation PR adds `requirements/p5-tools.lock`.
+
+### 10h. Stripe key handling (D-MED-1)
+
+- Presence was checked by name only earlier (`STRIPE_API_KEY` set; value never read). The prefix guard in the plan accepts `rk_test_` or `sk_test_` and never prints the value. No Stripe request was made by this probe.
