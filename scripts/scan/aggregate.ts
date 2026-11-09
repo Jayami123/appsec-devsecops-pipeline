@@ -58,6 +58,15 @@ function judge(needs: Needs, jobs: KeyJobs, reportJobs: ReadonlySet<string>): Ve
   return contributions.length > 0 ? "pass" : "fail"; // nothing judged: fail closed
 }
 
+// Syft is report-only policy (plan 5.9 rule 4, O-15): skipped when decide.report is false; when report is true
+// and syft did not succeed, fail.
+function syftVerdict(needs: Needs, jobs: KeyJobs, reportJobs: ReadonlySet<string>): Verdict {
+  const report = needs["decide"]?.outputs?.["report"];
+  if (report === "false") return "skipped";
+  if (report === "true" && needs["syft"]?.result !== "success") return "fail";
+  return judge(needs, jobs, reportJobs);
+}
+
 export function aggregate(
   needs: Needs,
   registry: Registry,
@@ -68,7 +77,12 @@ export function aggregate(
   for (const [key, state] of Object.entries(registry)) {
     const jobs = KEY_JOBS[key];
     if (jobs === undefined) throw new Error(`registry key '${key}' has no job mapping`);
-    const verdict: Verdict = state === "stub" ? "not-implemented" : judge(needs, jobs, reportJobs);
+    const verdict: Verdict =
+      state === "stub"
+        ? "not-implemented"
+        : key === "syft"
+          ? syftVerdict(needs, jobs, reportJobs)
+          : judge(needs, jobs, reportJobs);
     if (key === "codeql") codeqlVerdict = verdict;
     pairs.push(`${key}=${verdict}`);
   }
@@ -96,7 +110,11 @@ function main(): number {
     const rows = scannerStatus.split(",").map((pair) => {
       const [name, verdict] = pair.split("=");
       const shown =
-        verdict === "not-implemented" ? "NOT IMPLEMENTED" : (verdict ?? "").toUpperCase();
+        verdict === "not-implemented"
+          ? "NOT IMPLEMENTED"
+          : verdict === "skipped"
+            ? "SKIPPED (report-only, not run on this event)"
+            : (verdict ?? "").toUpperCase();
       return `| ${name ?? ""} | ${shown} |`;
     });
     appendFileSync(
