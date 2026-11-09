@@ -75,3 +75,13 @@ test("the codeql init step has no tools input (codeql-action reads tools: defaul
   assert.ok(start >= 0 && end > start, "init step found");
   assert.doesNotMatch(text.slice(start, end), /^\s*tools:/m);
 });
+
+test("codeql uses javascript.sarif for the upload and the threshold, with a precheck before the threshold", () => {
+  const text = readFileSync(join(REPO, ".github/workflows/codeql-reusable.yml"), "utf8");
+  assert.doesNotMatch(text, /javascript-typescript\.sarif/, "plan 5.5 name is not used");
+  assert.match(text, /sarif_file: \$\{\{ runner\.temp \}\}\/codeql-results\/javascript\.sarif/);
+  const thresholdAt = text.indexOf("codeql-threshold.ts");
+  const precheckAt = text.indexOf("expected javascript.sarif as the only *.sarif");
+  assert.ok(precheckAt >= 0 && thresholdAt > precheckAt, "precheck runs before the threshold call");
+  assert.match(text, /codeql-threshold\.ts "\$sarif"/);
+});

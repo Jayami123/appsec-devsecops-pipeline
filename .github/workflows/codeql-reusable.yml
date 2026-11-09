@@ -38,7 +38,17 @@ jobs:
       - name: Upload the CodeQL SARIF
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          sarif_file: ${{ runner.temp }}/codeql-results/javascript-typescript.sarif
+          sarif_file: ${{ runner.temp }}/codeql-results/javascript.sarif
           category: codeql
-      - id: verdict
-        run: node --experimental-strip-types scripts/scan/codeql-threshold.ts "$RUNNER_TEMP/codeql-results/javascript-typescript.sarif" config/scan/baseline/codeql.json docs/findings/ledger.json >> "$GITHUB_OUTPUT"
+      - id: verdict # fail-fast precheck, then the threshold over the one SARIF the action wrote
+        run: |
+          set -eu
+          dir="$RUNNER_TEMP/codeql-results"
+          sarif="$dir/javascript.sarif"
+          count="$(find "$dir" -maxdepth 1 -name '*.sarif' 2>/dev/null | wc -l)"
+          if [ ! -f "$sarif" ] || [ "$count" -ne 1 ]; then
+            echo "codeql: expected javascript.sarif as the only *.sarif in $dir; directory contents:" >&2
+            ls -la "$dir" >&2 || echo "(directory $dir does not exist)" >&2
+            exit 1
+          fi
+          node --experimental-strip-types scripts/scan/codeql-threshold.ts "$sarif" config/scan/baseline/codeql.json docs/findings/ledger.json >> "$GITHUB_OUTPUT"
