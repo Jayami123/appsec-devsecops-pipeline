@@ -136,3 +136,12 @@ test("zizmor runs offline and its requirement is hash-pinned to the plan digest"
     /^zizmor==1\.32\.0 --hash=sha256:84a6acb975accc13408786a2bd274b572537ca19c933ebbc13e78f3988562071$/m,
   );
 });
+
+test("the PN-7 token scan runs before each SARIF upload", () => {
+  for (const file of ["p5-scans.yml", "codeql-reusable.yml"]) {
+    const text = readFileSync(join(REPO, ".github/workflows", file), "utf8");
+    const scanAt = text.indexOf("evidence-token-scan.mjs");
+    const uploadAt = text.indexOf("github/codeql-action/upload-sarif@");
+    assert.ok(scanAt >= 0 && uploadAt > scanAt, `${file}: scan before upload`);
+  }
+});

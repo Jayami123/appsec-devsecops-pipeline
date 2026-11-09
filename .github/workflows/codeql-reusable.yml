@@ -34,7 +34,8 @@ jobs:
           category: codeql
           output: ${{ runner.temp }}/codeql-results
           upload: failure-only
-      # PN-7 (section 5.10, L8) inserts the artefact token scan over codeql-results here, before the upload.
+      - name: PN-7 artefact token scan (before the SARIF upload)
+        run: node scripts/scan/evidence-token-scan.mjs "$RUNNER_TEMP/codeql-results"
       - name: Upload the CodeQL SARIF
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
