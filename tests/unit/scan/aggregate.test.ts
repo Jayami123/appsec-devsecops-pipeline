@@ -72,3 +72,24 @@ test("every registry key appears exactly once", () => {
   const names = scannerStatus.split(",").map((pair) => pair.split("=")[0]);
   assert.deepEqual(names, Object.keys(realRegistry));
 });
+
+test("syft is skipped when decide report is false", () => {
+  const registry: Registry = { codeql: "stub", syft: "implemented" };
+  const needs: Needs = {
+    decide: { result: "success", outputs: { report: "false" } },
+    syft: { result: "skipped" },
+  };
+  assert.equal(
+    pairOf(aggregate(needs, registry, reportJobs).scannerStatus, "syft"),
+    "syft=skipped",
+  );
+});
+
+test("syft fails when decide report is true and syft did not succeed", () => {
+  const registry: Registry = { codeql: "stub", syft: "implemented" };
+  const needs: Needs = {
+    decide: { result: "success", outputs: { report: "true" } },
+    syft: { result: "failure" },
+  };
+  assert.equal(pairOf(aggregate(needs, registry, reportJobs).scannerStatus, "syft"), "syft=fail");
+});

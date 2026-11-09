@@ -43,7 +43,8 @@ test("an implemented entry with a stub-marker workflow fails", () => {
 });
 
 test("an implemented entry whose job is missing fails", () => {
-  const problems = checkRegistry({ syft: "implemented" }, scanWorkflow, true);
+  const withoutSyft = scanWorkflow.replace(/ {2}syft:[\s\S]*?(?=\n {2}summary:)/, "");
+  const problems = checkRegistry({ syft: "implemented" }, withoutSyft, true);
   assert.ok(problems.some((p) => p.includes("job syft is missing")));
 });
 

@@ -77,7 +77,7 @@ test("report-only jobs are gated by the decide job, per job", () => {
   const text = read("p5-scans.yml");
   const jobs = reportOnlyJobs(text);
   assert.ok(jobs.length > 0, "report-only jobs are present");
-  for (const job of ["gitleaks-forks", "osv-forks", "trivy-images", "trivy-forks"]) {
+  for (const job of ["gitleaks-forks", "osv-forks", "trivy-images", "trivy-forks", "syft"]) {
     assert.ok(jobs.includes(job), `${job} is covered`);
   }
   assert.deepEqual(ungatedReportJobs(text), []);

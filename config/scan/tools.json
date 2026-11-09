@@ -34,6 +34,14 @@
       "format": "wheel",
       "source": "https://github.com/zizmorcore/zizmor (tag v1.32.0, commit 21bd300700d43d9ba04b0c1fce72a89391ac80b4, lightweight); PyPI zizmor 1.32.0",
       "licence": "MIT"
+    },
+    "syft": {
+      "version": "1.57.1",
+      "url": "https://github.com/anchore/syft/releases/download/v1.57.1/syft_1.57.1_linux_amd64.tar.gz",
+      "sha256": "bf52519eb57f675d47c07d43213cb6dff6449f3d6d1147ff6701ed91f44eef0c",
+      "member": "syft",
+      "source": "https://github.com/anchore/syft (tag v1.57.1, peeled commit a0c0d3890a9d79421c403e8fcadec50a2e55bf21, annotated tag object 33b3234e4d1b2bbf5752bb1cc93ab2b0db36e2d9); checksums file syft_1.57.1_checksums.txt",
+      "licence": "Apache-2.0"
     }
   }
 }
