@@ -49,14 +49,14 @@ test("the scanned file lists are not empty", () => {
 });
 
 test("no file in src/kit or scripts imports from src/ci, src/db, src/webhooks, src/run, src/readiness, src/auth, src/invariants, src/shared, or src/env.ts", () => {
-  const forbidden =
-    /\/src\/(ci|db|webhooks|run|readiness|auth|invariants|shared)\/|\/src\/env\.ts$/;
+  const forbiddenDir = /\/src\/(ci|db|webhooks|run|readiness|auth|invariants|shared)\//;
+  const forbiddenEnv = /\/src\/env\.ts$/;
   const offenders: string[] = [];
   for (const file of [...KIT_FILES, ...SCRIPT_FILES]) {
     for (const spec of specifiers(file)) {
       if (!spec.startsWith(".")) continue;
       const target = resolve(dirname(file), spec);
-      if (forbidden.test(target)) offenders.push(`${file} -> ${spec}`);
+      if (forbiddenDir.test(target) || forbiddenEnv.test(target)) offenders.push(`${file} -> ${spec}`);
     }
   }
   assert.deepEqual(offenders, []);
