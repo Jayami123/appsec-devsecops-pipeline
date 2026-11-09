@@ -1,0 +1,45 @@
+name: codeql-reusable
+
+on:
+  workflow_call:
+    outputs:
+      verdict:
+        description: "CodeQL verdict (plan 6.5): pass or fail; upload success is never the gate"
+        value: ${{ jobs.analyze.outputs.verdict }}
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+          build-mode: none
+          tools: default
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: codeql
+          output: ${{ runner.temp }}/codeql-results
+          upload: failure-only
+      # PN-7 (section 5.10, L8) inserts the artefact token scan over codeql-results here, before the upload.
+      - name: Upload the CodeQL SARIF
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: ${{ runner.temp }}/codeql-results/javascript-typescript.sarif
+          category: codeql
+      - id: verdict
+        run: node --experimental-strip-types scripts/scan/codeql-threshold.ts "$RUNNER_TEMP/codeql-results/javascript-typescript.sarif" config/scan/baseline/codeql.json docs/findings/ledger.json >> "$GITHUB_OUTPUT"
