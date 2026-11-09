@@ -129,3 +129,42 @@ Yes. Private items are recorded only as IDs and status (plan section 4.7). No ti
 | Plan and record arithmetic | Mechanical counts over the edited files | KEEP 64, ALIAS 10, DROP 2, Playwright projects 13, F0-2 unit tests 31, F0-3 unit tests 42, F0-4 ledger tests 8. Derived from listed names; not a test run. |
 
 Not performed in r3: no product stack, no harness run, no CI or scanner run, no settings or account change, no send, no merge, no PR-body edit. Live CI status for the existing PR is not re-read here.
+
+## 2.1 F0-2 re-check of section 2 at the pinned refs (P-1)
+
+Method: each cited path was read by raw URL at its pinned ref (P2 `99a2fde`, harness `v0.3.1`, P6 `0533e61`, Documenso `f4105e47`, Twenty `7cbdfec6`, Cal `c2b7ac44`, Medusa core `v2.21.2`, Medusa starter `f677db43`, stripe-node `v23.0.1`) and the cited lines were printed and compared with the claim. Code search was used only where the index was known to cover the repository; its control query failed for the harness, so no absence claim rests on search.
+
+Legend: CONFIRMED = cited lines support the claim. UNREAD = not re-checked here (path not established at the pin, or external setting or documentation not read). CONTRADICTS = the pinned ref does not support the cited evidence. Line offsets of one line are noted and are not findings.
+
+| # | Re-check status | Evidence at pin (file:line) | Note |
+|---|---|---|---|
+| 1 | CONFIRMED | harness `v0.3.1` `src/adapters/documenso-env.ts:297-298` | Exact condition |
+| 2 | CONFIRMED | P6 `0533e61` `src/load/spike/limiter-contract.ts:19` (upload 20), `:20` (ai 3), `:26` (authorize 10), `:31-33`, `:38-40`, `:45-47`, `:52-54` | Values match the cited ranges |
+| 3 | CONFIRMED | Documenso `f4105e47` `packages/app-tests/e2e/user/password.spec.ts:113`, `:171` | Test titles at the cited lines |
+| 4 | CONFIRMED | P6 `0533e61` `tests/documenso/races/doc-race-002-double-submit.spec.ts:40-48` | Oracle lines |
+| 5 | UNREAD (absence part) | harness `v0.3.1` `src/adapters/twenty-passthrough.ts:5-12`, `twenty-rate-limits.ts:7-14` read; `LOGIC_FUNCTION_TYPE` absent from the listed names | Absence from `src/` not checked: code search control failed |
+| 6 | CONFIRMED (source); harness absence UNREAD | Twenty `7cbdfec6` `packages/twenty-server/src/engine/core-modules/captcha/captcha.service.ts:12-18` | Image behaviour UNPROBED per record |
+| 7 | UNREAD | Twenty `logic-function.entity.ts`, `create-logic-function-from-source.input.ts`, `local.driver.ts` | Full paths not in the record; not discoverable without tree access |
+| 8 | CONFIRMED | P2 `99a2fde` `docs/probes/2026-11-03-p2-lane-tw-probes.md:42` | Row shows `createWorkflowVersion` FORBIDDEN for the API key and core mutations absent from its schema |
+| 9 | CONFIRMED (partly) | Cal `c2b7ac44` `packages/features/auth/lib/next-auth-options.ts:254-270`; `scripts/seed.ts:1015-1026` | `apps/web/app/_router.tsx` (cited `:23`, `:32`) does not exist at the pin: UNREAD |
+| 10 | CONFIRMED (CSV); UNREAD (table) | Cal `packages/lib/csvUtils.ts:1`, `:33`, `:40`, `:49` | `UserListTable.tsx` path not found at the pin: UNREAD |
+| 11 | CONFIRMED | Cal `apps/api/v2/src/lib/throttler-guard.ts:36` (default 120), `:34` (60 s default TTL); `packages/lib/rateLimit.ts:36-41` (no-op without `UNKEY_ROOT_KEY`) | Booking call path UNREAD (as recorded) |
+| 12 | CONFIRMED (rbac and harness env range); UNREAD (medusa-env, absence) | Medusa `v2.21.2` `packages/medusa/src/feature-flags/rbac.ts:5-6`; harness `src/adapters/medusa.adapter.ts:276-282` (`backendProcessEnv`) | `MEDUSA_FF_RBAC` absence from harness not checked |
+| 13 | CONFIRMED | Medusa `v2.21.2` `packages/medusa/src/api/store/orders/middlewares.ts:17-27` (list, authenticated), `:28-37` (`/store/orders/:id`, query validation only) | |
+| 14 | CONFIRMED (stripe-node); UNREAD (Stripe documentation sentence) | stripe-node `v23.0.1` `src/Webhooks.ts:142` (`DEFAULT_TOLERANCE: 300`) | Daily tolerance UNVERIFIED (as recorded) |
+| 15 | CONFIRMED | P2 `99a2fde` `src/webhooks/sign.ts:87`, `:105`; `verify.ts:102`; `reach.ts:25`, `:29`; `src/db/roles.ts:12-13` | |
+| 16 | UNREAD | Repository rulesets, secret scanning, code scanning and Actions permissions are settings, not read in this pass | Owner settings check (plan section 12) |
+| 17 | CONFIRMED | P2 `99a2fde` `tests/webhooks/cal/cal-dly.spec.ts:23-40`, `:42-60`, `:63-79` | Authenticity only, as recorded |
+| 18 | CONFIRMED (middleware) | Medusa `v2.21.2` `packages/medusa/src/api/store/carts/middlewares.ts:60-63` (`POST /store/carts/:id/customer` with `authenticate`) | Handler ownership UNPROBED (as recorded) |
+| 19 | CONFIRMED | harness `src/adapters/cal.adapter.ts:977-981`; `src/internal/run.ts:100-102` | `SEED_OAUTH2_*` pass-through UNPROBED (as recorded) |
+| 20 | **CONTRADICTS** | P6 `0533e61`: `src/load/spike/limiter-profile.ts` returns not found at the cited path. `limiter-contract.ts` (lines 1-12) does not import a profile module. Code search for `limiter-profile` in the P6 repository found no P6 file. Twenty `usage-limit-definitions.constant.ts` not found at the recorded path | Binding claim (P6 `limiter-profile.ts:6-8`) and the matching §8 `TW_LIMITER_LAYERS` citation (`:10-17`) have no pinned source. **STOP** per plan section 15 until the plan owner supplies the correct pinned path or retracts the citation. |
+| 21 | CONFIRMED | harness `src/adapters/twenty-env.ts:137`, `:218`, `:251` | No product-scoped reset in the cited lines |
+| 22 | CONFIRMED (range off by one) | P2 `99a2fde` `scripts/bootstrap.sh:138-148` (`prepare_cal_env`) | Cited 139-149 |
+| 23 | CONFIRMED | P2 `99a2fde` `.github/workflows/p2-doc.yml:57-96` | |
+| 24 | CONFIRMED (range off by one) | P2 `99a2fde` `scripts/bootstrap.sh:116-127` (`install_documenso_deps`, default `/opt/node24/bin/node` at `:120`) | Cited 117-128 |
+| 25 | CONFIRMED | P2 `99a2fde` `.cursor/environment.json:6` (`start` calls the receiver script and `qa:passwords`) | |
+| 26 | UNREAD | Claude Code settings documentation | External documentation, not re-read here |
+| 27 | UNREAD | GitHub CodeQL documentation | External documentation, not re-read here |
+| 28 | UNREAD | GitHub reusable-workflow documentation | External documentation, not re-read here |
+
+**Result: one CONTRADICTS (fact 20). Work stopped per plan section 15.** Facts 5, 6, 7, 9, 10, 12, 16 and 26-28 have UNREAD parts recorded above. None of them blocks the code work listed in this record, but none may be cited as CONFIRMED.
