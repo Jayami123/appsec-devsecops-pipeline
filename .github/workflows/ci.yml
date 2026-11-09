@@ -38,9 +38,9 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/paths.txt"
+            git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/paths.txt"
           elif [[ "$EVENT_NAME" == "push" && ! "$PUSH_BEFORE" =~ ^0+$ ]]; then
-            git diff --name-only "$PUSH_BEFORE...$PUSH_SHA" > "$RUNNER_TEMP/paths.txt"
+            git diff --name-only --no-renames "$PUSH_BEFORE...$PUSH_SHA" > "$RUNNER_TEMP/paths.txt"
           else
             : > "$RUNNER_TEMP/paths.txt"
           fi
