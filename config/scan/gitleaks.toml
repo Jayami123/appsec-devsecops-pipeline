@@ -4,13 +4,16 @@ title = "P5 gitleaks config: this repository only"
 useDefault = true
 
 # Only entries that suppress a real default-rule hit. Today: one (probe 2c and 2h).
-# Each entry: regexTarget "line", one path, one anchored line. The regex is the verbatim
-# line from the PR #3 body, with regex metacharacters escaped by the build.
+# Scope: the single generic-api-key rule (targetRules), one path, and the verbatim
+# line 28 text (regexTarget "line"; an anchored regex does not match in gitleaks 8.30.1).
+# Validated by extend-only probes (PR body, L2): other values and other paths still report.
 [[allowlists]]
 description = "PR #3 row 16: vectors.ts:28, synthetic test vector (default-rule hit)"
+targetRules = ["generic-api-key"]
+condition = "AND"
 regexTarget = "line"
 paths = ['''^tests/unit/webhooks/vectors\.ts$''']
-regexes = ['''^export const DAILY_SECRET_B64 = "ZGFpbHktdmVjdG9yLWtleS1ieXRlcw=="";$''']
+regexes = ['''DAILY_SECRET_B64 = "ZGFpbHktdmVjdG9yLWtleS1ieXRlcw=="''']
 
 # Reviewed in PR #3 with no default-rule hit (not entries here):
 #   row 1  src/kit/env.ts:71          row 9   src/kit/webhooks/sign.ts:39
