@@ -71,7 +71,7 @@ Dropped as a fact: "harness `v0.3.0` turns limits off" (stale; fact 1).
 | D1 | Product lanes (L-CAL, L-DOC, L-MED, L-TW-A, L-TW-B), one DevSecOps lane (L-PIPE), serial foundation F0, closeout X. |
 | D2 | Selective vendoring into `src/kit/` with provenance and an explicit relocation/adaptation contract (section 7.2). No shared package extraction now. |
 | D3 | Private-first: ID and status only (section 4.7). Enforced by a PR checklist and by strict runtime schema validation. No keyword CI check. |
-| D4 | Scanner gate scope: BLOCK only on (a) leaked secrets in this repo, (b) NEW High/Critical alerts that are in P5-owned code and have a fix available, (c) workflow-hardening errors. Product images and forks report-only. Accepted risks need owner, reason and expiry (section 9.4). |
+| D4 | Scanner gate scope: BLOCK only on (a) leaked secrets in this repo, (b) NEW High/Critical alerts that are in P5-owned code and have a fix available, (c) workflow-hardening errors. Product images and forks report-only. Accepted risks need owner, reason and expiry (sections 7.4 and 9.3). |
 | D5 | OSV-Scanner and `npm audit`. Not Snyk. |
 | D6 | Satisfied IDs stay as ALIAS rows with a stated scope and residual. |
 | D7 | P5-CAL-RL-001 is a documented deployment note. Scope: the helper is a no-op without `UNKEY_ROOT_KEY` (fact 11); the booking call path is not traced, so the note says exactly that. |
@@ -502,6 +502,7 @@ Not vendored, with reason: P2 lane-specific code under `src/lanes/`, `src/client
 | Test-side adaptations | Carried P2 tests (`tests/unit/kit/**`) use: `p5-qa-` and `xp5-qa-` for `p2-qa-`/`xp2-qa-` run names; `P5_RUN_ID` for `P2_RUN_ID` (fixture environment and assertions); `p5-receiver.test`; `p5-qa-oracle-medusa` and `P5 oracle:`; `## P5 cal: run summary` and `P5 job summary`; `p5-summary-` and `p5-receiver-` temp-directory prefixes; `roleDbUrl` expectations moved from `P2_QA_RO_PASSWORD is missing or malformed` to `^Error: ENV_INVALID: P2_QA_RO_PASSWORD$` (the recorded ENV_INVALID change), with the bad-value non-echo check kept; the roles fixture environment adds `P5_RUN_ID`; the `TEST BUG` test name is renamed to `ENV_INVALID`. No assertion was weakened. Fixture `tests/unit/ci/fixtures/playwright-contract.json` is kept at its path. |
 | F0-2 test exclusions | Not carried, with reasons: `tests/unit/auth/secret.test.ts` `revokeAndVerify` block (3 tests; needs `src/auth/lifecycle.ts` and `src/auth/http.ts`, not vendored); `tests/unit/invariants/engine.test.ts` `rules:` and `twenty leak rules` blocks (7 tests; need the P2 rule catalog `src/invariants/rules.ts` and `src/invariants/lane-kit.ts`, not vendored); `tests/unit/readiness/checks.test.ts` `SLO budgets` block (2 tests; needs `src/slo.ts`, not vendored). Carried portable parts: secret 5, engine 12, checks 2. |
 | `scripts/db-roles.ts` | Vendored, not wired: there is no `db:roles:*` npm script (F0-1 excluded those scripts). Wiring needs an owner-approved script change. |
+| Summary cell escape (F0-5a) | `src/kit/ci/playwright-json-summary.ts` `escapeCell` escapes a backslash before the pipe escape (CodeQL `js/incomplete-sanitization`, L-PIPE probe 2c). Recorded adaptation. |
 
 Anything not in this table is a STOP.
 
@@ -688,7 +689,7 @@ Jobs `check` (`npm ci`, `npm run check:static`), `unit` (`npm run unit:ci`), `wo
 Call chain: `ci.yml` job `p5-scans` (grants read + security-events write) → `./.github/workflows/p5-scans.yml` (`workflow_call`, top-level read; job `codeql` with `permissions: { contents: read, security-events: write }`) → `./.github/workflows/codeql-reusable.yml` (`workflow_call`, outputs `verdict`). The reusable workflow:
 1. Runs `github/codeql-action/init` and `analyze` (external action, full SHA pin, section 9.4) producing SARIF in `$RUNNER_TEMP`.
 2. Uploads SARIF with `github/codeql-action/upload-sarif` (public repository: contents read and security-events write suffice; actions read is a private-repository requirement, not needed here).
-3. Runs `scripts/scan/codeql-threshold.mjs` on the SARIF in the same job and writes `verdict` = `pass` or `fail` as a job output.
+3. Runs `scripts/scan/codeql-threshold.ts` (run with `node --experimental-strip-types`) on the SARIF in the same job and writes `verdict` = `pass` or `fail` as a job output.
 
 Threshold semantics (D4 scope):
 - **Newness:** an alert is NEW when its fingerprint (`ruleId` + `location.uri` + `partialFingerprints` primary line hash) is not in `config/scan/codeql-baseline.json`. The baseline is committed; the owner does not edit it by hand except through a foundation PR.
@@ -734,7 +735,7 @@ Only `p5-zap-nightly.yml` may declare `schedule`. `ci.yml` never calls it. Manua
 ### 9.11 Workflow tests (`tests/unit/ci/workflow.test.ts`, exact names)
 1. "ci.yml triggers are exactly pull_request, push to main and workflow_dispatch"
 2. "ci.yml top-level permissions are contents: read"
-3. "security-events: write appears only on the p5-scans caller job in ci.yml and on the codeql job in p5-scans.yml"
+3. "security-events: write appears only on the allowed scan jobs and always on the p5-scans caller job in ci.yml"
 4. "gate needs every job and runs always()"
 5. "every lane job's if: requires the same-repo check"
 6. "no workflow uses pull_request_target, workflow_run or continue-on-error"
@@ -748,19 +749,22 @@ Only `p5-zap-nightly.yml` may declare `schedule`. `ci.yml` never calls it. Manua
 14. "schedule appears only in p5-zap-nightly.yml"
 15. "every timeout-minutes is at most 120"
 16. "p5-x.yml has no secrets key"
+17. "p5-zap-nightly.yml triggers are exactly schedule and workflow_dispatch"
 
-`tests/unit/ci/ci-changes.test.ts` (16 tests, exact names): "a cal lane path flags cal only"; "a doc lane path flags doc only"; "a tw-iso path flags tw_iso only and not tw"; "a cal csv-corpus change flags cal and x"; "a tests/closeout/medusa path flags x only"; "a tests/closeout/twenty path flags x only"; "a docs-only pull_request flags no lane and no codeql and keeps scans"; "a shared src/kit path flags every lane and codeql"; "an unknown path flags every lane and codeql"; "an empty pull_request list flags every lane and codeql"; "workflow_dispatch flags every lane and codeql"; "a push touching only a cal lane path flags cal and codeql only"; "a push touching src/security flags every lane and codeql"; "a push with an empty diff flags no lane and no codeql and keeps scans"; "a push with an all-zero before flags every lane and codeql"; "a docs-only push flags no lane, no codeql and keeps scans".
+Test 7 accepts `owner/repo/subpath@<40-hex sha> # vX.Y.Z`; a subpath still needs a full SHA and a version comment. Test 10 excludes `p5-zap-nightly.yml`, which test 17 covers.
+
+`tests/unit/ci/ci-changes.test.ts` (17 tests, exact names): "a cal lane path flags cal only"; "a doc lane path flags doc only"; "a tw-iso path flags tw_iso only and not tw"; "a cal csv-corpus change flags cal and x"; "a tests/closeout/medusa path flags x only"; "a tests/closeout/twenty path flags x only"; "a docs-only pull_request flags no lane and no codeql and keeps scans"; "a shared src/kit path flags every lane and codeql"; "an unknown path flags every lane and codeql"; "an empty pull_request list flags every lane and codeql"; "workflow_dispatch flags every lane and codeql"; "a push touching only a cal lane path flags cal and codeql only"; "a push touching src/security flags every lane and codeql"; "a push with an empty diff flags no lane and no codeql and keeps scans"; "a push with an all-zero before flags every lane and codeql"; "a docs-only push flags no lane, no codeql and keeps scans"; "a tests/unit/scan path flags codeql only".
 
 `tests/unit/ci/lint-workflows.test.ts` (3 tests): "the actionlint checksum constant is 64 lowercase hex characters"; "the script fails closed on an empty checksum"; "the script reads the version constant".
 
-`tests/unit/ci/gate.test.ts` (7 tests, exact names): "a lane skipped with its flag false passes the gate"; "a lane skipped with its flag true fails the gate"; "a stub scanner reporting not-implemented passes with a NOT IMPLEMENTED row"; "an implemented scanner reporting not-implemented fails the gate"; "a stub entry reporting pass is rejected"; "codeql not-implemented passes only while codeql is a stub"; "a codeql fail verdict blocks the gate".
+`tests/unit/ci/gate.test.ts` (11 tests, exact names): "a lane skipped with its flag false passes the gate"; "a lane skipped with its flag true fails the gate"; "a stub scanner reporting not-implemented passes with a NOT IMPLEMENTED row"; "an implemented scanner reporting not-implemented fails the gate"; "a stub entry reporting pass is rejected"; "codeql not-implemented passes only while codeql is a stub"; "a codeql fail verdict blocks the gate"; "skipped is accepted only for report-only keys"; "skipped for gitleaks fails"; "a missing syft key fails"; "skipped on a stub key fails".
 
 ### 9.12 Ruleset
 The required status check is `gate` only (owner step, section 12).
 
 ### 9.13 Scanner status, stubs and enforcement
 
-Verdict set for every scanner: `pass`, `fail`, `not-implemented`. A stub never emits `pass`.
+Verdict set for every scanner: `pass`, `fail`, `not-implemented`, and `skipped` for the report-only keys `syft` and `zap` only (O-15). A stub never emits `pass`.
 
 `config/scan/implementation-status.json` (created by F0-3; foundation-owned; each implementing PR flips its own entry in that same PR) maps each scanner name to `stub` or `implemented`. Initial content at F0-3: `codeql`, `gitleaks`, `osv-npm`, `trivy`, `zap`, `syft`, `zizmor` = `stub`. (`actionlint` is not a scanner in this map; it runs in `foundation.yml` as a real check.)
 
@@ -769,6 +773,7 @@ Rules:
 - `implemented` + `not-implemented`: the gate fails.
 - `stub` + `pass` or `fail`: the registry test fails (no fabricated results).
 - `implemented` + `pass`: accepted. `implemented` + `fail`: the gate fails.
+- `implemented` + `skipped`: accepted only for `syft` and `zap` (report-only); `skipped` for any other key, or for a stub, fails the gate. Every key still appears exactly once.
 - A stub-marker workflow and its registry entry must agree (tests in section 9.11).
 
 Consequence, stated plainly: until L-PIPE implements CodeQL, CodeQL does not enforce anything. The gate reports `not-implemented` for CodeQL when P5-owned source changes, and that is not a pass. The owner sees it in the summary and in the gate reason.
@@ -1047,7 +1052,7 @@ Waits on F0-3. Owns `scripts/scan/`, `config/scan/`, `.github/workflows/p5-scans
 
 | ID | Technique | Gate or outcome | File |
 |---|---|---|---|
-| P5-SCAN-001 | Trivy filesystem and product image | D4: block only on NEW High/Critical with fix in P5-owned code; product images report-only SARIF against `config/scan/baseline/` | `p5-scans.yml` job `trivy` |
+| P5-SCAN-001 | Trivy filesystem and product image | D4: block only on NEW High/Critical with fix in P5-owned code; product images report-only JSON (never uploaded as SARIF) | `p5-scans.yml` job `trivy` |
 | P5-SCAN-002 | gitleaks on this repo blocking; forks report-only | Blocking on a secret in this repo; control: clean tree passes; a synthetic fixture secret in a fixture file fails | `p5-scans.yml` job `gitleaks`; `config/scan/gitleaks.toml` |
 | P5-SCAN-003 | OSV-Scanner and `npm audit` | D4/D5 | `p5-scans.yml` job `osv-npm` |
 | P5-SCAN-004 | ZAP passive baseline nightly per product; starts unauthenticated, switches to authenticated as login helpers merge | Outcome by alert threshold; no PR gate | `p5-zap-nightly.yml` |

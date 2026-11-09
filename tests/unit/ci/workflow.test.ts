@@ -97,7 +97,7 @@ test("ci.yml top-level permissions are contents: read", () => {
   assert.match(ci, /^permissions:\n {2}contents: read$/m);
 });
 
-test("security-events: write appears only on the p5-scans caller job in ci.yml and on the codeql job in p5-scans.yml", () => {
+test("security-events: write appears only on the allowed scan jobs and always on the p5-scans caller job in ci.yml", () => {
   const grants: string[] = [];
   for (const file of workflowFiles) {
     for (const [job, lines] of jobs(workflow(file))) {
@@ -105,8 +105,15 @@ test("security-events: write appears only on the p5-scans caller job in ci.yml a
         grants.push(`${file}:${job}`);
     }
   }
-  // p5-scans.yml has no codeql job in F0-3 (L-PIPE adds it), so only the caller grant exists.
-  assert.deepEqual(grants, ["ci.yml:p5-scans"]);
+  const ALLOWED_GRANTS = [
+    "ci.yml:p5-scans",
+    "p5-scans.yml:codeql",
+    "codeql-reusable.yml:analyze",
+    "p5-scans.yml:trivy-upload",
+  ];
+  for (const grant of grants)
+    assert.ok(ALLOWED_GRANTS.includes(grant), `unexpected security-events grant: ${grant}`);
+  assert.ok(grants.includes("ci.yml:p5-scans"), "ci.yml:p5-scans must hold security-events: write");
 });
 
 test("gate needs every job and runs always()", () => {
@@ -137,16 +144,23 @@ test("no workflow uses pull_request_target, workflow_run or continue-on-error", 
   }
 });
 
+const EXTERNAL_USES =
+  /uses: [a-z0-9-]+\/[a-z0-9._-]+(\/[a-z0-9._/-]+)?@[0-9a-f]{40} # v\d+\.\d+\.\d+$/;
+
 test("every external uses: is a full 40-hex SHA with a version comment", () => {
   let externals = 0;
   for (const file of workflowFiles) {
     for (const line of workflow(file).split("\n")) {
       if (!/uses:/.test(line) || /uses:\s*\.\//.test(line)) continue;
       externals += 1;
-      assert.match(line, /uses: [a-z0-9-]+\/[a-z0-9._-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/, file);
+      assert.match(line, EXTERNAL_USES, file);
     }
   }
   assert.ok(externals > 0, "expected at least one external action");
+  const sha = "33d7b85da1a04171e211befe2c739303b9a4c066";
+  assert.match(`      - uses: github/codeql-action/init@${sha} # v4.39.3`, EXTERNAL_USES);
+  assert.doesNotMatch("      - uses: github/codeql-action/init@v4", EXTERNAL_USES);
+  assert.doesNotMatch(`      - uses: github/codeql-action/init@${sha}`, EXTERNAL_USES);
 });
 
 test("every local uses: starts with ./.github/workflows/ and the file exists", () => {
@@ -168,7 +182,9 @@ test("no docker:// uses in F0 workflows", () => {
 });
 
 test("each lane workflow is workflow_call and workflow_dispatch with no pull_request or push trigger", () => {
-  const lanes = workflowFiles.filter((file) => file.startsWith("p5-"));
+  const lanes = workflowFiles.filter(
+    (file) => file.startsWith("p5-") && file !== "p5-zap-nightly.yml",
+  );
   assert.ok(lanes.length > 0, "expected lane workflows");
   for (const file of lanes) {
     assert.deepEqual(triggers(workflow(file)), ["workflow_call", "workflow_dispatch"], file);
@@ -234,4 +250,16 @@ test("every timeout-minutes is at most 120", () => {
 
 test("p5-x.yml has no secrets key", () => {
   assert.doesNotMatch(workflow("p5-x.yml"), /^\s*secrets\s*:/m);
+});
+
+test("p5-zap-nightly.yml triggers are exactly schedule and workflow_dispatch", () => {
+  const NIGHTLY_TRIGGERS = ["schedule", "workflow_dispatch"];
+  const good = "on:\n  schedule:\n    - cron: '0 1 * * *'\n  workflow_dispatch:\njobs:\n";
+  const bad =
+    "on:\n  schedule:\n    - cron: '0 1 * * *'\n  workflow_dispatch:\n  pull_request:\njobs:\n";
+  assert.deepEqual([...triggers(good)].sort(), NIGHTLY_TRIGGERS);
+  assert.notDeepEqual([...triggers(bad)].sort(), NIGHTLY_TRIGGERS);
+  if (workflowFiles.includes("p5-zap-nightly.yml")) {
+    assert.deepEqual([...triggers(workflow("p5-zap-nightly.yml"))].sort(), NIGHTLY_TRIGGERS);
+  }
 });

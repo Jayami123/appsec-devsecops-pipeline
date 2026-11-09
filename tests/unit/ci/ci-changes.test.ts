@@ -120,3 +120,7 @@ test("a push with an all-zero before flags every lane and codeql", () => {
 test("a docs-only push flags no lane, no codeql and keeps scans", () => {
   expectFlags(classify(["docs/notes.md"], "push", BEFORE), [], false);
 });
+
+test("a tests/unit/scan path flags codeql only", () => {
+  expectFlags(classify(["tests/unit/scan/x.test.ts"], "pull_request"), [], true);
+});
