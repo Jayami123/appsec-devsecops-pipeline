@@ -151,6 +151,13 @@ Scope limit: this enumerates only `apps/web/app/api/cron/`. Cron handlers elsewh
 | Baseline headers | `apps/web/next.config.ts:427`, `:436` (`X-Frame-Options`), `:445` (`X-Content-Type-Options`) | CONFIRMED on source. No CSP match in `next.config` or `middleware`. Live response headers UNPROBED. |
 | successRedirectUrl parse | `packages/features/bookings/lib/bookingSuccessRedirect.ts:186` (parameter), `:203` (`new URL(successRedirectUrl)`), `:212-221` (external redirect handling) | CONFIRMED the URL is parsed at `:203`. No scheme or host allowlist found in that file. Whether validation happens earlier (schema layer) is UNPROBED. |
 
+### 3j. PN-2 OAS source (measured for provenance)
+
+| Check | Source | Result |
+|---|---|---|
+| P2 OAS at `99a2fde` | `git show 99a2fde:contracts/cal/openapi-v2.json` | CONFIRMED present; 560358 bytes; sha256 `3c2849d89d8f352d719ef073bf9e0c39ce981aa1a6c9e5066b3a744b68bfc41a`; measured 2026-11-09; the commit has no tag (UNVERIFIED tag: none found, not searched further). |
+| Schemathesis pin | not present in `package.json` on this branch | UNVERIFIED: the owner-set 4.33.1 pin is not in the repo; the foundation PR adds it with a fully hashed lock. |
+
 ## 4. Fact status (plan section 2 facts touched by this probe)
 
 | Fact | Status in this run |
