@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ledger.schema.json",
+  "title": "P5 findings ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "cases", "private", "findings", "accepted_risks"],
+  "properties": {
+    "schema": { "const": 1 },
+    "cases": { "type": "array", "items": { "$ref": "#/definitions/case" } },
+    "private": { "type": "array", "items": { "$ref": "#/definitions/privateEntry" } },
+    "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } },
+    "accepted_risks": { "type": "array", "items": { "$ref": "#/definitions/acceptedRisk" } }
+  },
+  "definitions": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "product", "status", "title", "lane", "severity"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(P5|PN|MI)-" },
+        "product": { "enum": ["cal", "documenso", "medusa", "twenty", "repo", "cross"] },
+        "status": { "enum": ["planned", "gated", "alias", "dropped"] },
+        "title": { "type": "string", "minLength": 1 },
+        "lane": { "type": "string", "minLength": 1 },
+        "severity": { "type": ["string", "null"], "enum": ["Critical", "High", "Medium", "Low", "Info", null] },
+        "alias": { "$ref": "#/definitions/alias" },
+        "blocker": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        { "if": { "properties": { "status": { "const": "alias" } } }, "then": { "required": ["alias"] } },
+        { "if": { "properties": { "status": { "const": "gated" } } }, "then": { "required": ["blocker"] } },
+        { "if": { "properties": { "status": { "const": "dropped" } } }, "then": { "required": ["reason"] } }
+      ]
+    },
+    "alias": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonicalId", "repo", "ref", "file", "scopeCovered", "residual", "disposition"],
+      "properties": {
+        "canonicalId": { "type": "string", "minLength": 1 },
+        "repo": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "file": { "type": "string", "minLength": 1 },
+        "scopeCovered": { "type": "string", "minLength": 1 },
+        "residual": { "type": "string", "minLength": 1 },
+        "disposition": { "enum": ["ALIAS", "ALIAS-PARTIAL", "ALIAS-supported"] }
+      }
+    },
+    "privateEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "status": { "const": "held-private" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "product", "status", "title", "severity", "evidence"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(P5|PN|MI)-" },
+        "product": { "enum": ["cal", "documenso", "medusa", "twenty", "repo", "cross"] },
+        "status": { "enum": ["open", "product-bug-suspected", "confirmed-product-bug", "fixed"] },
+        "title": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["Critical", "High", "Medium", "Low", "Info"] },
+        "bugId": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["runId", "artifact", "file", "line"],
+          "properties": {
+            "runId": { "type": "string", "minLength": 1 },
+            "artifact": { "type": "string", "minLength": 1 },
+            "file": { "type": "string", "minLength": 1 },
+            "line": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+    "acceptedRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "product", "status", "title", "severity", "owner", "reason", "acceptedOn", "expires"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(P5|PN|MI)-" },
+        "product": { "enum": ["cal", "documenso", "medusa", "twenty", "repo", "cross"] },
+        "status": { "const": "accepted-risk" },
+        "title": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["Critical", "High", "Medium", "Low", "Info"] },
+        "owner": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "acceptedOn": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "expires": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }
+      }
+    }
+  }
+}
