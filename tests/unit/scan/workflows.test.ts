@@ -67,3 +67,11 @@ test("gitleaks exit codes are captured, not left to bash -e", () => {
     assert.match(continued, /\|\| code=\$\?/, call.trim());
   }
 });
+
+test("the codeql init step has no tools input (codeql-action reads tools: default as a local path)", () => {
+  const text = readFileSync(join(REPO, ".github/workflows/codeql-reusable.yml"), "utf8");
+  const start = text.indexOf("github/codeql-action/init@");
+  const end = text.indexOf("github/codeql-action/analyze@", start);
+  assert.ok(start >= 0 && end > start, "init step found");
+  assert.doesNotMatch(text.slice(start, end), /^\s*tools:/m);
+});
