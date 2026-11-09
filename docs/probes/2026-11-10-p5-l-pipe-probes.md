@@ -337,8 +337,8 @@ Commands run from the repository root unless stated. "Scratch" means a copy unde
 |---|---|---|---|
 | gitleaks default, root, exit code 2 | `gitleaks dir . --no-banner --redact -f json -r <out> --exit-code 2` | 2, 2 hits | 2, 2 hits (`tests/unit/security/redact.test.ts`, `tests/unit/webhooks/vectors.ts`) |
 | fixture form, concatenated (scratch; run with `--exit-code 2`) | file line `redactArtefact("key=" + "api_" + "9f8e7d6c5b4a3210zz");` | 0 | 0, 0 hits (exit 0 with the flag; exit 0 without it) |
-| fixture form, join (scratch; run with `--exit-code 2`) | file line `redactArtefact(["key=api", "9f8e7d6c5b4a3210zz"].join("_"));` | 2 with the flag | 1 hit, exit 2 with `--exit-code 2`; exit 1 without the flag |
-| fixture form, plain literal (scratch; run with `--exit-code 2`) | file line `redactArtefact("key=api_9f8e7d6c5b4a3210zz");` | 2 with the flag | 1 hit, exit 2 with `--exit-code 2`; exit 1 without the flag |
+| fixture form, join (scratch; run with `--exit-code 2`) | file line `redactArtefact(["key=api", "<redacted 18 chars>"].join("_"));` | 2 with the flag | 1 hit, exit 2 with `--exit-code 2`; exit 1 without the flag |
+| fixture form, plain literal (scratch; run with `--exit-code 2`) | file line `redactArtefact("key=api_<redacted 18 chars>");` | 2 with the flag | 1 hit, exit 2 with `--exit-code 2`; exit 1 without the flag |
 | gitleaks git, PR range | `gitleaks git . --log-opts="5a3a1d9..HEAD" --exit-code 2` | 0 | 0, 0 hits |
 | allowlist uniqueness | count of each verbatim PR #3 line in the file at HEAD | 1 each | 1 each, 16 of 16 |
 | Trivy default, root | `trivy fs --scanners vuln --format json` | 0 vulnerabilities | 0 |
