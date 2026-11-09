@@ -1,0 +1,707 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "P5-CAL-AUTHZ-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Other user cannot GET/PUT/DELETE owner booking",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-AUTHZ-002",
+      "product": "cal",
+      "status": "planned",
+      "title": "Anonymous cannot mutate; UID read fields documented",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-CAP-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Anonymous UID response field allowlist",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-TEAM-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Team A member cannot edit team B event type",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-WH-002",
+      "product": "cal",
+      "status": "planned",
+      "title": "Replay of a captured valid signed request",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-WH-003",
+      "product": "cal",
+      "status": "planned",
+      "title": "Stale timestamp with recomputed signature",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-CRON-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Cron without key rejected, one row per cron route",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-OAUTH-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Authorization code single-use",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-OAUTH-002",
+      "product": "cal",
+      "status": "planned",
+      "title": "PKCE: wrong code_verifier rejected",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-2FA-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Burst of wrong TOTP codes",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-TOK-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Reset token concurrent redemption",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-RL-002",
+      "product": "cal",
+      "status": "planned",
+      "title": "API key over quota returns 429",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-XSS-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Script in event description not executed",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-XSS-002",
+      "product": "cal",
+      "status": "planned",
+      "title": "Description in confirmation email sanitised",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-RED-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "External successRedirectUrl rejected or warned",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-CSV-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Export prefixes formula-like cells (organisation members table)",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-HDR-001",
+      "product": "cal",
+      "status": "planned",
+      "title": "Booker response security headers",
+      "lane": "L-CAL",
+      "severity": null
+    },
+    {
+      "id": "P5-DOC-AUTHZ-001",
+      "product": "documenso",
+      "status": "planned",
+      "title": "Other user GET/DELETE envelope denied",
+      "lane": "L-DOC",
+      "severity": null
+    },
+    {
+      "id": "P5-DOC-AUTHZ-002",
+      "product": "documenso",
+      "status": "planned",
+      "title": "Cross-organisation template access denied",
+      "lane": "L-DOC",
+      "severity": null
+    },
+    {
+      "id": "P5-DOC-RBAC-001",
+      "product": "documenso",
+      "status": "planned",
+      "title": "EVERYONE role visibility sample cells",
+      "lane": "L-DOC",
+      "severity": null
+    },
+    {
+      "id": "P5-DOC-HDR-001",
+      "product": "documenso",
+      "status": "planned",
+      "title": "Signing page headers",
+      "lane": "L-DOC",
+      "severity": null
+    },
+    {
+      "id": "P5-DOC-OIDC-001",
+      "product": "documenso",
+      "status": "planned",
+      "title": "OAuth state replay rejected",
+      "lane": "L-DOC",
+      "severity": null
+    },
+    {
+      "id": "P5-DOC-OIDC-002",
+      "product": "documenso",
+      "status": "planned",
+      "title": "`email_verified=false` not auto-linked",
+      "lane": "L-DOC",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-WH-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Missing signature: payment unchanged",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-WH-002",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Invalid signature: payment unchanged",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-AUTHZ-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Customer B cannot take over or mutate customer A's cart through a customer-authenticated route",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-AUTHZ-002",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Publishable key alone cannot act as admin",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-AUTHZ-003",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Customer B cannot update customer A address",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-RBAC-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Role without order write cannot cancel",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-FIELD-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "`fields=` rejects restricted customer PII on store",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-RL-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Admin login wrong-password burst",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-CORS-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Disallowed origin gets no ACAO",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-FUZZ-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Schemathesis store API valid extras never 5xx",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-MED-HDR-001",
+      "product": "medusa",
+      "status": "planned",
+      "title": "Admin `/app` and store API headers",
+      "lane": "L-MED",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-MT-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Apple user cannot read YC company",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-MT-002",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Signed file URL from one workspace not readable in another",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-RBAC-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Guest cannot create webhook",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-RLS-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Hidden record absent from search",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-RLS-002",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Hidden record absent from CSV export",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-RLS-003",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Hidden field absent from GraphQL selection",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-MASS-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Client-supplied id, createdBy, deletedAt ignored",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-SSRF-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Logic/workflow HTTP to owner canary blocked",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-INJ-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Filter corpus does not 500 or leak SQL",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-RL-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Wrong-password burst on one throwaway account",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-RL-002",
+      "product": "twenty",
+      "status": "planned",
+      "title": "One-attempt-per-account spray across throwaway accounts",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-SEC-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "API key secret not stored in plaintext",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-FUZZ-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Schemathesis `/rest/open-api/core`",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-HDR-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Frontend CSP and frame-ancestors",
+      "lane": "L-TW-A",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-SND-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Sandbox cannot read `process.env` secrets",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-SND-002",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Sandbox egress to owner internal canary blocked",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-SND-003",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Infinite loop terminated",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-SND-004",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Bounded memory allocation at the verified configured limit",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-GQL-001",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Deeply nested query rejected",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-GQL-002",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Query cost or complexity limit",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-GQL-003",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Alias flooding bounded",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-GQL-004",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Batched operations and limiter layers",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-GQL-005",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Introspection exposure",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-TW-GQL-006",
+      "product": "twenty",
+      "status": "planned",
+      "title": "Field suggestions leak schema",
+      "lane": "L-TW-B",
+      "severity": null
+    },
+    {
+      "id": "P5-SCAN-001",
+      "product": "repo",
+      "status": "planned",
+      "title": "Trivy filesystem and product image scan",
+      "lane": "L-PIPE",
+      "severity": null
+    },
+    {
+      "id": "P5-SCAN-002",
+      "product": "repo",
+      "status": "planned",
+      "title": "gitleaks on this repo blocking; forks report-only",
+      "lane": "L-PIPE",
+      "severity": null
+    },
+    {
+      "id": "P5-SCAN-003",
+      "product": "repo",
+      "status": "planned",
+      "title": "OSV-Scanner and npm audit",
+      "lane": "L-PIPE",
+      "severity": null
+    },
+    {
+      "id": "P5-SCAN-004",
+      "product": "repo",
+      "status": "planned",
+      "title": "ZAP authenticated passive baseline nightly",
+      "lane": "L-PIPE",
+      "severity": null
+    },
+    {
+      "id": "P5-SCAN-005",
+      "product": "repo",
+      "status": "planned",
+      "title": "Summary markdown on every scan job",
+      "lane": "L-PIPE",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-CSV-002",
+      "product": "cal",
+      "status": "planned",
+      "title": "Medusa and Twenty export control with the same corpus",
+      "lane": "X",
+      "severity": null
+    },
+    {
+      "id": "P5-CAL-WH-001",
+      "product": "cal",
+      "status": "alias",
+      "title": "P5-CAL-WH-001",
+      "lane": "L-CAL",
+      "severity": null,
+      "alias": {
+        "canonicalId": "P2-CAL-DLY-002",
+        "repo": "api-webhook-db-test-suite",
+        "ref": "99a2fde",
+        "file": "tests/webhooks/cal/cal-dly.spec.ts",
+        "scopeCovered": "Signature acceptance and the observed 400/200 contract for an authenticated Daily-shaped request",
+        "residual": "Successful business processing (the original 2xx property). A new business-positive control in P5-CAL-WH-002 supplies it.",
+        "disposition": "ALIAS-PARTIAL"
+      }
+    },
+    {
+      "id": "P5-CAL-WH-004",
+      "product": "cal",
+      "status": "alias",
+      "title": "P5-CAL-WH-004",
+      "lane": "L-CAL",
+      "severity": null,
+      "alias": {
+        "canonicalId": "unnamed: cal-dly.spec.ts:23-40 (no ID in plan)",
+        "repo": "api-webhook-db-test-suite",
+        "ref": "99a2fde",
+        "file": "tests/webhooks/cal/cal-dly.spec.ts",
+        "scopeCovered": "Negative signature validation for a tampered body",
+        "residual": "Random or forged signature values not derived from the secret or body (not covered by that test); business processing",
+        "disposition": "ALIAS-PARTIAL"
+      }
+    },
+    {
+      "id": "P5-CAL-CRON-002",
+      "product": "cal",
+      "status": "alias",
+      "title": "P5-CAL-CRON-002",
+      "lane": "L-CAL",
+      "severity": null,
+      "alias": {
+        "canonicalId": "FC-1",
+        "repo": "api-webhook-db-test-suite",
+        "ref": "99a2fde",
+        "file": "tests/integration/cal/cal-framework.spec.ts",
+        "scopeCovered": "The two routes FC-1 checks, as reported by the review",
+        "residual": "Every other cron route. P5-CAL-CRON-001 builds one row per route.",
+        "disposition": "ALIAS-PARTIAL"
+      }
+    },
+    {
+      "id": "P5-DOC-TOK-001",
+      "product": "documenso",
+      "status": "alias",
+      "title": "P5-DOC-TOK-001",
+      "lane": "L-DOC",
+      "severity": null,
+      "alias": {
+        "canonicalId": "P6-DOC-RACE-002",
+        "repo": "k6-load-concurrency-suite",
+        "ref": "0533e61",
+        "file": "tests/documenso/races/doc-race-002-double-submit.spec.ts",
+        "scopeCovered": "Same-token ten-way race: one SIGNED, nine ALREADY_SIGNED, all 200, one seal (supported by fact 4)",
+        "residual": "None within the race property",
+        "disposition": "ALIAS-supported"
+      }
+    },
+    {
+      "id": "P5-DOC-RL-001",
+      "product": "documenso",
+      "status": "alias",
+      "title": "P5-DOC-RL-001",
+      "lane": "L-DOC",
+      "severity": null,
+      "alias": {
+        "canonicalId": "P6-DOC-LOAD-009",
+        "repo": "k6-load-concurrency-suite",
+        "ref": "0533e61",
+        "file": "src/load/spike/limiter-contract.ts",
+        "scopeCovered": "Max+1 behaviour for its route",
+        "residual": "The slow 15-minute window-reset edge is UNCOVERED and DEFERRED to a later row",
+        "disposition": "ALIAS-PARTIAL"
+      }
+    },
+    {
+      "id": "P5-DOC-RL-002",
+      "product": "documenso",
+      "status": "alias",
+      "title": "P5-DOC-RL-002",
+      "lane": "L-DOC",
+      "severity": null,
+      "alias": {
+        "canonicalId": "P6-DOC-LOAD-009",
+        "repo": "k6-load-concurrency-suite",
+        "ref": "0533e61",
+        "file": "src/load/spike/limiter-contract.ts",
+        "scopeCovered": "Max+1 behaviour for those routes",
+        "residual": "Window-reset edge (as above)",
+        "disposition": "ALIAS-PARTIAL"
+      }
+    },
+    {
+      "id": "P5-DOC-RL-003",
+      "product": "documenso",
+      "status": "alias",
+      "title": "P5-DOC-RL-003",
+      "lane": "L-DOC",
+      "severity": null,
+      "alias": {
+        "canonicalId": "P6-DOC-LOAD-009",
+        "repo": "k6-load-concurrency-suite",
+        "ref": "0533e61",
+        "file": "src/load/spike/limiter-contract.ts",
+        "scopeCovered": "Max+1 behaviour for the upload route",
+        "residual": "Window-reset edge (as above)",
+        "disposition": "ALIAS-PARTIAL"
+      }
+    },
+    {
+      "id": "P5-MED-WH-003",
+      "product": "medusa",
+      "status": "alias",
+      "title": "P5-MED-WH-003",
+      "lane": "L-MED",
+      "severity": null,
+      "alias": {
+        "canonicalId": "P2-MED-WH-001",
+        "repo": "api-webhook-db-test-suite",
+        "ref": "99a2fde",
+        "file": "tests/webhooks/med/signed-event.spec.ts",
+        "scopeCovered": "Medusa signed-event handling for its covered case",
+        "residual": "Missing or invalid signatures (P5-MED-WH-001/002)",
+        "disposition": "ALIAS-supported"
+      }
+    },
+    {
+      "id": "P5-CAL-RL-001",
+      "product": "cal",
+      "status": "dropped",
+      "title": "P5-CAL-RL-001",
+      "lane": "L-CAL",
+      "severity": null,
+      "reason": "D7: documented deployment note. The helper is a no-op without `UNKEY_ROOT_KEY` (fact 11). The booking call path is not traced, so the note does not claim \"no limiter anywhere\"."
+    },
+    {
+      "id": "P5-DOC-SESS-001",
+      "product": "documenso",
+      "status": "dropped",
+      "title": "P5-DOC-SESS-001",
+      "lane": "L-DOC",
+      "severity": null,
+      "reason": "Fact 3: Documenso's own e2e covers reset and password-update session behaviour. Reuse is sound."
+    }
+  ],
+  "private": [
+    {
+      "id": "P5-DOC-TOK-002",
+      "status": "held-private"
+    },
+    {
+      "id": "P5-TW-TOK-001",
+      "status": "held-private"
+    },
+    {
+      "id": "P2-TW-BUG-004",
+      "status": "held-private"
+    },
+    {
+      "id": "P2-MED-WH-006",
+      "status": "held-private"
+    },
+    {
+      "id": "P6-OBS-DOC-003",
+      "status": "held-private"
+    },
+    {
+      "id": "P6-OBS-TW-001",
+      "status": "held-private"
+    },
+    {
+      "id": "MI-3",
+      "status": "held-private"
+    },
+    {
+      "id": "MI-18",
+      "status": "held-private"
+    }
+  ],
+  "findings": [],
+  "accepted_risks": []
+}
