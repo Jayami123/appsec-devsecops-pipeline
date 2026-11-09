@@ -4,6 +4,6 @@
   "osv-npm": "implemented",
   "trivy": "implemented",
   "zap": "stub",
-  "syft": "stub",
+  "syft": "implemented",
   "zizmor": "implemented"
 }
