@@ -1,7 +1,7 @@
 {
   "codeql": "stub",
   "gitleaks": "implemented",
-  "osv-npm": "stub",
+  "osv-npm": "implemented",
   "trivy": "stub",
   "zap": "stub",
   "syft": "stub",

@@ -105,8 +105,71 @@ jobs:
             if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then echo "gitleaks-forks: tool error on $product" >&2; exit 1; fi
           done
 
+  osv-npm: # blocking, the root package-lock.json (OSV primary; npm D5 cross-check)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install osv-scanner
+        run: bash scripts/scan/fetch-tool.sh osv-scanner
+      - id: osv
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out/osv"; mkdir -p "$out"
+          code=0
+          "$RUNNER_TEMP/tools/osv-scanner" scan source -L package-lock.json --format json > "$out/root.json" 2>"$out/root.err" || code=$?
+          echo "osv_exit=$code" >> "$GITHUB_OUTPUT"
+      - id: npm
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out/npm"; mkdir -p "$out"
+          npm audit --package-lock-only --json > "$out/audit.json" 2>"$out/audit.err" || true
+      - id: verdict # fails only on unusable input; a computed fail is verdict=fail
+        env:
+          OSV_EXIT: ${{ steps.osv.outputs.osv_exit }}
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out"
+          osv_v="$(node --experimental-strip-types scripts/scan/osv-threshold.ts "$out/osv/root.json" "$OSV_EXIT" config/scan/baseline/osv.json)" || { echo "osv threshold: unusable input" >&2; exit 1; }
+          npm_v="$(node --experimental-strip-types scripts/scan/npm-threshold.ts "$out/npm/audit.json" config/scan/baseline/npm-audit.json)" || { echo "npm threshold: unusable input" >&2; exit 1; }
+          if [ "$osv_v" = "verdict=pass" ] && [ "$npm_v" = "verdict=pass" ]; then echo "verdict=pass"; else echo "verdict=fail"; fi >> "$GITHUB_OUTPUT"
+
+  osv-forks: # report-only: each pinned fork lockfile; tool errors fail
+    needs: [decide]
+    if: needs.decide.outputs.report == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install osv-scanner
+        run: bash scripts/scan/fetch-tool.sh osv-scanner
+      - name: Scan each pinned fork lockfile (report only)
+        run: |
+          set -uo pipefail
+          tool="$RUNNER_TEMP/tools/osv-scanner"
+          products="$(node -e 'console.log(Object.keys(JSON.parse(require("node:fs").readFileSync("config/scan/forks.json", "utf8")).forks).join(" "))')"
+          for product in $products; do
+            dest="$RUNNER_TEMP/forks/$product"
+            if ! bash scripts/scan/fork-source.sh "$product" "$dest"; then
+              echo "osv-forks: could not fetch $product at its pin" >&2; exit 1
+            fi
+            if [ ! -f "$dest/package-lock.json" ]; then echo "osv-forks: $product has no package-lock.json"; continue; fi
+            out="$RUNNER_TEMP/scan-out/osv-forks"; mkdir -p "$out"
+            code=0
+            (cd "$dest" && "$tool" scan source -L package-lock.json --format json) > "$out/$product.json" 2>"$out/$product.err" || code=$?
+            if [ "$code" -ne 0 ] && [ "$code" -ne 1 ] && [ "$code" -ne 128 ]; then echo "osv-forks: tool error on $product ($code)" >&2; exit 1; fi
+          done
+
   summary: # the aggregator (section 5.9)
-    needs: [decide, gitleaks, gitleaks-forks]
+    needs: [decide, gitleaks, gitleaks-forks, osv-npm, osv-forks]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
