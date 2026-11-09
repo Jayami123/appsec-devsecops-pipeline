@@ -26,17 +26,27 @@ test("valid control: a well-formed p5-qa- id loads and the defaults resolve", ()
 
 test("an invalid value that contains a password string throws ENV_INVALID with the name only", () => {
   const distinctive = "Zq9-Distinct-Pass-Str1ng";
-  for (const env of [
-    { P5_RUN_ID: VALID_RUN_ID, CAL_DB_URL: `postgres://qa:${distinctive}@203.0.113.7:5432/cal` },
-    { P5_RUN_ID: VALID_RUN_ID, P2_DB_STATEMENT_TIMEOUT_MS: `slow-${distinctive}` },
-  ]) {
+  const cases = [
+    {
+      env: {
+        P5_RUN_ID: VALID_RUN_ID,
+        CAL_DB_URL: `postgres://qa:${distinctive}@203.0.113.7:5432/cal`,
+      },
+      name: "CAL_DB_URL",
+    },
+    {
+      env: { P5_RUN_ID: VALID_RUN_ID, P2_DB_STATEMENT_TIMEOUT_MS: `slow-${distinctive}` },
+      name: "P2_DB_STATEMENT_TIMEOUT_MS",
+    },
+  ];
+  for (const { env, name } of cases) {
     let message = "";
     try {
       loadEnv(env);
     } catch (error) {
       message = error instanceof Error ? error.message : String(error);
     }
-    assert.match(message, /^ENV_INVALID: (CAL_DB_URL|P2_DB_STATEMENT_TIMEOUT_MS)$/);
+    assert.equal(message, `ENV_INVALID: ${name}`);
     assert.ok(!message.includes(distinctive), "the invalid value must never be echoed");
   }
 });
