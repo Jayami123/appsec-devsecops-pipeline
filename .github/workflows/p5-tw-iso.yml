@@ -14,7 +14,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Record stub status
+        id: status
         run: |
+          echo "status=not-implemented" >> "$GITHUB_OUTPUT"
           {
             echo "### P5 tw-iso lane"
             echo "NOT IMPLEMENTED: no tests or scanners in this lane yet."
