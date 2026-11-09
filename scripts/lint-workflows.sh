@@ -6,9 +6,9 @@ set -euo pipefail
 
 # Latest actionlint release at the time of this PR (rhysd/actionlint v1.7.12).
 ACTIONLINT_VERSION="1.7.12"
-# SHA-256 of actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz, copied from that release's published
-# checksums file. Empty until the value is taken from the file; the script then refuses to run.
-ACTIONLINT_SHA256=""
+# SHA-256 of actionlint_1.7.12_linux_amd64.tar.gz. Source: the linux_amd64 line of
+# https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_checksums.txt
+ACTIONLINT_SHA256="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
 
 if [[ ! "$ACTIONLINT_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
   echo "lint-workflows: ACTIONLINT_SHA256 is empty or malformed; refusing to run an unverified actionlint" >&2
