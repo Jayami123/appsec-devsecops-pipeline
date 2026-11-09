@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { assertNoPrivateExtras, isPrivateEntry } from "../../../src/security/findings.ts";
 
 const read = (relative: string): string =>
   readFileSync(fileURLToPath(new URL(`../../../${relative}`, import.meta.url)), "utf8");
@@ -33,15 +34,6 @@ const Ajv = (require("ajv") as { default: AjvConstructor }).default;
 // strictRequired is off because the conditional `alias` requirement names a property defined through $ref.
 const validate = new Ajv({ allErrors: true, strict: true, strictRequired: false }).compile(schema);
 
-// Runtime rule from plan 4.7: a private entry may hold exactly id and status.
-function assertNoPrivateExtras(entry: Record<string, unknown>): void {
-  for (const key of Object.keys(entry)) {
-    if (key !== "id" && key !== "status") {
-      throw new Error(`PRIVATE_FIELD_REJECTED: ${key}`);
-    }
-  }
-}
-
 test("the ledger validates against the schema", () => {
   const ok = validate(ledger);
   assert.equal(ok, true, JSON.stringify(validate.errors));
@@ -51,6 +43,11 @@ test("every private entry has exactly id and status", () => {
   for (const entry of ledger.private) {
     assert.deepEqual(Object.keys(entry).sort(), ["id", "status"]);
     assert.equal(entry.status, "held-private");
+    // The shared runtime checks from src/security/findings.ts must also accept every entry.
+    assert.equal(isPrivateEntry(entry), true);
+    assert.doesNotThrow(() => {
+      assertNoPrivateExtras(entry);
+    });
   }
 });
 
