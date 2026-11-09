@@ -1,5 +1,5 @@
 {
-  "codeql": "stub",
+  "codeql": "implemented",
   "gitleaks": "implemented",
   "osv-npm": "implemented",
   "trivy": "implemented",

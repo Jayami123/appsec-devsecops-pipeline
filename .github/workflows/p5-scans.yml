@@ -268,6 +268,13 @@ jobs:
             if [ "$code" -ne 0 ]; then echo "trivy-forks: tool error on $product ($code)" >&2; exit 1; fi
           done
 
+  codeql: # calls codeql-reusable.yml; verdict is the reusable output
+    needs: [decide]
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/codeql-reusable.yml
+
   summary: # the aggregator (section 5.9)
     needs:
       [
@@ -280,6 +287,7 @@ jobs:
         trivy-upload,
         trivy-images,
         trivy-forks,
+        codeql,
       ]
     if: always()
     runs-on: ubuntu-latest
