@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { type AcceptedRisk } from "../../../src/security/accepted-risk.ts";
@@ -119,4 +119,96 @@ test("a High outside the owned prefixes does not block", () => {
     evaluateCodeql(sarif({ severity: "9.1", uri: "vendor/x.ts" }), new Set()).verdict,
     "pass",
   );
+});
+
+// A synthetic SARIF shaped as codeql-action v4.39.3 writes it with --sarif-group-rules-by-pack: the rules sit in
+// tool.extensions[N].rules, the driver has no rules, and each result refers to its rule by toolComponent index.
+function actionSarif(options: {
+  severity: string;
+  uri?: string;
+  refIndex?: number;
+  extensionRules?: readonly { id: string; severity: string }[];
+  resultRuleId?: string;
+  resultRef?: { id?: string; index: number; toolComponent: { index: number } };
+}): string {
+  const dir = scratch("codeql-action");
+  const file = join(dir, "javascript.sarif");
+  const rules = options.extensionRules ?? [
+    { id: "js/command-line-injection", severity: options.severity },
+  ];
+  const doc = {
+    runs: [
+      {
+        invocations: [{ executionSuccessful: true }],
+        tool: {
+          driver: { name: "CodeQL", rules: [] },
+          extensions: [
+            {
+              name: "javascript-security-and-quality",
+              rules: rules.map((rule) => ({
+                id: rule.id,
+                properties: { "security-severity": rule.severity },
+              })),
+            },
+          ],
+        },
+        results: [
+          {
+            ruleId: options.resultRuleId ?? "js/command-line-injection",
+            rule: options.resultRef ?? {
+              id: "js/command-line-injection",
+              index: options.refIndex ?? 0,
+              toolComponent: { index: 0 },
+            },
+            locations: [
+              { physicalLocation: { artifactLocation: { uri: options.uri ?? "src/x.js" } } },
+            ],
+            partialFingerprints: { primaryLocationLineHash: "abc123" },
+          },
+        ],
+      },
+    ],
+  };
+  writeFileSync(file, JSON.stringify(doc));
+  return file;
+}
+
+test("an action-shaped SARIF (rules grouped by pack) with a 9.8 result in src blocks", () => {
+  assert.equal(evaluateCodeql(actionSarif({ severity: "9.8" }), new Set()).verdict, "fail");
+});
+
+test("an action-shaped SARIF with a 6.3 result passes", () => {
+  assert.equal(evaluateCodeql(actionSarif({ severity: "6.3" }), new Set()).verdict, "pass");
+});
+
+test("a result whose rule cannot be resolved fails closed", () => {
+  const file = actionSarif({
+    severity: "9.8",
+    resultRuleId: "js/unknown-rule",
+    resultRef: { index: 7, toolComponent: { index: 5 } },
+  });
+  const scan = scanCodeql(file, new Set(), [], TODAY);
+  assert.equal(scan.outcome.verdict, "fail");
+  assert.match(scan.outcome.reason, /not resolvable/);
+});
+
+test("a toolComponent rule whose id does not match falls back to the id lookup", () => {
+  // The reference points at extension 0, rule 0 (id js/other), which does not match the result's rule id. The
+  // id lookup then finds js/target in extension 1, with a 9.5 severity: the result must block.
+  const file = actionSarif({
+    severity: "9.5",
+    extensionRules: [{ id: "js/other", severity: "1.0" }],
+    resultRuleId: "js/target",
+    resultRef: { id: "js/target", index: 0, toolComponent: { index: 0 } },
+  });
+  const doc = JSON.parse(readFileSync(file, "utf8")) as {
+    runs: { tool: { extensions: { rules: unknown[] }[] } }[];
+  };
+  const run = doc.runs[0];
+  if (run === undefined) throw new Error("synthetic SARIF has no run");
+  run.tool.extensions.push({
+    rules: [{ id: "js/target", properties: { "security-severity": "9.5" } }],
+  });
+  writeFileSync(file, JSON.stringify(doc));
+  assert.equal(evaluateCodeql(file, new Set()).verdict, "fail");
 });
