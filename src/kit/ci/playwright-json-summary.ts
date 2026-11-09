@@ -181,6 +181,7 @@ export function requireTests(summary: JobSummary, path: string): void {
 /** Markdown table safety for arbitrary text (titles and evidence). */
 export function escapeCell(text: string): string {
   return text
+    .replace(/\\/g, "\\\\")
     .replace(/\r?\n/g, " ")
     .replace(/\|/g, "\\|")
     .replace(/</g, "&lt;")

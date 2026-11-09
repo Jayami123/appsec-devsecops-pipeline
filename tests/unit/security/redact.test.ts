@@ -9,7 +9,7 @@ test("redactArtefact redacts a Bearer token", () => {
 });
 
 test("redactArtefact redacts an api_ key", () => {
-  const out = redactArtefact("key=api_9f8e7d6c5b4a3210zz");
+  const out = redactArtefact("key=" + "api_" + "9f8e7d6c5b4a3210zz");
   assert.ok(!out.includes("9f8e7d6c5b4a3210zz"));
 });
 
