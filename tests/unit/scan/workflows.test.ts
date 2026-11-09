@@ -51,3 +51,19 @@ test("report-only jobs are gated by the decide job", () => {
     assert.match(block, /if: needs\.decide\.outputs\.report == 'true'/, job);
   }
 });
+
+test("gitleaks exit codes are captured, not left to bash -e", () => {
+  // GitHub runs run: steps with bash -e, so a bare gitleaks call that exits 2 would end the step before its
+  // exit code is recorded. Every gitleaks invocation must capture its exit with "|| code=$?".
+  const text = read("p5-scans.yml");
+  const calls = text
+    .split("\n")
+    .filter((line) => /(tools\/gitleaks|\$tool)" (git|dir) /.test(line));
+  assert.ok(calls.length >= 3, "expected gitleaks invocations");
+  const lines = text.split("\n");
+  for (const call of calls) {
+    const index = lines.indexOf(call);
+    const continued = lines.slice(index, index + 4).join(" ");
+    assert.match(continued, /\|\| code=\$\?/, call.trim());
+  }
+});

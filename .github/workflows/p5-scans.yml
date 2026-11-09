@@ -52,18 +52,18 @@ jobs:
           set -uo pipefail
           out="$RUNNER_TEMP/scan-out/gitleaks"; mkdir -p "$out"
           if [[ ! "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then echo "gitleaks range: base is missing or malformed" >&2; exit 1; fi
+          code=0
           "$RUNNER_TEMP/tools/gitleaks" git . --config config/scan/gitleaks.toml --no-banner --redact \
-            --log-opts="$BASE_SHA..$HEAD_SHA" -f json -r "$out/range.json" --exit-code 2
-          code=$?
+            --log-opts="$BASE_SHA..$HEAD_SHA" -f json -r "$out/range.json" --exit-code 2 || code=$?
           echo "range_exit=$code" >> "$GITHUB_OUTPUT"
           if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then echo "gitleaks range: tool error" >&2; exit 1; fi
       - id: scan # exit 2 = leaks (computed fail, step exits 0); 1 = tool error
         run: |
           set -uo pipefail
           out="$RUNNER_TEMP/scan-out/gitleaks"; mkdir -p "$out"
+          code=0
           "$RUNNER_TEMP/tools/gitleaks" dir . --config config/scan/gitleaks.toml --no-banner --redact \
-            -f json -r "$out/tree.json" --exit-code 2
-          code=$?
+            -f json -r "$out/tree.json" --exit-code 2 || code=$?
           echo "gitleaks_exit=$code" >> "$GITHUB_OUTPUT"
           if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then echo "gitleaks: tool error" >&2; exit 1; fi
       - id: verdict # exits 0 on a computed fail; fails the job only on bad input
@@ -100,8 +100,8 @@ jobs:
               echo "gitleaks-forks: could not fetch $product at its pin" >&2; exit 1
             fi
             out="$RUNNER_TEMP/scan-out/forks"; mkdir -p "$out"
-            "$tool" dir "$dest" --no-banner --redact -f json -r "$out/$product.json" --exit-code 2
-            code=$?
+            code=0
+            "$tool" dir "$dest" --no-banner --redact -f json -r "$out/$product.json" --exit-code 2 || code=$?
             if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then echo "gitleaks-forks: tool error on $product" >&2; exit 1; fi
           done
 
