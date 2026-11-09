@@ -1,0 +1,117 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      p5_cal: ${{ steps.classify.outputs.p5_cal }}
+      p5_doc: ${{ steps.classify.outputs.p5_doc }}
+      p5_med: ${{ steps.classify.outputs.p5_med }}
+      p5_tw: ${{ steps.classify.outputs.p5_tw }}
+      p5_tw_iso: ${{ steps.classify.outputs.p5_tw_iso }}
+      p5_x: ${{ steps.classify.outputs.p5_x }}
+      p5_codeql: ${{ steps.classify.outputs.p5_codeql }}
+      p5_scans: ${{ steps.classify.outputs.p5_scans }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: List changed paths
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/paths.txt"
+          elif [[ "$EVENT_NAME" == "push" && ! "$PUSH_BEFORE" =~ ^0+$ ]]; then
+            git diff --name-only --no-renames "$PUSH_BEFORE...$PUSH_SHA" > "$RUNNER_TEMP/paths.txt"
+          else
+            : > "$RUNNER_TEMP/paths.txt"
+          fi
+      - name: Classify changes
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: bash scripts/ci-changes.sh < "$RUNNER_TEMP/paths.txt" >> "$GITHUB_OUTPUT"
+
+  foundation:
+    uses: ./.github/workflows/foundation.yml
+
+  p5-cal:
+    needs: [changes]
+    if: needs.changes.outputs.p5_cal == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/p5-cal.yml
+    secrets: inherit
+
+  p5-doc:
+    needs: [changes]
+    if: needs.changes.outputs.p5_doc == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/p5-doc.yml
+    secrets: inherit
+
+  p5-med:
+    needs: [changes]
+    if: needs.changes.outputs.p5_med == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/p5-med.yml
+    secrets: inherit
+
+  p5-tw:
+    needs: [changes]
+    if: needs.changes.outputs.p5_tw == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/p5-tw.yml
+    secrets: inherit
+
+  p5-tw-iso:
+    needs: [changes]
+    if: needs.changes.outputs.p5_tw_iso == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/p5-tw-iso.yml
+
+  p5-x:
+    needs: [changes]
+    if: needs.changes.outputs.p5_x == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/p5-x.yml
+    secrets: inherit
+
+  p5-scans:
+    needs: [changes]
+    if: needs.changes.outputs.p5_scans == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/p5-scans.yml
+
+  gate:
+    needs: [changes, foundation, p5-cal, p5-doc, p5-med, p5-tw, p5-tw-iso, p5-scans, p5-x]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Evaluate the gate
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: node scripts/ci-gate.mjs

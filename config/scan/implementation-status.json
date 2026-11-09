@@ -1,0 +1,9 @@
+{
+  "codeql": "stub",
+  "gitleaks": "stub",
+  "osv-npm": "stub",
+  "trivy": "stub",
+  "zap": "stub",
+  "syft": "stub",
+  "zizmor": "stub"
+}
