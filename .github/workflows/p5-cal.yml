@@ -1,0 +1,23 @@
+# P5-STUB: remove this line when the first real job lands
+name: p5-cal
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record stub status
+        id: status
+        run: |
+          echo "status=not-implemented" >> "$GITHUB_OUTPUT"
+          {
+            echo "### P5 cal lane"
+            echo "NOT IMPLEMENTED: no tests or scanners in this lane yet."
+          } >> "$GITHUB_STEP_SUMMARY"
