@@ -168,8 +168,119 @@ jobs:
             if [ "$code" -ne 0 ] && [ "$code" -ne 1 ] && [ "$code" -ne 128 ]; then echo "osv-forks: tool error on $product ($code)" >&2; exit 1; fi
           done
 
+  trivy: # blocking, the root filesystem (--include-dev-deps is required)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install trivy
+        run: bash scripts/scan/fetch-tool.sh trivy
+      - id: scan
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out/trivy"; mkdir -p "$out"
+          code=0
+          "$RUNNER_TEMP/tools/trivy" fs --include-dev-deps --scanners vuln --cache-dir "$RUNNER_TEMP/trivy-cache" \
+            --format json --quiet -o "$out/root.json" . || code=$?
+          if [ "$code" -ne 0 ]; then echo "trivy: tool error ($code)" >&2; exit 1; fi
+      - id: verdict
+        run: node --experimental-strip-types scripts/scan/trivy-threshold.ts "$RUNNER_TEMP/scan-out/trivy/root.json" root config/scan/baseline/trivy.json >> "$GITHUB_OUTPUT"
+
+  trivy-upload: # report SARIF; failure of the upload is fail, findings are not
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write # the only job in p5-scans that uploads (section 5.1)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install trivy
+        run: bash scripts/scan/fetch-tool.sh trivy
+      - name: Build the SARIF report
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out/trivy-sarif"; mkdir -p "$out"
+          "$RUNNER_TEMP/tools/trivy" fs --include-dev-deps --scanners vuln --cache-dir "$RUNNER_TEMP/trivy-cache" \
+            --format sarif -o "$out/root.sarif" . || { echo "trivy sarif: tool error" >&2; exit 1; }
+      # PN-7 (section 5.10, L8) inserts the artefact token scan here, before the upload.
+      - name: Upload the SARIF report
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: ${{ runner.temp }}/scan-out/trivy-sarif/root.sarif
+          category: trivy
+
+  trivy-images: # report-only: JSON per pinned image digest, never SARIF
+    needs: [decide]
+    if: needs.decide.outputs.report == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install trivy
+        run: bash scripts/scan/fetch-tool.sh trivy
+      - name: Scan each pinned image (report only)
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out/images"; mkdir -p "$out"
+          node -e 'const d=JSON.parse(require("node:fs").readFileSync("config/scan/images.json","utf8")); for (const i of d.images) console.log(i.name+" "+i.repo+"@"+i.digest)' | while read -r name ref; do
+            code=0
+            "$RUNNER_TEMP/tools/trivy" image --image-src remote --scanners vuln --cache-dir "$RUNNER_TEMP/trivy-cache" \
+              --format json --quiet -o "$out/$name.json" "$ref" || code=$?
+            if [ "$code" -ne 0 ]; then echo "trivy-images: tool error on $name ($code)" >&2; exit 1; fi
+          done
+
+  trivy-forks: # report-only: each pinned fork, JSON, tool errors fail
+    needs: [decide]
+    if: needs.decide.outputs.report == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc }
+      - name: Install trivy
+        run: bash scripts/scan/fetch-tool.sh trivy
+      - name: Scan each pinned fork (report only)
+        run: |
+          set -uo pipefail
+          out="$RUNNER_TEMP/scan-out/forks"; mkdir -p "$out"
+          products="$(node -e 'console.log(Object.keys(JSON.parse(require("node:fs").readFileSync("config/scan/forks.json", "utf8")).forks).join(" "))')"
+          for product in $products; do
+            dest="$RUNNER_TEMP/forks/$product"
+            if ! bash scripts/scan/fork-source.sh "$product" "$dest"; then
+              echo "trivy-forks: could not fetch $product at its pin" >&2; exit 1
+            fi
+            code=0
+            "$RUNNER_TEMP/tools/trivy" fs --scanners vuln --cache-dir "$RUNNER_TEMP/trivy-cache" \
+              --format json --quiet -o "$out/$product.json" "$dest" || code=$?
+            if [ "$code" -ne 0 ]; then echo "trivy-forks: tool error on $product ($code)" >&2; exit 1; fi
+          done
+
   summary: # the aggregator (section 5.9)
-    needs: [decide, gitleaks, gitleaks-forks, osv-npm, osv-forks]
+    needs:
+      [
+        decide,
+        gitleaks,
+        gitleaks-forks,
+        osv-npm,
+        osv-forks,
+        trivy,
+        trivy-upload,
+        trivy-images,
+        trivy-forks,
+      ]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
