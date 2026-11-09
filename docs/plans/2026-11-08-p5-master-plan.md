@@ -569,8 +569,10 @@ Anything not in this table is a STOP.
 - d. `p5-scans.yml` stub exposes `codeql_verdict=not-implemented` and `scanner_status` (every 9.13 scanner `not-implemented`). It never emits `pass`.
 - e. Workflow test 11 lane-to-test-directory map: `scripts/scan/` (p5-scans), `tests/closeout/` (x), `tests/iso/` and `tests/limiter-last/` (tw-iso), and `tests/{contracts,webhooks,integration,serial,ui}/<code>/` for cal, doc, med and tw (per 9.5).
 - f. The classifier "... only" tests also assert `p5_scans=true` on push and pull_request (9.5).
-- g. actionlint pin: version `1.7.12` (latest tag). The SHA-256 is **BLOCKED**: the release host returned 403 from the agent proxy, so the checksum is empty and the script fails closed until it is filled from the release checksums file.
+- g. actionlint pin: version `1.7.12` (latest tag). SHA-256 `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8` for `actionlint_1.7.12_linux_amd64.tar.gz`, from the linux_amd64 line of `https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_checksums.txt`. The value was verified outside the agent proxy from that file and by hashing the tarball.
 - h. OD-10 cites "section 9.5", which is the classifier and not a dual-runtime section. Noted only; OD-10 is not changed.
+- i. Classifier scope (9.5 left these open). `config/scan/` and the `p5-scans`, `codeql-reusable` and `p5-zap-nightly` workflow files are classified CodeQL-only. Literal 9.5 would treat them as unknown and run every lane. `workflow_dispatch` sets `p5_scans=true`, and dispatch runs every lane and CodeQL. `docs/`, `README.md`, `AGENTS.md` and `CLAUDE.md` stay neutral (9.5).
+- j. `scripts/ci-changes.sh` is fed by `git diff --name-only --no-renames` in `ci.yml` (both events). Without `--no-renames`, a rename lists only the new path: the deletion of `.github/workflows/security.yml` would be hidden, and a move between lanes would flag only the destination lane.
 
 **Build steps**
 1. Branch after F0-2.
