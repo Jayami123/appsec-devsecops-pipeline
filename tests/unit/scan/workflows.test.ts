@@ -85,3 +85,13 @@ test("codeql uses javascript.sarif for the upload and the threshold, with a prec
   assert.ok(precheckAt >= 0 && thresholdAt > precheckAt, "precheck runs before the threshold call");
   assert.match(text, /codeql-threshold\.ts "\$sarif"/);
 });
+
+test("zizmor runs offline and its requirement is hash-pinned to the plan digest", () => {
+  const text = readFileSync(join(REPO, ".github/workflows/p5-scans.yml"), "utf8");
+  assert.match(text, /zizmor" --no-online-audits --format sarif \.github\/workflows/);
+  const requirements = readFileSync(join(REPO, "config/scan/zizmor-requirements.txt"), "utf8");
+  assert.match(
+    requirements,
+    /^zizmor==1\.32\.0 --hash=sha256:84a6acb975accc13408786a2bd274b572537ca19c933ebbc13e78f3988562071$/m,
+  );
+});
