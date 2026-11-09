@@ -2,7 +2,7 @@
 # Fetches one pinned scanner archive from config/scan/tools.json, checks its SHA-256, and installs the
 # member binary into $RUNNER_TEMP/tools (or a temp dir outside the repository). Fails closed: an empty or
 # malformed checksum stops the script before any download, and a mismatch stops it before extraction.
-# Exit 2 = refused (config or checksum). Any other non-zero exit is a download or extract failure.
+# Formats: tar.gz (member inside the archive) or binary (the download is the tool). Exit 2 = refused (config or checksum). Any other non-zero exit is a download or extract failure.
 set -euo pipefail
 
 name="${1:-}"
@@ -28,6 +28,8 @@ version="$(read_field version)"
 url="$(read_field url)"
 sha256="$(read_field sha256)"
 member="$(read_field member)"
+format="$(read_field format)"
+format="${format:-tar.gz}"
 
 if [[ -z "$version" || -z "$url" || -z "$member" ]]; then
   echo "fetch-tool: '$name' is not fully described in $manifest; refusing" >&2
@@ -57,7 +59,19 @@ if [[ "$actual" != "$sha256" ]]; then
   exit 2
 fi
 
-tar -xzf "$archive" -C "$work" "$member"
-install -m 0755 "$work/$member" "$dest/$member"
+case "$format" in
+  tar.gz)
+    tar -xzf "$archive" -C "$work" "$member"
+    install -m 0755 "$work/$member" "$dest/$member"
+    ;;
+  binary)
+    # A raw release binary: the verified download is the tool itself.
+    install -m 0755 "$archive" "$dest/$member"
+    ;;
+  *)
+    echo "fetch-tool: $name has unsupported format '$format'; refusing" >&2
+    exit 2
+    ;;
+esac
 echo "$name $version sha256 OK"
 echo "$dest/$member"

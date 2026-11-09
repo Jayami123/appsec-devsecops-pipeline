@@ -79,3 +79,44 @@ test("forks.json pins equal the scripts/bootstrap.sh REF constants", () => {
     assert.equal(match?.[1], forks.forks[product]?.ref, `${product} pin`);
   }
 });
+
+test("fetch-tool installs a raw binary after the same checksum check, and refuses a mismatch", () => {
+  const dir = scratch("binary");
+  const payload = join(dir, "osv-scanner_fake");
+  writeFileSync(payload, "#!/bin/sh\necho fake-tool\n");
+  const sha = execFileSync("sha256sum", [payload], { encoding: "utf8" }).split(" ")[0] ?? "";
+  const copy = JSON.parse(JSON.stringify(manifest)) as {
+    tools: Record<string, Tool & { format?: string }>;
+  };
+  const base = {
+    version: "0.0.0",
+    url: `file://${payload}`,
+    member: "fake-tool",
+    format: "binary",
+    source: "https://example.invalid/x",
+  };
+  const good = join(dir, "good.json");
+  writeFileSync(
+    good,
+    JSON.stringify({ ...copy, tools: { "fake-tool": { ...base, sha256: sha } } }),
+  );
+  const out = join(dir, "out");
+  const ok = spawnSync("bash", [FETCH, "fake-tool"], {
+    env: { ...process.env, SCAN_TOOLS_MANIFEST: good, SCAN_TOOLS_DIR: out },
+    encoding: "utf8",
+  });
+  assert.equal(ok.status, 0, ok.stderr);
+  assert.equal(execFileSync(join(out, "fake-tool"), [], { encoding: "utf8" }).trim(), "fake-tool");
+
+  const bad = join(dir, "bad.json");
+  writeFileSync(
+    bad,
+    JSON.stringify({ ...copy, tools: { "fake-tool": { ...base, sha256: "0".repeat(64) } } }),
+  );
+  const refused = spawnSync("bash", [FETCH, "fake-tool"], {
+    env: { ...process.env, SCAN_TOOLS_MANIFEST: bad, SCAN_TOOLS_DIR: join(dir, "out2") },
+    encoding: "utf8",
+  });
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /checksum mismatch/);
+});
