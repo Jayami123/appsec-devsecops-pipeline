@@ -66,10 +66,45 @@ test("a lane skipped with its flag true fails the gate", () => {
   assert.ok(verdict.reasons.some((reason) => reason.includes("p5-cal must succeed")));
 });
 
+// Replaces the scanner_status string on the p5-scans job.
+function withStatus(needs: Needs, status: string): Needs {
+  const scanner = needs["p5-scans"];
+  return {
+    ...needs,
+    "p5-scans": {
+      result: scanner?.result ?? "success",
+      outputs: { ...scanner?.outputs, scanner_status: status },
+    },
+  };
+}
+
 test("a stub scanner reporting not-implemented passes with a NOT IMPLEMENTED row", () => {
   const verdict = evaluateGate({ needs: baseNeeds(), registry: baseRegistry() });
   assert.equal(verdict.ok, true, verdict.reasons.join("; "));
   assert.ok(verdict.rows.includes("NOT IMPLEMENTED: gitleaks"));
+
+  // Fail closed on an incomplete, duplicated or unknown scanner_status.
+  const complete = SCANNERS.map((name) => `${name}=not-implemented`);
+  const missing = evaluateGate({
+    needs: withStatus(baseNeeds(), complete.filter((p) => !p.startsWith("gitleaks=")).join(",")),
+    registry: baseRegistry(),
+  });
+  assert.equal(missing.ok, false);
+  assert.ok(missing.reasons.some((r) => r.startsWith("gitleaks: missing")));
+  const duplicated = evaluateGate({
+    needs: withStatus(baseNeeds(), [...complete, "gitleaks=not-implemented"].join(",")),
+    registry: baseRegistry(),
+  });
+  assert.equal(duplicated.ok, false);
+  assert.ok(
+    duplicated.reasons.some((r) => r.startsWith("gitleaks: scanner_status lists it 2 times")),
+  );
+  const unknown = evaluateGate({
+    needs: withStatus(baseNeeds(), [...complete, "bogus=not-implemented"].join(",")),
+    registry: baseRegistry(),
+  });
+  assert.equal(unknown.ok, false);
+  assert.ok(unknown.reasons.some((r) => r.startsWith("bogus:")));
 });
 
 test("an implemented scanner reporting not-implemented fails the gate", () => {
@@ -77,6 +112,15 @@ test("an implemented scanner reporting not-implemented fails the gate", () => {
   const verdict = evaluateGate({ needs: baseNeeds(), registry });
   assert.equal(verdict.ok, false);
   assert.ok(verdict.reasons.some((reason) => reason.startsWith("gitleaks:")));
+
+  // An implemented scanner absent from the list also fails.
+  const complete = SCANNERS.map((name) => `${name}=not-implemented`);
+  const absent = evaluateGate({
+    needs: withStatus(baseNeeds(), complete.filter((p) => !p.startsWith("gitleaks=")).join(",")),
+    registry,
+  });
+  assert.equal(absent.ok, false);
+  assert.ok(absent.reasons.some((r) => r.startsWith("gitleaks: missing")));
 });
 
 test("a stub entry reporting pass is rejected", () => {
@@ -98,6 +142,15 @@ test("codeql not-implemented passes only while codeql is a stub", () => {
     registry: { ...baseRegistry(), codeql: "implemented" },
   });
   assert.equal(implemented.ok, false);
+
+  // The codeql pair in scanner_status must equal codeql_verdict.
+  const disagree = withStatus(
+    needs,
+    SCANNERS.map((name) => `${name}=${name === "codeql" ? "pass" : "not-implemented"}`).join(","),
+  );
+  const mismatch = evaluateGate({ needs: disagree, registry: baseRegistry() });
+  assert.equal(mismatch.ok, false);
+  assert.ok(mismatch.reasons.some((r) => r.startsWith("codeql: scanner_status says 'pass'")));
 });
 
 test("a codeql fail verdict blocks the gate", () => {

@@ -79,9 +79,32 @@ export function evaluateGate({ needs, registry }) {
     if (pairs === null) {
       reasons.push("p5-scans: scanner_status is missing or malformed");
     } else {
+      // Fail closed: every registry key appears exactly once, and nothing else appears.
+      const counts = new Map();
+      for (const [name] of pairs) counts.set(name, (counts.get(name) ?? 0) + 1);
+      for (const [name, count] of counts) {
+        if (!Object.hasOwn(registry, name)) {
+          reasons.push(`${name}: scanner_status names a scanner not in the registry`);
+        } else if (count > 1) {
+          reasons.push(`${name}: scanner_status lists it ${count} times`);
+        }
+      }
+      for (const name of Object.keys(registry)) {
+        if (!counts.has(name)) reasons.push(`${name}: missing from scanner_status`);
+      }
       for (const [name, verdict] of pairs) {
-        // CodeQL is judged by its own verdict below, so it is not counted twice.
-        if (name !== "codeql") judge(name, verdict, registry, reasons, rows);
+        if (!Object.hasOwn(registry, name)) continue;
+        if (name === "codeql") {
+          // CodeQL is judged by codeql_verdict below; its pair here must agree with it.
+          const codeqlVerdict = output("p5-scans", "codeql_verdict");
+          if (verdict !== codeqlVerdict) {
+            reasons.push(
+              `codeql: scanner_status says '${verdict}' but codeql_verdict is '${codeqlVerdict}'`,
+            );
+          }
+        } else {
+          judge(name, verdict, registry, reasons, rows);
+        }
       }
     }
   }
