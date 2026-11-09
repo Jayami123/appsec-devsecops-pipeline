@@ -17,6 +17,14 @@
       "format": "binary",
       "source": "https://github.com/google/osv-scanner (tag v2.7.1, peeled commit 02f96a40691c2d155fdda799af436e111231e365); checksums file osv-scanner_SHA256SUMS",
       "licence": "Apache-2.0"
+    },
+    "trivy": {
+      "version": "0.76.2",
+      "url": "https://github.com/aquasecurity/trivy/releases/download/v0.76.2/trivy_0.76.2_Linux-64bit.tar.gz",
+      "sha256": "bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf",
+      "member": "trivy",
+      "source": "https://github.com/aquasecurity/trivy (tag v0.76.2, commit 3f6334d223b52188324af3b9923b4249cd206652, lightweight); checksums file trivy_0.76.2_checksums.txt",
+      "licence": "Apache-2.0"
     }
   }
 }

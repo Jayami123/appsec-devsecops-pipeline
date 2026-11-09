@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "images": [
+    {
+      "name": "twenty",
+      "repo": "docker.io/twentycrm/twenty",
+      "tag": "v2.44.0",
+      "digest": "sha256:01fb6d2c00397976fd7613dbeb9703b514b52fb6270339b7a326a2a975d15b26"
+    },
+    {
+      "name": "postgres",
+      "repo": "docker.io/library/postgres",
+      "tag": "15",
+      "digest": "sha256:1aac5b49cefd627f02816141ca4ad012d6cc19460dfe02a9b5168a105be3fc53"
+    },
+    {
+      "name": "redis",
+      "repo": "docker.io/library/redis",
+      "tag": "7",
+      "digest": "sha256:2e3eb11462c4e3759e6972678dd051d150ff54b1e60714b3c33b701260172a90"
+    },
+    {
+      "name": "mailpit",
+      "repo": "docker.io/axllent/mailpit",
+      "tag": "v1.22.3",
+      "digest": "sha256:f7f7c31de4de59540ad6515a0ca057a77525bca2069b6e747d873ca66c10fe08"
+    },
+    {
+      "name": "inbucket",
+      "repo": "docker.io/inbucket/inbucket",
+      "tag": null,
+      "digest": "sha256:48063d73be66889d95c43a6ee18ed5db08e3ad01196d8f7aa1e7f1e6e4625d93"
+    },
+    {
+      "name": "gotenberg",
+      "repo": "docker.io/gotenberg/gotenberg",
+      "tag": "8",
+      "digest": "sha256:13672f317b443c793e972b1bd2155ec62a3e7b6891b411e8196442cc053ee5f5"
+    }
+  ]
+}
