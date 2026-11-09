@@ -559,6 +559,20 @@ Anything not in this table is a STOP.
 | `config/scan/implementation-status.json` | new (foundation-owned, section 9.13) | Scanner stub or implemented registry |
 | `scripts/lint-workflows.sh` | new (section 9.4) | Pinned actionlint, checksum-verified |
 | `tests/unit/ci/workflow.test.ts`, `tests/unit/ci/ci-changes.test.ts`, `tests/unit/ci/gate.test.ts`, `tests/unit/ci/lint-workflows.test.ts` | new | Shape, classifier, gate and lint tests (counts in the test lists below) |
+| `scripts/ci-gate.mjs` | new (correction a) | Gate evaluator. `ci.yml` job `gate` runs it; `tests/unit/ci/gate.test.ts` tests it. |
+| `results/.gitkeep` | new (correction b) | Keeps `results/` so `npm run unit:ci` can write its JUnit file (it exits 7 at `298ae29` without it). `.gitignore` already has `!results/.gitkeep`. |
+
+**Recorded corrections (F0-3).** Each is listed in the F0-3 PR body.
+- a. Gate evaluator `scripts/ci-gate.mjs` added (row above).
+- b. `results/.gitkeep` added (row above).
+- c. `foundation.yml` uses the pinned `actions/setup-node` (9.4) with `node-version-file: .nvmrc`. No Node 24 and no `/opt/node24`.
+- d. `p5-scans.yml` stub exposes `codeql_verdict=not-implemented` and `scanner_status` (every 9.13 scanner `not-implemented`). It never emits `pass`.
+- e. Workflow test 11 lane-to-test-directory map: `scripts/scan/` (p5-scans), `tests/closeout/` (x), `tests/iso/` and `tests/limiter-last/` (tw-iso), and `tests/{contracts,webhooks,integration,serial,ui}/<code>/` for cal, doc, med and tw (per 9.5).
+- f. The classifier "... only" tests also assert `p5_scans=true` on push and pull_request (9.5).
+- g. actionlint pin: version `1.7.12` (latest tag). SHA-256 `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8` for `actionlint_1.7.12_linux_amd64.tar.gz`, from the linux_amd64 line of `https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_checksums.txt`. The value was verified outside the agent proxy from that file and by hashing the tarball.
+- h. OD-10 cites "section 9.5", which is the classifier and not a dual-runtime section. Noted only; OD-10 is not changed.
+- i. Classifier scope (9.5 left these open). `config/scan/` and the `p5-scans`, `codeql-reusable` and `p5-zap-nightly` workflow files are classified CodeQL-only. Literal 9.5 would treat them as unknown and run every lane. `workflow_dispatch` sets `p5_scans=true`, and dispatch runs every lane and CodeQL. `docs/`, `README.md`, `AGENTS.md` and `CLAUDE.md` stay neutral (9.5).
+- j. `scripts/ci-changes.sh` is fed by `git diff --name-only --no-renames` in `ci.yml` (both events). Without `--no-renames`, a rename lists only the new path: the deletion of `.github/workflows/security.yml` would be hidden, and a move between lanes would flag only the destination lane.
 
 **Build steps**
 1. Branch after F0-2.
