@@ -214,6 +214,10 @@ describe("P5 job summary: parser (S1 to S16)", () => {
     assert.equal(escapeCell("a|b\nc<b>"), "a\\|b c&lt;b&gt;");
   });
 
+  test("escapeCell escapes a backslash before a pipe", () => {
+    assert.equal(escapeCell("a\\|b"), "a\\\\\\|b");
+  });
+
   test("S13 a docs path in evidence adds a commit-pinned link and keeps the text", () => {
     const cell = evidenceCell("x docs/a.md:5", "o/r", "abc");
     assert.ok(cell.includes("x docs/a.md:5"));
