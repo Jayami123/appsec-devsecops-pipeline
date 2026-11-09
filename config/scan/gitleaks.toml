@@ -1,0 +1,23 @@
+title = "P5 gitleaks config: this repository only"
+
+[extend]
+useDefault = true
+
+# Only entries that suppress a real default-rule hit. Today: one (probe 2c and 2h).
+# Each entry: regexTarget "line", one path, one anchored line. The regex is the verbatim
+# line from the PR #3 body, with regex metacharacters escaped by the build.
+[[allowlists]]
+description = "PR #3 row 16: vectors.ts:28, synthetic test vector (default-rule hit)"
+regexTarget = "line"
+paths = ['''^tests/unit/webhooks/vectors\.ts$''']
+regexes = ['''^export const DAILY_SECRET_B64 = "ZGFpbHktdmVjdG9yLWtleS1ieXRlcw=="";$''']
+
+# Reviewed in PR #3 with no default-rule hit (not entries here):
+#   row 1  src/kit/env.ts:71          row 9   src/kit/webhooks/sign.ts:39
+#   row 2  src/kit/env.ts:75          row 10  src/security/findings.ts:6
+#   row 3  src/kit/env.ts:79          row 11  tests/unit/kit/db/pg.test.ts:18
+#   row 4  src/kit/env.ts:87          row 12  tests/unit/kit/db/roles.test.ts:172
+#   row 5  src/kit/env.ts:88          row 13  tests/unit/kit/db/roles.test.ts:176
+#   row 6  src/kit/env.ts:160         row 14  tests/unit/kit/env.test.ts:33
+#   row 7  src/kit/webhooks/redact.ts:7   row 15  tests/unit/webhooks/vectors.ts:7
+#   row 8  src/kit/webhooks/sign.ts:27
