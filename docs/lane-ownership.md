@@ -57,6 +57,6 @@ Recorded adaptation (F0-5a, L-PIPE plan section 11.1 and 5.5.1): `src/kit/ci/pla
 
 - The required status check is `gate` only (owner step, plan section 12).
 - `gate` needs every job and runs `if: always()`. Changes and foundation must succeed; each lane whose flag is true must succeed; a skipped lane is allowed only when its flag is false.
-- When `p5_scans` is true, `p5-scans` must succeed and each scanner reports `pass`, `fail` or `not-implemented`. A stub reports `not-implemented` only. An implemented scanner reporting `not-implemented` fails the gate.
+- When `p5_scans` is true, `p5-scans` must succeed and each scanner reports `pass`, `fail` or `not-implemented`, or `skipped` for the report-only `syft` and `zap` once implemented (O-15). A stub reports `not-implemented` only. An implemented scanner reporting `not-implemented` fails the gate.
 - When `p5_codeql` is true, `codeql_verdict` is `pass`, or `not-implemented` while CodeQL is a stub. `fail` blocks.
 - The registry is `config/scan/implementation-status.json` (foundation-owned). Each implementing PR flips its own entry in the same PR.
