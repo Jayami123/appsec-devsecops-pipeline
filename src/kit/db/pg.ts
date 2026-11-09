@@ -32,7 +32,7 @@ export interface ClientLike {
 }
 export type PoolFactory = (config: pg.PoolConfig) => PoolLike;
 
-export const IDLE_CLIENT_ERROR_MESSAGE = "P2 oracle: idle pg client error; client discarded";
+export const IDLE_CLIENT_ERROR_MESSAGE = "P5 oracle: idle pg client error; client discarded";
 
 /**
  * pg emits "error" on the pool when an idle client dies (server restart, network drop); without a
@@ -102,7 +102,7 @@ export function createReadOnlyDb(product: OracleLabel, options: ReadOnlyDbOption
     max: 2,
     allowExitOnIdle: true,
     connectionTimeoutMillis: 5_000,
-    application_name: `p2-qa-oracle-${product}`,
+    application_name: `p5-qa-oracle-${product}`,
     options: readOnlySessionOptions(options.statementTimeoutMs),
   });
   let closed = false;

@@ -116,7 +116,7 @@ export async function withAdmin<T>(
   const url = dbUrl(product);
   const client = new pg.Client({
     connectionString: url,
-    application_name: `p2-qa-roles-${product}`,
+    application_name: `p5-qa-roles-${product}`,
   });
   await client.connect();
   try {

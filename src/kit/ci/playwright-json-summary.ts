@@ -202,7 +202,7 @@ export function formatJobSummary(
   s: JobSummary,
   env: { repo: string; sha: string; runUrl: string },
 ): string {
-  const lines: string[] = [`## P2 ${s.label}: run summary`, ""];
+  const lines: string[] = [`## P5 ${s.label}: run summary`, ""];
   lines.push(
     "| project | passed | failed | skipped | expected failures | flaky |",
     "| --- | ---: | ---: | ---: | ---: | ---: |",

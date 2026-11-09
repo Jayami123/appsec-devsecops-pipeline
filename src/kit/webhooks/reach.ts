@@ -23,7 +23,7 @@ export type ReceiverReach =
   | { readonly kind: "container-gateway" }
   | { readonly kind: "none" };
 
-export const DOCUMENSO_RECEIVER_HOSTNAME = "p2-receiver.test";
+export const DOCUMENSO_RECEIVER_HOSTNAME = "p5-receiver.test";
 export const TWENTY_COMPOSE_PROJECT = "qa-harness-twenty";
 export const TWENTY_SERVER_SERVICE = "server";
 /** The name the product calls; the receiver binds the address this name resolves to inside the server container. */

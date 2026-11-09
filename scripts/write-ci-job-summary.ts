@@ -1,5 +1,5 @@
 // Vendored from Jayami123/api-webhook-db-test-suite ref 99a2fde scripts/write-ci-job-summary.ts (relocated to scripts/write-ci-job-summary.ts, F0-2). Change here only with a reason in the PR.
-// P2 job summary for one Playwright invocation. Usage: node scripts/write-ci-job-summary.ts <label> <report.json>
+// P5 job summary for one Playwright invocation. Usage: node scripts/write-ci-job-summary.ts <label> <report.json>
 // Prints the markdown and appends it to $GITHUB_STEP_SUMMARY when that is set. Exit codes:
 //   0 = summary written, or the report is missing (a warning is printed and a placeholder is written)
 //   1 = wrong argument count, unreadable JSON, unsupported shape, or zero tests (named on stderr)
@@ -28,7 +28,7 @@ if (!existsSync(path)) {
   process.stdout.write(
     `::warning::No Playwright JSON report at ${path} for ${label}; the job summary is incomplete.\n`,
   );
-  markdown = `## P2 ${label}: run summary\n\nNo Playwright JSON report was written, so the results table is not available.\n\nRun page with the artifacts: ${runUrl}\n`;
+  markdown = `## P5 ${label}: run summary\n\nNo Playwright JSON report was written, so the results table is not available.\n\nRun page with the artifacts: ${runUrl}\n`;
 } else {
   let raw: unknown;
   try {
