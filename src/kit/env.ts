@@ -53,7 +53,8 @@ const bindHostList = z
   );
 
 // Defaults are the public local defaults of the pinned P2 contract, with localhost rewritten to
-// 127.0.0.1. They are not secrets. Never log a value taken from the environment.
+// 127.0.0.1. Source: harness v0.3.1 `.env.example` lines 17 (CAL_DB_URL), 37 (DOCUMENSO_DB_URL),
+// 51 (MEDUSA_DB_URL) and 80 (TWENTY_DB_URL). They are not secrets. Never log a value taken from the environment.
 const schema = z.object({
   P5_RUN_ID: z.string().trim().regex(RUN_ID_PATTERN),
   CAL_BASE_URL: z.preprocess(blankToUndefined, loopbackUrl.default("http://127.0.0.1:3000")),
