@@ -105,8 +105,14 @@ test("security-events: write appears only on the allowed scan jobs and always on
         grants.push(`${file}:${job}`);
     }
   }
-  const ALLOWED_GRANTS = ["ci.yml:p5-scans", "p5-scans.yml:codeql", "codeql-reusable.yml:analyze", "p5-scans.yml:trivy-upload"];
-  for (const grant of grants) assert.ok(ALLOWED_GRANTS.includes(grant), `unexpected security-events grant: ${grant}`);
+  const ALLOWED_GRANTS = [
+    "ci.yml:p5-scans",
+    "p5-scans.yml:codeql",
+    "codeql-reusable.yml:analyze",
+    "p5-scans.yml:trivy-upload",
+  ];
+  for (const grant of grants)
+    assert.ok(ALLOWED_GRANTS.includes(grant), `unexpected security-events grant: ${grant}`);
   assert.ok(grants.includes("ci.yml:p5-scans"), "ci.yml:p5-scans must hold security-events: write");
 });
 
@@ -138,7 +144,8 @@ test("no workflow uses pull_request_target, workflow_run or continue-on-error", 
   }
 });
 
-const EXTERNAL_USES = /uses: [a-z0-9-]+\/[a-z0-9._-]+(\/[a-z0-9._\/-]+)?@[0-9a-f]{40} # v\d+\.\d+\.\d+$/;
+const EXTERNAL_USES =
+  /uses: [a-z0-9-]+\/[a-z0-9._-]+(\/[a-z0-9._/-]+)?@[0-9a-f]{40} # v\d+\.\d+\.\d+$/;
 
 test("every external uses: is a full 40-hex SHA with a version comment", () => {
   let externals = 0;
@@ -175,7 +182,9 @@ test("no docker:// uses in F0 workflows", () => {
 });
 
 test("each lane workflow is workflow_call and workflow_dispatch with no pull_request or push trigger", () => {
-  const lanes = workflowFiles.filter((file) => file.startsWith("p5-") && file !== "p5-zap-nightly.yml");
+  const lanes = workflowFiles.filter(
+    (file) => file.startsWith("p5-") && file !== "p5-zap-nightly.yml",
+  );
   assert.ok(lanes.length > 0, "expected lane workflows");
   for (const file of lanes) {
     assert.deepEqual(triggers(workflow(file)), ["workflow_call", "workflow_dispatch"], file);
@@ -246,7 +255,8 @@ test("p5-x.yml has no secrets key", () => {
 test("p5-zap-nightly.yml triggers are exactly schedule and workflow_dispatch", () => {
   const NIGHTLY_TRIGGERS = ["schedule", "workflow_dispatch"];
   const good = "on:\n  schedule:\n    - cron: '0 1 * * *'\n  workflow_dispatch:\njobs:\n";
-  const bad = "on:\n  schedule:\n    - cron: '0 1 * * *'\n  workflow_dispatch:\n  pull_request:\njobs:\n";
+  const bad =
+    "on:\n  schedule:\n    - cron: '0 1 * * *'\n  workflow_dispatch:\n  pull_request:\njobs:\n";
   assert.deepEqual([...triggers(good)].sort(), NIGHTLY_TRIGGERS);
   assert.notDeepEqual([...triggers(bad)].sort(), NIGHTLY_TRIGGERS);
   if (workflowFiles.includes("p5-zap-nightly.yml")) {

@@ -2,13 +2,21 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { BUDGETS } from "../../../src/security/budgets.ts";
-import { matchAcceptedRisk, validateAcceptedRisks, type AcceptedRisk } from "../../../src/security/accepted-risk.ts";
+import {
+  matchAcceptedRisk,
+  validateAcceptedRisks,
+  type AcceptedRisk,
+} from "../../../src/security/accepted-risk.ts";
 
 const TTL = BUDGETS.ACCEPTED_RISK_TTL_DAYS.value;
 const DAY_MS = 86_400_000;
 
 function plusDays(date: string, days: number): string {
-  const ms = Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)));
+  const ms = Date.UTC(
+    Number(date.slice(0, 4)),
+    Number(date.slice(5, 7)) - 1,
+    Number(date.slice(8, 10)),
+  );
   return new Date(ms + days * DAY_MS).toISOString().slice(0, 10);
 }
 

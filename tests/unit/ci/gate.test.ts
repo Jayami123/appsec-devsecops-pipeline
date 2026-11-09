@@ -167,8 +167,8 @@ test("a codeql fail verdict blocks the gate", () => {
 });
 
 test("skipped is accepted only for report-only keys", () => {
-  const status = SCANNERS.map((name) =>
-    `${name}=${name === "syft" || name === "zap" ? "skipped" : "not-implemented"}`,
+  const status = SCANNERS.map(
+    (name) => `${name}=${name === "syft" || name === "zap" ? "skipped" : "not-implemented"}`,
   ).join(",");
   const registry = { ...baseRegistry(), syft: "implemented", zap: "implemented" };
   const verdict = evaluateGate({ needs: withStatus(baseNeeds(), status), registry });
@@ -179,7 +179,10 @@ test("skipped is accepted only for report-only keys", () => {
 
 test("skipped for gitleaks fails", () => {
   const registry = { ...baseRegistry(), gitleaks: "implemented" };
-  const verdict = evaluateGate({ needs: withScanner(baseNeeds(), "gitleaks", "skipped"), registry });
+  const verdict = evaluateGate({
+    needs: withScanner(baseNeeds(), "gitleaks", "skipped"),
+    registry,
+  });
   assert.equal(verdict.ok, false);
   assert.ok(verdict.reasons.includes("gitleaks: skipped is allowed only for report-only scanners"));
 });

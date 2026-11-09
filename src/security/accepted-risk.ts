@@ -37,7 +37,9 @@ export function validateAcceptedRisks(entries: readonly AcceptedRisk[]): string[
     if (expires <= accepted) {
       errors.push(`ACCEPTED_RISK_INVALID: ${entry.id} expires is not after acceptedOn`);
     } else if (expires - accepted > TTL_DAYS) {
-      errors.push(`ACCEPTED_RISK_INVALID: ${entry.id} expires is more than ACCEPTED_RISK_TTL_DAYS after acceptedOn`);
+      errors.push(
+        `ACCEPTED_RISK_INVALID: ${entry.id} expires is more than ACCEPTED_RISK_TTL_DAYS after acceptedOn`,
+      );
     }
   }
   return errors;
@@ -51,7 +53,8 @@ export function matchAcceptedRisk(
   today: string,
 ): "suppressed" | "expired" | "none" {
   const todayDay = dayNumber(today);
-  if (todayDay === null) throw new Error(`ACCEPTED_RISK_INVALID: today is not a real YYYY-MM-DD date: ${today}`);
+  if (todayDay === null)
+    throw new Error(`ACCEPTED_RISK_INVALID: today is not a real YYYY-MM-DD date: ${today}`);
   const matching = entries.filter(
     (entry) => entry.match.tool === finding.tool && entry.match.fingerprint === finding.fingerprint,
   );
