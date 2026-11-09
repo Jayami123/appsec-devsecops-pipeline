@@ -559,6 +559,18 @@ Anything not in this table is a STOP.
 | `config/scan/implementation-status.json` | new (foundation-owned, section 9.13) | Scanner stub or implemented registry |
 | `scripts/lint-workflows.sh` | new (section 9.4) | Pinned actionlint, checksum-verified |
 | `tests/unit/ci/workflow.test.ts`, `tests/unit/ci/ci-changes.test.ts`, `tests/unit/ci/gate.test.ts`, `tests/unit/ci/lint-workflows.test.ts` | new | Shape, classifier, gate and lint tests (counts in the test lists below) |
+| `scripts/ci-gate.mjs` | new (correction a) | Gate evaluator. `ci.yml` job `gate` runs it; `tests/unit/ci/gate.test.ts` tests it. |
+| `results/.gitkeep` | new (correction b) | Keeps `results/` so `npm run unit:ci` can write its JUnit file (it exits 7 at `298ae29` without it). `.gitignore` already has `!results/.gitkeep`. |
+
+**Recorded corrections (F0-3).** Each is listed in the F0-3 PR body.
+- a. Gate evaluator `scripts/ci-gate.mjs` added (row above).
+- b. `results/.gitkeep` added (row above).
+- c. `foundation.yml` uses the pinned `actions/setup-node` (9.4) with `node-version-file: .nvmrc`. No Node 24 and no `/opt/node24`.
+- d. `p5-scans.yml` stub exposes `codeql_verdict=not-implemented` and `scanner_status` (every 9.13 scanner `not-implemented`). It never emits `pass`.
+- e. Workflow test 11 lane-to-test-directory map: `scripts/scan/` (p5-scans), `tests/closeout/` (x), `tests/iso/` and `tests/limiter-last/` (tw-iso), and `tests/{contracts,webhooks,integration,serial,ui}/<code>/` for cal, doc, med and tw (per 9.5).
+- f. The classifier "... only" tests also assert `p5_scans=true` on push and pull_request (9.5).
+- g. actionlint pin: version `1.7.12` (latest tag). The SHA-256 is **BLOCKED**: the release host returned 403 from the agent proxy, so the checksum is empty and the script fails closed until it is filled from the release checksums file.
+- h. OD-10 cites "section 9.5", which is the classifier and not a dual-runtime section. Noted only; OD-10 is not changed.
 
 **Build steps**
 1. Branch after F0-2.
