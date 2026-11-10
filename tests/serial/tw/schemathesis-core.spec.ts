@@ -28,6 +28,8 @@ const HOOKS_DIR = fileURLToPath(new URL("../../../src/lanes/tw", import.meta.url
 async function runSchemathesis(input: {
   readonly args: string[];
   readonly bearer: string;
+  /** Working directory of the process (a temporary directory: Schemathesis writes a cache there). */
+  readonly cwd: string;
 }): Promise<{ readonly exitCode: number; readonly summary: string }> {
   const env = schemathesisEnv({ bearer: input.bearer, hooksDir: HOOKS_DIR, base: process.env });
   const counts = (text: string): string =>
