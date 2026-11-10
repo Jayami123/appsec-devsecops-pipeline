@@ -58,8 +58,8 @@ test.describe("P5-CAL-NEW-CAL-4 api key scope", () => {
     );
     expect(booking.status).toBe(201);
     const cross = await getBooking(api, a.apiKey, booking.uid);
-    expect([401, 403, 404], "key A on B's booking").toContain(cross.status);
     const after = await getBooking(api, bUser.apiKey, booking.uid);
-    expect(bookingStatusOf(after.body), "B's booking unchanged").toBe("accepted");
+    expect(bookingStatusOf(after.body), "B's booking state (observed)").toBe("accepted");
+    expect([401, 403, 404], `key A on B's booking, status ${cross.status}`).toContain(cross.status);
   });
 });

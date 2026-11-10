@@ -59,7 +59,7 @@ test.describe("P5-CAL-AUTHZ-002 anonymous mutations", () => {
       owner.apiKey,
       eventTypeId,
       attendee,
-      nextBookableStartIso(new Date(), 6),
+      nextBookableStartIso(new Date(), 20),
     );
     expect(create.status, `keyed POST (create): ${JSON.stringify(create.body).slice(0, 240)}`).toBe(
       201,
@@ -81,16 +81,23 @@ test.describe("P5-CAL-AUTHZ-002 anonymous mutations", () => {
   test("P5-CAL-AUTHZ-002 anonymous PATCH is refused", async ({ run }) => {
     const { api, owner, uid } = await setup(run, "anonpatch");
     const anon = await rescheduleBooking(api, null, uid, nextBookableStartIso(new Date(), 5));
-    expect([401, 403], "anonymous reschedule is refused").toContain(anon.status);
+    // State is read before the refusal assertion so an accepted anonymous reschedule is visible.
     const after = await getBooking(api, owner.apiKey, uid);
-    expect(bookingStatusOf(after.body), "booking unchanged").toBe("accepted");
+    expect(
+      bookingStatusOf(after.body),
+      "booking state after the anonymous attempt (observed)",
+    ).toBe("accepted");
+    expect([401, 403], `anonymous reschedule, status ${anon.status}`).toContain(anon.status);
   });
 
   test("P5-CAL-AUTHZ-002 anonymous DELETE is refused", async ({ run }) => {
     const { api, owner, uid } = await setup(run, "anondelete");
     const anon = await cancelBooking(api, null, uid);
-    expect([401, 403], "anonymous cancel is refused").toContain(anon.status);
     const after = await getBooking(api, owner.apiKey, uid);
-    expect(bookingStatusOf(after.body), "booking unchanged").toBe("accepted");
+    expect(
+      bookingStatusOf(after.body),
+      "booking state after the anonymous attempt (observed)",
+    ).toBe("accepted");
+    expect([401, 403], `anonymous cancel, status ${anon.status}`).toContain(anon.status);
   });
 });
