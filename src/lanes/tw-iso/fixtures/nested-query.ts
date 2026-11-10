@@ -40,17 +40,39 @@ export function aliasQuery(count: number): string {
 }
 
 /**
- * Exactly `count` requested fields (GQL-002): one root field plus `count - 1` aliased scalar fields.
- * Real fields only: the live probe (D-TWISO-B15) showed that __typename aliases are not counted by the
- * field cap (2001 of them returned 200 with no errors), so they cannot test it. The cap refuses real fields.
+ * Exactly `count` requested fields on the real root collection `workspaceMembers` (GQL-002, D-TWISO-B15).
+ * Structure: workspaceMembers, edges, node (three fields) plus `count - 3` aliased scalar fields of the node.
+ * Real fields only: the field cap does not count __ meta fields (hook:181). The refusal message reports the
+ * requested count, so the boundary test can check the counter itself.
  */
 export function overFieldsQuery(count: number): string {
-  if (!Number.isInteger(count) || count < 2) {
-    throw new RangeError(`TEST BUG: count must be an integer of at least 2, got ${String(count)}`);
+  if (!Number.isInteger(count) || count < 4) {
+    throw new RangeError(`TEST BUG: count must be an integer of at least 4, got ${String(count)}`);
   }
   const parts: string[] = [];
-  for (let i = 1; i < count; i++) parts.push(`f${i}: email`);
-  return `{ r: currentUser { ${parts.join(" ")} } }`;
+  for (let i = 1; i <= count - 3; i++) parts.push(`f${i}: userEmail`);
+  return `{ workspaceMembers(first: 1) { edges { node { ${parts.join(" ")} } } } }`;
+}
+
+/** Control for GQL-003: `count` aliases of nested real fields under ONE root field (no duplicate root). */
+export function nestedAliasQuery(count: number): string {
+  positiveInteger(count, "count");
+  const parts: string[] = [];
+  for (let i = 1; i <= count; i++) parts.push(`a${i}: userEmail`);
+  return `{ workspaceMembers(first: 1) { edges { node { ${parts.join(" ")} } } } }`;
+}
+
+/** Negative for GQL-003: `count` aliases of one REAL root field (duplicate root resolver check, graphql-config:75). */
+export function rootAliasQuery(count: number): string {
+  positiveInteger(count, "count");
+  const parts: string[] = [];
+  for (let i = 1; i <= count; i++) parts.push(`a${i}: workspaceMembers(first: 1) { totalCount }`);
+  return `{ ${parts.join(" ")} }`;
+}
+
+/** Correct field of the authenticated schema (GQL-006 control). */
+export function memberIdQuery(): string {
+  return "{ workspaceMembers(first: 1) { edges { node { id } } } }";
 }
 
 /** The schema name query (GQL-005). */

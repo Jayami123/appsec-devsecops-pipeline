@@ -56,6 +56,15 @@ export function readEffectiveConfig(
   };
 }
 
+/** The NODE_ENV readback from the behaviour of an anonymous introspection request (GQL-005, D-TWISO-B28).
+ *  The fork refuses anonymous introspection only in production (graphql-config.service.ts:66-68; the rule is
+ *  use-disable-introspection-and-suggestions-for-unauthenticated-users.hook.ts:12-17). */
+export function nodeEnvFromBehaviour(anonymousIntrospectionRefused: boolean): string {
+  return anonymousIntrospectionRefused
+    ? "production (behavioural, GQL-005)"
+    : "not production (behavioural, GQL-005: anonymous introspection answered)";
+}
+
 export interface RateLimitReadback {
   readonly limit: number | null;
   readonly remaining: number | null;

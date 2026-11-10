@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   compareForwardedEffective,
+  nodeEnvFromBehaviour,
   parseRateLimitHeaders,
 } from "../../../../src/lanes/tw-iso/effective-config.ts";
 
@@ -19,4 +20,9 @@ test("parseRateLimitHeaders reads limit, remaining and reset by name", () => {
 test("a forwarded value that differs from the effective value is reported as ENV", () => {
   assert.equal(compareForwardedEffective("100", "100"), "match");
   assert.equal(compareForwardedEffective("100", "200"), "ENV mismatch");
+});
+
+test("nodeEnvFromBehaviour reports production only when anonymous introspection was refused", () => {
+  assert.equal(nodeEnvFromBehaviour(true), "production (behavioural, GQL-005)");
+  assert.match(nodeEnvFromBehaviour(false), /^not production/);
 });
