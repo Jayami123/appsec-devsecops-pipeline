@@ -35,10 +35,14 @@ function setup(): string {
 }
 
 function runPrint(tmp: string, env: Record<string, string> = {}) {
-  return spawnSync("bash", [join(tmp, "repo", "scripts", "bootstrap.sh"), "--print-products-root"], {
-    encoding: "utf8",
-    env: { PATH: process.env.PATH ?? "/usr/bin:/bin", HOME: join(tmp, "home"), ...env },
-  });
+  return spawnSync(
+    "bash",
+    [join(tmp, "repo", "scripts", "bootstrap.sh"), "--print-products-root"],
+    {
+      encoding: "utf8",
+      env: { PATH: process.env.PATH ?? "/usr/bin:/bin", HOME: join(tmp, "home"), ...env },
+    },
+  );
 }
 
 test("bootstrap --print-products-root prints an absolute PRODUCTS_ROOT from the environment and clones nothing", () => {

@@ -153,8 +153,7 @@ export const BUDGETS = {
   TW_DEMOTE_RACE_TRIALS: {
     value: 5,
     class: "INVESTIGATIVE",
-    basis:
-      "owner decision RC-16 (tw plan); basis P6 src/races/env.ts:38 UNVERIFIED; provisional",
+    basis: "owner decision RC-16 (tw plan); basis P6 src/races/env.ts:38 UNVERIFIED; provisional",
   },
   // Medusa: two parallel requests are the smallest race (structural).
   MED_RACE_PARALLEL_N: {
@@ -180,8 +179,7 @@ export const BUDGETS = {
   // X closeout: Medusa async export wait (expect.poll deadline). UNPROBED.
   CSV_EXPORT_POLL_MS: {
     value: null,
-    formula:
-      "set from the first live Medusa export run; an expect.poll deadline, never a sleep",
+    formula: "set from the first live Medusa export run; an expect.poll deadline, never a sleep",
     class: "INVESTIGATIVE",
     basis: "x plan 4.3 and 5.1 (lane foundation budgets); UNPROBED; provisional",
   },

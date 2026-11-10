@@ -304,7 +304,9 @@ test("only the p5-med caller passes named secrets, and p5-med.yml declares each 
 // A job that runs bootstrap or the harness must set PRODUCTS_ROOT for the whole job: a job-level env key,
 // or an early step that writes it to $GITHUB_ENV (the runner context cannot be used in job-level env).
 function setsProductsRootForJob(body: string): boolean {
-  return /^ {6}PRODUCTS_ROOT:\s*\S/m.test(body) || /PRODUCTS_ROOT=[^\n]*>>\s*"?\$GITHUB_ENV"?/.test(body);
+  return (
+    /^ {6}PRODUCTS_ROOT:\s*\S/m.test(body) || /PRODUCTS_ROOT=[^\n]*>>\s*"?\$GITHUB_ENV"?/.test(body)
+  );
 }
 
 test("every lane job that runs bootstrap or the harness sets PRODUCTS_ROOT for the whole job", () => {
