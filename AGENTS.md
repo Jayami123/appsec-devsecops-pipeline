@@ -14,7 +14,7 @@ configuration unit tests. It contains no product test, no product source and no 
   test name or product context for them, and no keyword-matching CI check for their IDs.
 - A checklist row is never counted as built, proved or closed by a configuration change. Gated rows
   keep their named gate; a gated row is never counted as built.
-- P1 UI-only conventions do not turn this P5 skeleton into UI coverage. UI work is `cal-ui` only,
+- P1 UI-only conventions do not turn this P5 skeleton into UI coverage. UI work is `cal-ui` and the X `twenty-closeout` CSV export leg (owner decision D-2) only,
   and only where a later PR adds it with probe evidence.
 - Do not add product source (`src/`), copied test kits, fixtures, scanners, a findings ledger or CI
   gates in a PR that the plan does not assign to it.
