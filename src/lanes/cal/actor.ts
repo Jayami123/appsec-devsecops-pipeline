@@ -2,6 +2,7 @@
 // revoke through the product's own routes, and a minimal API v2 client. Each actor owns its own
 // Playwright request context, so its session cookie never leaves that context.
 // Secrets (password, session cookie, API key) are held in memory only and never printed.
+import { randomBytes } from "node:crypto";
 import { request as pwRequest, type APIRequestContext } from "@playwright/test";
 import { assertThrowawayEmail, throwawayEmail, throwawayPassword } from "./login.ts";
 
@@ -170,4 +171,9 @@ export function nextBookableStartIso(now: Date, offsetDays = 2): string {
   d.setUTCHours(15, 0, 0, 0);
   while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString();
+}
+
+/** Unique actor label per use within a run: `<base>-<6 hex>` (login.ts allows [a-z0-9-]{1,20}). */
+export function labelFor(base: string): string {
+  return `${base}-${randomBytes(3).toString("hex")}`;
 }

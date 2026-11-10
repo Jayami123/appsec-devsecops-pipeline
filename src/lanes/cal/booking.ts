@@ -8,6 +8,7 @@ import { v2, V2_BOOKINGS_VERSION, V2_EVENT_TYPES_VERSION, type CalActor } from "
 export interface BookingRef {
   readonly uid: string;
   readonly status: number;
+  readonly body: unknown;
 }
 
 export async function createEventType(
@@ -38,7 +39,7 @@ export async function createBooking(
     attendee: { name: "p5 attendee", email: attendeeEmail, timeZone: "UTC" },
   });
   const uid = (res.body as { data?: { uid?: string } } | null)?.data?.uid ?? "";
-  return { uid, status: res.status };
+  return { uid, status: res.status, body: res.body };
 }
 
 export async function getBooking(api: APIRequestContext, apiKey: string | null, uid: string) {
