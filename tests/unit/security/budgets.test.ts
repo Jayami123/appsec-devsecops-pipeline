@@ -39,7 +39,8 @@ test("TW_SPRAY_ACCOUNTS is 20", () => {
 
 test("FUZZ_RATE_LIMIT is 2 and below the strictest cited Documenso route limit", () => {
   assert.equal(BUDGETS.FUZZ_RATE_LIMIT.value, 2);
-  assert.ok(BUDGETS.FUZZ_RATE_LIMIT.value < 3, "must sit below the cited route limit 3");
+  const rate: number = BUDGETS.FUZZ_RATE_LIMIT.value;
+  assert.ok(rate < 3, "must sit below the cited route limit 3");
   assert.match(BUDGETS.FUZZ_RATE_LIMIT.formula, /--rate-limit/);
 });
 
@@ -71,7 +72,7 @@ test("WEBHOOK_SETTLE_MS, CSV_EXPORT_POLL_MS and CSV_UI_DOWNLOAD_MS stay unset un
     BUDGETS.CSV_UI_DOWNLOAD_MS,
   ] as const) {
     assert.equal(budget.value, null);
-    assert.ok(budget.formula !== undefined && budget.formula.length > 0, "needs a formula");
+    assert.match(budget.formula, /./, "needs a formula");
     assert.match(budget.basis, /UNPROBED/);
   }
 });

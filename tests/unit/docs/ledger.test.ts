@@ -86,7 +86,8 @@ test("exactly the eight foundation-gated cases are gated, each with its blocker"
   const gated = ledger.cases.filter((c) => c.status === "gated");
   assert.deepEqual(gated.map((c) => c.id).sort(), GATED_IDS);
   for (const c of gated) {
-    assert.ok(typeof c.blocker === "string" && c.blocker.length > 0, `${c.id} needs a blocker`);
+    const blocker: unknown = (c as { blocker?: unknown }).blocker;
+    assert.ok(typeof blocker === "string" && blocker.length > 0, `${c.id} needs a blocker`);
   }
 });
 
