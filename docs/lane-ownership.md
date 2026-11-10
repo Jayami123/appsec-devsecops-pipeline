@@ -60,3 +60,34 @@ Recorded adaptation (F0-5a, L-PIPE plan section 11.1 and 5.5.1): `src/kit/ci/pla
 - When `p5_scans` is true, `p5-scans` must succeed and each scanner reports `pass`, `fail` or `not-implemented`, or `skipped` for the report-only `syft` and `zap` once implemented (O-15). A stub reports `not-implemented` only. An implemented scanner reporting `not-implemented` fails the gate.
 - When `p5_codeql` is true, `codeql_verdict` is `pass`, or `not-implemented` while CodeQL is a stub. `fail` blocks.
 - The registry is `config/scan/implementation-status.json` (foundation-owned). Each implementing PR flips its own entry in the same PR.
+
+## Lane records, closeout paths and shared tool locks (lane foundation PR)
+
+These rows apply the lane-plan decisions cited in each row. A row here takes precedence over the broad "X owns `docs/` closeout files" rule in the ownership map. The matching master-plan section 6 text is updated in a separate owner PR.
+
+| Path | Owner | Contents | Basis |
+|---|---|---|---|
+| `docs/verdicts/cal/` | L-CAL | one record per verdict, `<ID>.md` | cal plan 4.3 and 5 (`docs/plans/2026-11-10-p5-cal.md:178`, `:305`) |
+| `docs/verdicts/doc/` | L-DOC | one record per verdict, `<id>.md` | doc plan F-3 and O-4 (`docs/plans/2026-11-10-p5-doc.md:155`, `:536`) |
+| `docs/verdicts/tw/` | L-TW-A | `mi-7.md`, `mi-8.md` (owner-set names) | tw plan RC-7 (`docs/plans/2026-11-10-p5-tw.md:177`, `:649`) |
+| `docs/verdicts/tw-iso/` | L-TW-B | `<ID>.md`, the exact master-plan ID | tw-iso plan X-1 (`docs/plans/2026-11-10-p5-tw-iso.md:180`, `:220`, `:757`) |
+| `docs/verdicts/x/` | X | `<ID>.md` | x plan 4.1 and 8 (`docs/plans/2026-11-10-p5-x.md:90`, `:278`) |
+| `docs/capabilities/` | L-MED (L-CAL reads it) | capability documents, first `guest-cart-and-uid.md` | cal plan 4.3 (`docs/plans/2026-11-10-p5-cal.md:176`), med plan 3b (`docs/plans/2026-11-10-p5-med.md:140`) |
+| `README.md` | X | the README landing | x plan D-6 (`docs/plans/2026-11-10-p5-x.md:20`, `:108`) |
+| `docs/threat-models/<product>.md` | X | one-pagers, IDs and status only (`TEMPLATE.md` unchanged) | x plan 4.1 (`docs/plans/2026-11-10-p5-x.md:81`) |
+| `docs/design/` | X | design notes, first `webhook-authenticity.md` (MI-11) | x plan 4.1 (`:82`) |
+| `docs/public-drafts/` | X | `index.md` | x plan 4.1 (`:83`) |
+| `docs/traceability/` | X | `p7-aliases.md` | x plan 4.1 (`:84`) |
+| `tests/unit/lanes/x/` | X | X unit tests | x plan D-7 (`:21`, `:108`) |
+| `tests/unit/lanes/tw-iso/` | L-TW-B | tw-iso unit tests | tw-iso plan 7 (`docs/plans/2026-11-10-p5-tw-iso.md:212`) |
+| `requirements/` | Foundation | shared hashed Python tool locks (`schemathesis.in`, `schemathesis.txt`); one tool per file | doc F-5, med D-MED-5, tw RC-13, cal 4.4 |
+
+## Vendored contracts (lane-owned data files)
+
+Each file is copied byte-identical by its lane build and checked by sha256. Source repository: `Jayami123/api-webhook-db-test-suite` at `99a2fdebbb60aac196fcb0fce16911e36a0d5c0a`. The lane keeps a `PROVENANCE.md` next to the file (source, ref, sha256, fetch date).
+
+| Vendored file (dest) | Source path | Bytes | sha256 | Change | Needed by |
+|---|---|---|---|---|---|
+| `src/lanes/cal/contracts/openapi-v2.json` | `contracts/cal/openapi-v2.json` | 560358 | `3c2849d89d8f352d719ef073bf9e0c39ce981aa1a6c9e5066b3a744b68bfc41a` | none | PN-2 (L-CAL) |
+| `src/lanes/doc/contracts/openapi.json` | `contracts/doc/openapi.json` | 1796397 | `37a55f222bb8de14ecfc66c1bfaad3e51f8b6edfb2b2ee8cb34aa9dcb3a6a87f` | none | PN-3 (L-DOC) |
+| `src/lanes/med/contracts/store.openapi.full.yaml` | `contracts/med/upstream/store.openapi.full.yaml` | 1699076 | `cc4af9d7b00fead80c8ab75bd3b2ab97fec0397086bc0d0eccc2f7cb12b7032a` | none | FUZZ-001 (L-MED) |
