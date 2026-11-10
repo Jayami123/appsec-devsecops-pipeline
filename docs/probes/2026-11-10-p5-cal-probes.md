@@ -158,6 +158,15 @@ Scope limit: this enumerates only `apps/web/app/api/cron/`. Cron handlers elsewh
 | P2 OAS at `99a2fde` | `git show 99a2fde:contracts/cal/openapi-v2.json` | CONFIRMED present; 560358 bytes; sha256 `3c2849d89d8f352d719ef073bf9e0c39ce981aa1a6c9e5066b3a744b68bfc41a`; measured 2026-11-09; the commit has no tag (UNVERIFIED tag: none found, not searched further). |
 | Schemathesis pin | not present in `package.json` on this branch | UNVERIFIED: the owner-set 4.33.1 pin is not in the repo; the foundation PR adds it with a fully hashed lock. |
 
+### 3k. Harness v0.4.0 (VERIFIED on the harness repo)
+
+| Check | Source | Result |
+|---|---|---|
+| PR #49 merged | `Jayami123/qa-portfolio-harness` `d342a8b` (merge of `feat/2026-11-10-cal-root-env`) | VERIFIED (fetched from `main`). |
+| Tag `v0.4.0` | `git ls-remote --tags`: tag object `6bb2c238e97589de06ec28a277412313ddc7594b`, peeled `31cafc0844d441a8567db89cd18612300c3d4b77` | VERIFIED. The PR #49 merge is an ancestor of the peeled commit. |
+| Cal root `.env` writer | `src/adapters/cal-env.ts` (`ensureCalRootEnv` imported at `src/adapters/cal.adapter.ts:30`; called at `:642-644`) at `31cafc0` | VERIFIED static. Live behaviour UNPROBED (Docker unavailable). |
+| H-1 mail catcher, H-2 effective limit, H-3 `SEED_OAUTH2_*` in v0.4.0 | grep of `docker/cal*`, `src/adapters/cal*`, whole tree at `31cafc0` | No match for `mailpit`/`inbucket`, `RATE_LIMIT_DEFAULT`/`UNKEY`, or `SEED_OAUTH2`. Still open (VERIFIED static). |
+
 ## 4. Fact status (plan section 2 facts touched by this probe)
 
 | Fact | Status in this run |
