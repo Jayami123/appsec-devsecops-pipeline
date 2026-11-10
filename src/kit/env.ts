@@ -86,6 +86,8 @@ const schema = z.object({
   // Passwords of the two database roles. Optional here: only code that connects as a role needs them.
   P2_QA_RO_PASSWORD: z.preprocess(blankToUndefined, z.string().trim().optional()),
   P2_QA_FIXTURE_PASSWORD: z.preprocess(blankToUndefined, z.string().trim().optional()),
+  // Stripe webhook signing secret for the med-stripe job only (med plan D-MED-2). Optional; never logged.
+  STRIPE_WEBHOOK_SECRET: z.preprocess(blankToUndefined, z.string().trim().min(1).optional()),
   P2_DB_STATEMENT_TIMEOUT_MS: z.preprocess(
     blankToUndefined,
     z.coerce.number().int().min(100).max(600_000).default(5_000),
@@ -144,6 +146,13 @@ export function receiverConfig(env: NodeJS.ProcessEnv = process.env): {
 } {
   const parsed = loadEnv(env);
   return { hosts: parsed.P2_RECEIVER_HOSTS, port: parsed.P2_RECEIVER_PORT };
+}
+
+/** The Stripe webhook signing secret. Throws `ENV_MISSING: STRIPE_WEBHOOK_SECRET` when unset; never echoes a value. */
+export function stripeWebhookSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const value = loadEnv(env).STRIPE_WEBHOOK_SECRET;
+  if (value === undefined) throw new Error("ENV_MISSING: STRIPE_WEBHOOK_SECRET");
+  return value;
 }
 
 /**

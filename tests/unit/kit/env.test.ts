@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadEnv } from "../../../src/kit/env.ts";
+import { loadEnv, stripeWebhookSecret } from "../../../src/kit/env.ts";
 
 test("loadEnv throws ENV_MISSING for unset P5_RUN_ID", () => {
   assert.throws(() => loadEnv({}), /^Error: ENV_MISSING: P5_RUN_ID$/);
@@ -49,4 +49,28 @@ test("an invalid value that contains a password string throws ENV_INVALID with t
     assert.equal(message, `ENV_INVALID: ${name}`);
     assert.ok(!message.includes(distinctive), "the invalid value must never be echoed");
   }
+});
+
+test("STRIPE_WEBHOOK_SECRET is optional and blank means unset", () => {
+  assert.equal(loadEnv({ P5_RUN_ID: VALID_RUN_ID }).STRIPE_WEBHOOK_SECRET, undefined);
+  assert.equal(
+    loadEnv({ P5_RUN_ID: VALID_RUN_ID, STRIPE_WEBHOOK_SECRET: "  " }).STRIPE_WEBHOOK_SECRET,
+    undefined,
+  );
+});
+
+test("stripeWebhookSecret throws ENV_MISSING by name and returns a set value", () => {
+  assert.throws(
+    () => stripeWebhookSecret({ P5_RUN_ID: VALID_RUN_ID }),
+    (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.message, "ENV_MISSING: STRIPE_WEBHOOK_SECRET");
+      return true;
+    },
+  );
+  const synthetic = "whsec_test_synthetic";
+  assert.equal(
+    stripeWebhookSecret({ P5_RUN_ID: VALID_RUN_ID, STRIPE_WEBHOOK_SECRET: synthetic }),
+    synthetic,
+  );
 });

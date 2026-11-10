@@ -2,10 +2,11 @@
 # Base image for Cursor Cloud Agents on this repo (referenced by .cursor/environment.json).
 # Docker block follows https://cursor.com/docs/cloud-agent/setup ("Running Docker").
 # Do not COPY the project: Cursor clones the repo and runs `install` itself.
+# P5 lane foundation PR: python3 and python3-venv for the hashed Schemathesis lock (requirements/schemathesis.txt).
 FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl git gnupg openssl sudo xz-utils poppler-utils \
+    ca-certificates curl git gnupg openssl python3 python3-venv sudo xz-utils poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 # Node.js 22 (harness and Medusa need >= 22.22.0) on PATH, and pnpm 10.11.1 (the Medusa fork's pin).
 # Every archive is verified against its published SHASUMS256 entry before extraction.

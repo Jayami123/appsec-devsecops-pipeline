@@ -3,6 +3,16 @@ name: p5-med
 
 on:
   workflow_call:
+    # Interface only: ci.yml passes these names (med plan section 3d). No stub step reads them.
+    secrets:
+      MEDUSA_ADMIN_EMAIL:
+        required: false
+      MEDUSA_ADMIN_PASSWORD:
+        required: false
+      STRIPE_API_KEY:
+        required: false
+      STRIPE_WEBHOOK_SECRET:
+        required: false
   workflow_dispatch:
 
 permissions:

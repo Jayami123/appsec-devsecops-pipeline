@@ -36,3 +36,43 @@ test("CAL_RESET_CONCURRENT_N is 5", () => {
 test("TW_SPRAY_ACCOUNTS is 20", () => {
   assert.equal(BUDGETS.TW_SPRAY_ACCOUNTS.value, 20);
 });
+
+test("FUZZ_RATE_LIMIT is 2 and below the strictest cited Documenso route limit", () => {
+  assert.equal(BUDGETS.FUZZ_RATE_LIMIT.value, 2);
+  const rate: number = BUDGETS.FUZZ_RATE_LIMIT.value;
+  assert.ok(rate < 3, "must sit below the cited route limit 3");
+  assert.match(BUDGETS.FUZZ_RATE_LIMIT.formula, /--rate-limit/);
+});
+
+test("DOC_UPLOAD_CASES is 3 and the control plus the cases stay below the cited upload limit", () => {
+  assert.equal(BUDGETS.DOC_UPLOAD_CASES.value, 3);
+  assert.match(BUDGETS.DOC_ROUTE_LIMITS.formula, /upload: 20/);
+  assert.ok(1 + BUDGETS.DOC_UPLOAD_CASES.value < 20, "control plus cases must stay below 20");
+});
+
+test("DOC_UPLOAD_OVERSIZE_BYTES is the fork default 50 MiB plus one byte", () => {
+  assert.equal(BUDGETS.DOC_UPLOAD_OVERSIZE_BYTES.value, 52428801);
+  assert.equal(BUDGETS.DOC_UPLOAD_OVERSIZE_BYTES.value, 50 * 1024 * 1024 + 1);
+});
+
+test("TW_DEMOTE_RACE_TRIALS is 5 and INVESTIGATIVE", () => {
+  assert.equal(BUDGETS.TW_DEMOTE_RACE_TRIALS.value, 5);
+  assert.equal(BUDGETS.TW_DEMOTE_RACE_TRIALS.class, "INVESTIGATIVE");
+});
+
+test("MED_RACE_PARALLEL_N and MED_REPLAY_DELIVERIES are 2", () => {
+  assert.equal(BUDGETS.MED_RACE_PARALLEL_N.value, 2);
+  assert.equal(BUDGETS.MED_REPLAY_DELIVERIES.value, 2);
+});
+
+test("WEBHOOK_SETTLE_MS, CSV_EXPORT_POLL_MS and CSV_UI_DOWNLOAD_MS stay unset until measured and carry a formula", () => {
+  for (const budget of [
+    BUDGETS.WEBHOOK_SETTLE_MS,
+    BUDGETS.CSV_EXPORT_POLL_MS,
+    BUDGETS.CSV_UI_DOWNLOAD_MS,
+  ] as const) {
+    assert.equal(budget.value, null);
+    assert.match(budget.formula, /./, "needs a formula");
+    assert.match(budget.basis, /UNPROBED/);
+  }
+});

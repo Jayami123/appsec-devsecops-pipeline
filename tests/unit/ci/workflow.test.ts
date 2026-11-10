@@ -263,3 +263,66 @@ test("p5-zap-nightly.yml triggers are exactly schedule and workflow_dispatch", (
     assert.deepEqual([...triggers(workflow("p5-zap-nightly.yml"))].sort(), NIGHTLY_TRIGGERS);
   }
 });
+
+test("no lane caller in ci.yml uses secrets: inherit", () => {
+  for (const lane of LANE_JOBS) {
+    const body = (jobs(ci).get(lane) ?? []).join("\n");
+    assert.doesNotMatch(body, /secrets:\s*inherit/, lane);
+  }
+  assert.doesNotMatch(ci, /secrets:\s*inherit/);
+});
+
+test("only the p5-med caller passes named secrets, and p5-med.yml declares each one as optional", () => {
+  const medLines = jobs(ci).get("p5-med") ?? [];
+  const start = medLines.findIndex((line) => /^ {4}secrets:\s*$/.test(line));
+  assert.ok(start >= 0, "p5-med caller must pass named secrets");
+  const names: string[] = [];
+  for (const line of medLines.slice(start + 1)) {
+    const key = /^ {6}([A-Z_]+):/.exec(line);
+    if (key) names.push(key[1] ?? "");
+    else if (/^ {0,5}\S/.test(line)) break;
+  }
+  const expected = [
+    "MEDUSA_ADMIN_EMAIL",
+    "MEDUSA_ADMIN_PASSWORD",
+    "STRIPE_API_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+  ];
+  assert.deepEqual(names, expected);
+  for (const lane of LANE_JOBS.filter((name) => name !== "p5-med")) {
+    assert.ok(
+      !(jobs(ci).get(lane) ?? []).some((line) => /^ {4}secrets\s*:/.test(line)),
+      `${lane} must not pass a secrets block`,
+    );
+  }
+  const med = workflow("p5-med.yml");
+  for (const name of expected) {
+    assert.match(med, new RegExp(`${name}:\\s*\\n\\s*required: false`), name);
+  }
+});
+
+// A job that runs bootstrap or the harness must set PRODUCTS_ROOT for the whole job: a job-level env key,
+// or an early step that writes it to $GITHUB_ENV (the runner context cannot be used in job-level env).
+function setsProductsRootForJob(body: string): boolean {
+  return (
+    /^ {6}PRODUCTS_ROOT:\s*\S/m.test(body) || /PRODUCTS_ROOT=[^\n]*>>\s*"?\$GITHUB_ENV"?/.test(body)
+  );
+}
+
+test("every lane job that runs bootstrap or the harness sets PRODUCTS_ROOT for the whole job", () => {
+  const positive =
+    '    steps:\n      - run: echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"\n      - run: bash scripts/bootstrap.sh medusa';
+  const negative =
+    "    steps:\n      - run: PRODUCTS_ROOT=$RUNNER_TEMP/products bash scripts/bootstrap.sh medusa";
+  assert.equal(setsProductsRootForJob(positive), true, "positive control");
+  assert.equal(setsProductsRootForJob(negative), false, "negative control");
+  const usesHarness = /scripts\/bootstrap\.sh|qa-portfolio-harness\/scripts\//;
+  for (const file of workflowFiles) {
+    if (!/^p5-/.test(file) || file === "p5-scans.yml" || file === "p5-zap-nightly.yml") continue;
+    for (const [job, lines] of jobs(workflow(file))) {
+      const body = lines.join("\n");
+      if (!usesHarness.test(body)) continue;
+      assert.ok(setsProductsRootForJob(body), `${file} job ${job} must set PRODUCTS_ROOT`);
+    }
+  }
+});

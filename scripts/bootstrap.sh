@@ -2,11 +2,12 @@
 # Vendored from Jayami123/api-webhook-db-test-suite ref 99a2fde scripts/bootstrap.sh. Change here only with a reason in the PR.
 # Clone the product forks qa-portfolio-harness needs into PRODUCTS_ROOT and install their deps.
 # Usage: bash scripts/bootstrap.sh [medusa|cal|documenso|twenty ...]   (default: medusa)
+#   bash scripts/bootstrap.sh --print-products-root   (resolve and print only; clones nothing)
 # Idempotent: an existing checkout is never reset, pulled or overwritten. Never prints secrets.
 # P5 F0-1 adaptations (listed in docs/cloud-environments.md): the Cal .env writer is removed
 # (fork .env provisioning is harness-owned); a pin mismatch is a hard error; NODE24 must be supplied
 # by the selection contract and is checked (absolute path, exact 24.22.0, npm >= 11.17) before any
-# Documenso install; no .env is written.
+# Documenso install; no .env is written; PRODUCTS_ROOT must be absolute, no $HOME fallback, and a non-environment value prints its export line (lane foundation PR).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -51,30 +52,52 @@ product_ref() {
 }
 
 # PRODUCTS_ROOT: environment, then .env (read only), then ../products next to this repo.
+# P5 adaptation (lane foundation PR): a set value must be absolute and outside node_modules, and there is
+# no $HOME fallback. Reason: qa-portfolio-harness v0.4.0 (src/config.ts:11, :37-48) reads only the process
+# environment and resolves an unset or relative PRODUCTS_ROOT against the current directory, so any other
+# choice can clone the forks into a folder the harness never reads.
+RESOLVED_PRODUCTS_ROOT=""
+PRODUCTS_ROOT_ORIGIN=""
 resolve_products_root() {
-  local root="${PRODUCTS_ROOT:-}"
+  local root="${PRODUCTS_ROOT:-}" origin="environment"
   if [ -z "$root" ] && [ -f "$REPO_ROOT/.env" ]; then
     root="$(sed -n 's/^PRODUCTS_ROOT=//p' "$REPO_ROOT/.env" | tail -n 1 | tr -d '\r"'"'")"
+    origin=".env"
   fi
   if [ -n "$root" ]; then
     case "$root" in
       /* | [A-Za-z]:*) ;;
-      *) root="$REPO_ROOT/$root" ;;
+      *)
+        log "ERROR PRODUCTS_ROOT must be an absolute path (from $origin); the harness resolves a relative path against the current directory" >&2
+        exit 1
+        ;;
+    esac
+    case "$root" in
+      */node_modules | */node_modules/*)
+        log "ERROR PRODUCTS_ROOT must not be inside node_modules (from $origin)" >&2
+        exit 1
+        ;;
     esac
     mkdir -p "$root"
-    (cd "$root" && pwd)
+    RESOLVED_PRODUCTS_ROOT="$(cd "$root" && pwd)"
+    PRODUCTS_ROOT_ORIGIN="$origin"
     return
   fi
   root="$(cd "$REPO_ROOT/.." && pwd)/products"
   if mkdir -p "$root" 2>/dev/null && [ -w "$root" ]; then
-    (cd "$root" && pwd)
+    RESOLVED_PRODUCTS_ROOT="$(cd "$root" && pwd)"
+    PRODUCTS_ROOT_ORIGIN="default"
     return
   fi
-  # Parent not writable: use $HOME. Nothing is written into the repository (no .env is created).
-  root="$HOME/products"
-  mkdir -p "$root"
-  log "$(dirname "$REPO_ROOT") is not writable; using $root (set PRODUCTS_ROOT to choose a path)" >&2
-  printf '%s\n' "$root"
+  log "ERROR PRODUCTS_ROOT is unset and $root cannot be created or written; set PRODUCTS_ROOT to an absolute, writable path and export it" >&2
+  exit 1
+}
+
+# The harness reads only the process environment: say how to export a value that came from elsewhere.
+note_products_root_export() {
+  if [ "$PRODUCTS_ROOT_ORIGIN" != "environment" ]; then
+    log "NOTE PRODUCTS_ROOT came from $PRODUCTS_ROOT_ORIGIN, not the environment. Before any harness command, run: export PRODUCTS_ROOT=$(printf '%q' "$RESOLVED_PRODUCTS_ROOT")" >&2
+  fi
 }
 
 clone_pinned() {
@@ -179,6 +202,12 @@ install_cal_deps() {
 }
 
 main() {
+  if [ "${1:-}" = "--print-products-root" ]; then
+    resolve_products_root
+    note_products_root_export
+    printf '%s\n' "$RESOLVED_PRODUCTS_ROOT"
+    return 0
+  fi
   local products=("$@")
   [ "${#products[@]}" -gt 0 ] || products=(medusa)
   local p
@@ -189,9 +218,10 @@ main() {
     }
   done
 
-  local root
-  root="$(resolve_products_root)"
+  resolve_products_root
+  local root="$RESOLVED_PRODUCTS_ROOT"
   log "PRODUCTS_ROOT=$root"
+  note_products_root_export
 
   for p in "${products[@]}"; do
     local dest

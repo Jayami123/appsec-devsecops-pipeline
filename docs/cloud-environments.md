@@ -179,17 +179,16 @@ settings by hand. A committed file does not activate them.
    | `ghcr.io`, `pkg-containers.githubusercontent.com` | the ZAP image (GitHub Container Registry). The blob host is UNVERIFIED until the first pull |
    | `pypi.org`, `files.pythonhosted.org` | pip packages |
 
-   Registry check (grep only; no compose file was run). The harness pin is `v0.4.0` (PR #22, still open, not merged;
-   `main` still pins v0.3.1). The grep was of the v0.4.0 tag's `docker/*.yml` (commit `31cafc0`). The v0.3.1 copy in
-   `node_modules` names the same images, except the Twenty Redis digest pin. Images found: `postgres:15` (Documenso,
+   Registry check (grep only; no compose file was run). The harness pin is `v0.4.0` (PR #22, merged). The grep was of the v0.4.0 tag's `docker/*.yml` (commit `31cafc0`).
+   The v0.3.1 copy (the pin before #22) named the same images, except the Twenty Redis digest pin. Images found: `postgres:15` (Documenso,
    Medusa), `redis:7` (Medusa, Cal), `inbucket/inbucket`, `axllent/mailpit:v1.22.3`, `twentycrm/twenty:${TAG:-v2.44.0}`,
    `gotenberg/gotenberg:8@sha256:…`, and `redis:8.10.3@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53`
    (Twenty, `docker/twenty.compose.yml:59`, v0.4.0 only). All are Docker Hub images, so the Docker Hub row covers them.
-   No quay.io, mcr.microsoft.com or other registry was found. Cal's Postgres image is **UNVERIFIED**. The harness
-   `docker/cal.compose.yml` has no `image:` line; the Cal adapter (`src/adapters/cal.adapter.ts:159-164`, `:627-629`)
-   reads the Postgres service from `<cal fork>/packages/prisma/docker-compose.yml`. That fork is not under
-   `PRODUCTS_ROOT` (`/home/user/products`) in this session, and a disk-wide search for that file found nothing.
-   The fork is pinned at `CAL_REF=c2b7ac44c66f24ffef1662b276f0653988a609a3` (`scripts/bootstrap.sh:18`).
+   No quay.io, mcr.microsoft.com or other registry was found. Cal's Postgres images (verified 2026-11-10 from `Jayami123/cal` at `c2b7ac44c66f24ffef1662b276f0653988a609a3`,
+   `packages/prisma/docker-compose.yml`, which the Cal adapter reads, `src/adapters/cal.adapter.ts:159-164`, `:627-629`):
+   `postgres:18` for service `postgres` (line 5) and an untagged `postgres` for service `postgres_is_ready` (line 21).
+   Both are Docker Hub images, so the Docker Hub row covers them. The untagged image floats to whatever `latest` is at
+   pull time; it is in the product fork, not P5 code, so P5 does not change it.
 
 5. **Verify in a NEW session** (not in the setup run). Run this command, wait about 60 seconds, and run it again:
 
@@ -222,6 +221,14 @@ Dockerfile.
    times: `28.5.2`.
 
 Status: the Dockerfile build is **UNPROBED**. It was not run in this build.
+
+## Schemathesis (shared hashed lock)
+
+The pin is `requirements/schemathesis.in` (`schemathesis==4.33.1`) and the fully hashed lock is `requirements/schemathesis.txt`, generated with uv 0.13.7 (`uv pip compile requirements/schemathesis.in --universal --python-version 3.11 --generate-hashes --output-file requirements/schemathesis.txt`). Install only into a virtual environment: `python3 -m venv <venv> && <venv>/bin/pip install --require-hashes -r requirements/schemathesis.txt`. Needs Python >= 3.11 and `python3 -m venv`, and the hosts `pypi.org` and `files.pythonhosted.org` (already in the allowed-hosts table). The lane builds never pin Schemathesis anywhere else, and never in `package.json`.
+
+## PRODUCTS_ROOT (one value for bootstrap and the harness)
+
+The harness reads `PRODUCTS_ROOT` only from the process environment and resolves an unset or relative value against the current directory (harness v0.4.0 `src/config.ts:11`, `:37-48`). So: always export an absolute `PRODUCTS_ROOT` before bootstrap and harness commands. Both clouds default to `/home/user/products` (`scripts/cloud-install.sh:24`, `.claude/hooks/session-start.sh:19`, `:75-78`). Locally, run `bash scripts/bootstrap.sh --print-products-root` to see the path bootstrap will use; when the value came from `.env` or the default, bootstrap prints the exact `export PRODUCTS_ROOT=...` line. A relative value or an unwritable default now fails instead of falling back to `$HOME/products`. In CI, every lane job that clones or calls the harness sets it for the whole job, first step: `echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"` (enforced by `tests/unit/ci/workflow.test.ts`).
 
 ## Claude Code
 

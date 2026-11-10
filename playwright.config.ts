@@ -30,7 +30,12 @@ export default defineConfig({
     // Fresh-stack ordering for this lane is owned by the workflow (a later PR), not by this config.
     { name: "tw-limiter-last", testMatch: ["limiter-last/tw/**/*.spec.ts"] },
     { name: "medusa-closeout", testMatch: ["closeout/medusa/**/*.spec.ts"] },
-    { name: "twenty-closeout", testMatch: ["closeout/twenty/**/*.spec.ts"] },
+    // Twenty's default CSV export is client-side, so the X Twenty leg needs a browser (X plan D-2).
+    {
+      name: "twenty-closeout",
+      testMatch: ["closeout/twenty/**/*.spec.ts"],
+      use: { browserName: "chromium" },
+    },
     {
       name: "cal-serial",
       testMatch: ["serial/cal/**/*.spec.ts"],

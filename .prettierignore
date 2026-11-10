@@ -12,3 +12,6 @@ docs/
 
 # vendored upstream OpenAPI, kept byte-identical (sha256 checked)
 contracts/med/upstream/
+
+# vendored lane OpenAPI contracts, kept byte-identical (sha256 in docs/lane-ownership.md)
+src/lanes/*/contracts/
