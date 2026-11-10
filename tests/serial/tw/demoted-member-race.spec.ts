@@ -43,10 +43,12 @@ test("NEW-TW-6: a demoted member's concurrent update is 2xx-and-persisted or 4xx
   });
   const member = await loginThrowaway({ baseUrl: base, email, password });
 
+  // Filter by the member's email: a plain list is paged, and the harness stack keeps earlier rows (TEST BUG fixed).
   const memberWorkspaceId = await (async () => {
-    const response = await fetch(`${base}/rest/workspaceMembers?limit=200`, {
-      headers: { authorization: `Bearer ${admin.accessToken}` },
-    });
+    const response = await fetch(
+      `${base}/rest/workspaceMembers?limit=1&filter=userEmail[eq]:${encodeURIComponent(email)}`,
+      { headers: { authorization: `Bearer ${admin.accessToken}` } },
+    );
     const body = (await response.json()) as {
       data?: { workspaceMembers?: Array<{ id: string; userEmail: string }> };
     };
