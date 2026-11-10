@@ -63,12 +63,31 @@ test("a private entry with an extra key is rejected with PRIVATE_FIELD_REJECTED"
   assert.equal(validate(withExtra), false);
 });
 
-test("cases holds 74 entries: 64 planned, 8 alias, 2 dropped", () => {
+test("cases holds 74 entries: 56 planned, 8 gated, 8 alias, 2 dropped", () => {
   const count = (status: string): number => ledger.cases.filter((c) => c.status === status).length;
   assert.equal(ledger.cases.length, 74);
-  assert.equal(count("planned"), 64);
+  assert.equal(count("planned"), 56);
+  assert.equal(count("gated"), 8);
   assert.equal(count("alias"), 8);
   assert.equal(count("dropped"), 2);
+});
+
+test("exactly the eight foundation-gated cases are gated, each with its blocker", () => {
+  const GATED_IDS = [
+    "P5-CAL-CSV-002",
+    "P5-TW-FUZZ-001",
+    "P5-TW-GQL-004",
+    "P5-TW-SEC-001",
+    "P5-TW-SND-001",
+    "P5-TW-SND-002",
+    "P5-TW-SND-003",
+    "P5-TW-SND-004",
+  ];
+  const gated = ledger.cases.filter((c) => c.status === "gated");
+  assert.deepEqual(gated.map((c) => c.id).sort(), GATED_IDS);
+  for (const c of gated) {
+    assert.ok(typeof c.blocker === "string" && c.blocker.length > 0, `${c.id} needs a blocker`);
+  }
 });
 
 test("private holds 8 entries and no id appears twice", () => {
