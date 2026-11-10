@@ -17,7 +17,7 @@ Status key: **CONFIRMED** (observed; matches the master plan or the stated expec
 |---|---|---|
 | Merged contracts the lane depends on | CONFIRMED | Ledger counts 74 cases, 8 private, 0 findings, 0 accepted risks. `p5-med.yml` stub marker present. Classifier `med` regex and `med`, `med-serial` Playwright projects present (section 5). |
 | P-11 and fact 12 (harness backend env) | CONFIRMED | No `MEDUSA_FF_RBAC` anywhere in the harness tree. The switch parser reads four names only. Section 2a. |
-| D14 / harness item 2 (RBAC-001) | BLOCKED | `BLOCKED: harness item 2 not in harness v0.3.1` (MP:803). |
+| D14 / harness item 2 (RBAC-001) | BLOCKED | `BLOCKED: MEDUSA_FF_RBAC not in harness v0.3.1 (released in v0.4.0; gated on the P5 pin-bump PR #v0.3.1 -> #v0.4.0)` (MP:803). |
 | P-10 (throwaway customers and admins) | CONFIRMED on source; live UNPROBED | Customers: normal store routes need no admin. Admins: no route creates one without an existing admin session. Harness admin credentials are unset here (ENV). Section 2b. |
 | P-14 and fact 18 (cart and address routes) | CONFIRMED on middleware and handler; live UNPROBED | Only `POST /store/carts/:id/customer` is customer-authenticated. Its workflow has no owner check. Address routes scope by customer. Section 2c. |
 | Fact 13 (order routes) | CONFIRMED | List route authenticated; order-by-id is intentionally unauthenticated. Section 2c. |
@@ -55,7 +55,7 @@ Status key: **CONFIRMED** (observed; matches the master plan or the stated expec
 - CONFIRMED: `src/adapters/medusa-env.ts` is readable. Its switch parser `parseMedusaHarnessSwitches` (`medusa-env.ts:174-197`) reads `MEDUSA_REDIS`, `MEDUSA_STRIPE`, `MEDUSA_LOCK` and `MEDUSA_FF_CACHING` only. Fact 12's status "`medusa-env.ts` UNREAD" becomes CONFIRMED.
 - CONFIRMED: the backend `.env` is written at `src/adapters/medusa.adapter.ts:272`. `buildMedusaBackendEnvFile` (`medusa-env.ts:241-250`) upserts `DATABASE_URL`, `REDIS_URL`, `STRIPE_API_KEY` and `STRIPE_WEBHOOK_SECRET` into the template. The read-back is `backendProcessEnv` at `medusa.adapter.ts:276-282`.
 - Correction to the brief: `medusa.adapter.ts:527` is the storefront `.env.local` writer (`medusa.adapter.ts:526-527`), not the backend `.env`. Recorded in section 7.
-- Result: RBAC-001 is `BLOCKED: harness item 2 not in harness v0.3.1` (MP:803). The D14 gate holds.
+- Result: RBAC-001 is `BLOCKED: MEDUSA_FF_RBAC not in harness v0.3.1 (released in v0.4.0; gated on the P5 pin-bump PR #v0.3.1 -> #v0.4.0)` (MP:803). The D14 gate holds.
 - Second pass (section 10): the flag is present on harness `main` at commit `519dfba` (`src/adapters/medusa-env.ts:206-217`, `:271`; test at `medusa.adapter.test.ts:11`). It is merged on `main` and unreleased. The owner's wording is "BLOCKED: MEDUSA_FF_RBAC not in harness v0.3.1 (merged on harness main, unreleased)".
 
 ### 2b. P-10: throwaway actors through normal routes
@@ -217,6 +217,7 @@ Scope: source reads and scratch computations only. No stack, no Docker, no secre
 
 - Harness `main` at `519dfba` (shallow clone, outside the repo). `MEDUSA_FF_RBAC` is read by `src/adapters/medusa-env.ts:206-217` (`MEDUSA_FF_RBAC_VALUES`, parser with `MEDUSA_FF_RBAC_INVALID`) and written at `:271`. The test is at `src/adapters/medusa.adapter.test.ts:11`.
 - Tag `v0.3.1` (`7d4a3ae`) has no reference. Status: merged on harness main, unreleased.
+- Update (2026-11-10): released in v0.4.0 (31cafc0), VERIFIED.
 
 ### 10b. Core v2.21.2 routes for D-MED-3, D-MED-4, D-MED-6 (method names confirmed; body enums UNVERIFIED)
 
@@ -257,7 +258,7 @@ Scope: source reads and scratch computations only. No stack, no Docker, no secre
 
 - Generated in scratch with `pip-compile --generate-hashes` for `schemathesis==4.33.1` (Python 3.13, scratch virtualenv outside the repo).
 - Result: NOT GENERATED. Attempt 1 was terminated before it wrote a lock. Attempt 2 (`timeout 1700`, verbose log) exited 124 (timed out) with no lock written. The resolution through the package proxy did not complete in this session. Status: UNVERIFIED that hashed resolution completes here. D-MED-5 stays open until the foundation PR generates `requirements/p5-tools.lock` with `pip-compile --generate-hashes` on a host where it completes. No digest is recorded.
-- The lock file is not committed here. The foundation PR adds `requirements/p5-tools.lock`.
+- The lock file is not committed here. The proposed path is `requirements/p5-tools.lock`; the foundation PR names the file and generates it.
 
 ### 10h. Stripe key handling (D-MED-1)
 
