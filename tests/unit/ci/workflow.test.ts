@@ -300,3 +300,27 @@ test("only the p5-med caller passes named secrets, and p5-med.yml declares each 
     assert.match(med, new RegExp(`${name}:\\s*\\n\\s*required: false`), name);
   }
 });
+
+// A job that runs bootstrap or the harness must set PRODUCTS_ROOT for the whole job: a job-level env key,
+// or an early step that writes it to $GITHUB_ENV (the runner context cannot be used in job-level env).
+function setsProductsRootForJob(body: string): boolean {
+  return /^ {6}PRODUCTS_ROOT:\s*\S/m.test(body) || /PRODUCTS_ROOT=[^\n]*>>\s*"?\$GITHUB_ENV"?/.test(body);
+}
+
+test("every lane job that runs bootstrap or the harness sets PRODUCTS_ROOT for the whole job", () => {
+  const positive =
+    '    steps:\n      - run: echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"\n      - run: bash scripts/bootstrap.sh medusa';
+  const negative =
+    "    steps:\n      - run: PRODUCTS_ROOT=$RUNNER_TEMP/products bash scripts/bootstrap.sh medusa";
+  assert.equal(setsProductsRootForJob(positive), true, "positive control");
+  assert.equal(setsProductsRootForJob(negative), false, "negative control");
+  const usesHarness = /scripts\/bootstrap\.sh|qa-portfolio-harness\/scripts\//;
+  for (const file of workflowFiles) {
+    if (!/^p5-/.test(file) || file === "p5-scans.yml" || file === "p5-zap-nightly.yml") continue;
+    for (const [job, lines] of jobs(workflow(file))) {
+      const body = lines.join("\n");
+      if (!usesHarness.test(body)) continue;
+      assert.ok(setsProductsRootForJob(body), `${file} job ${job} must set PRODUCTS_ROOT`);
+    }
+  }
+});
