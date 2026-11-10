@@ -13,6 +13,11 @@ import {
 } from "../../../src/lanes/cal/actor.ts";
 import { currentRunPrefix } from "../../../src/kit/run/prefix.ts";
 
+// Local override only (P5_CHROMIUM_PATH): the pre-installed browser differs from the pinned Playwright build.
+// CI installs its own Chromium and leaves the variable unset.
+const localChromium = process.env.P5_CHROMIUM_PATH;
+test.use(localChromium ? { launchOptions: { executablePath: localChromium } } : {});
+
 const PLAIN = "p5-xss-plain-description";
 
 async function eventTypeWithDescription(
