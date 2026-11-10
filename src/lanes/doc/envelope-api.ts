@@ -42,3 +42,29 @@ export async function deleteEnvelopeStatus(
   });
   return res.status();
 }
+
+/** Adds one SIGNER (create-many, envelope-recipients/create-envelope-recipients.types.ts:31-35). Returns the status. */
+export async function addSigner(
+  request: APIRequestContext,
+  baseUrl: string,
+  envelopeId: string,
+  email: string,
+  name: string,
+): Promise<number> {
+  const res = await request.post(`${baseUrl}${V2_PATH}/envelope/recipient/create-many`, {
+    data: { envelopeId, data: [{ email, name, role: "SIGNER" }] },
+  });
+  return res.status();
+}
+
+/** Sends the envelope (distribute, envelope/distribute). The signing mail carries the /sign/<token> link. */
+export async function distributeEnvelope(
+  request: APIRequestContext,
+  baseUrl: string,
+  envelopeId: string,
+): Promise<number> {
+  const res = await request.post(`${baseUrl}${V2_PATH}/envelope/distribute`, {
+    data: { envelopeId },
+  });
+  return res.status();
+}
