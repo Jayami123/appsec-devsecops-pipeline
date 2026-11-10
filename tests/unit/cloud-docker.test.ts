@@ -313,3 +313,30 @@ test("cloud-docker-install refuses a non-noble OS, and accepts noble as its cont
   const control = runScript(INSTALL, { ...base, OS_RELEASE_FILE: NOBLE_OS }, ["--dry-run"]);
   assert.equal(control.status, 0, control.stderr);
 });
+
+test("cloud-docker-install leaves a preinstalled dockerd 29.9.2 alone: exit 0, message, no install command", () => {
+  const bin = binDir("preinstalled");
+  const calls = join(bin, "state-changing-calls");
+  fakeCommand(bin, "dockerd", `echo "Docker version 29.9.2, build 0367cbe"`);
+  for (const name of ["apt-get", "curl", "gpg", "update-alternatives", "install", "tee"]) {
+    fakeCommand(bin, name, `echo ${name} >> "${calls}"; exit 1`);
+  }
+  for (const args of [[], ["--dry-run"]]) {
+    const result = runScript(
+      INSTALL,
+      {
+        PATH: `${bin}:${TOOLS_DIR}`,
+        HOME: scratch,
+        START_DOCKER_SUDO: "",
+        OS_RELEASE_FILE: NOBLE_OS,
+      },
+      args,
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      result.stdout,
+      "cloud-docker-install: using preinstalled dockerd 29.9.2 from the platform image; the 28.5.2 pin applies only when this script installs Docker. No change made.\n",
+    );
+  }
+  assert.equal(existsSync(calls), false, "no apt, key, alternatives or file-install command runs");
+});

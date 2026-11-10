@@ -12,8 +12,11 @@
 # Does NOT start dockerd: .claude/hooks/start-docker.sh does that at session start.
 # Does NOT add users to the docker group: the hook and this script run as root or through sudo, so the
 # group is not needed. Add it only for a non-root login shell, and say why in that PR.
-# Exit 1 with "cloud-docker-install: ERROR" on: a non-noble OS, an unsupported architecture, an installed
-# dockerd of another version (never replaced), a daemon.json that differs, or any apt or key failure.
+# A dockerd already installed at another version (the Claude Code cloud image ships 29.9.2) is preinstalled
+# by the platform: the script prints "using preinstalled dockerd <ver> ..." and exits 0 without installing or
+# changing anything, also with --dry-run. The 28.5.2 pin applies only when this script installs Docker.
+# Exit 1 with "cloud-docker-install: ERROR" on: a non-noble OS, an unsupported architecture, a key fingerprint
+# mismatch, a daemon.json that differs, any apt failure, or a post-install version that is not 28.5.2.
 #
 # Overrides (tests and non-standard hosts only):
 #   START_DOCKER_SUDO  prefix for privileged commands. Default: empty when root, else "sudo". "" means none.
@@ -78,17 +81,15 @@ case "$ARCH" in
   *) die "unsupported architecture '$ARCH' (supported: amd64, arm64). No change made." ;;
 esac
 
-# 3. Installed daemon: idempotent when it is the pinned version; a different version is never replaced.
+# 3. Installed daemon: idempotent when it is the pinned version. Any other installed version is preinstalled
+#    by the platform image: it is left as is, nothing is installed, and the script exits 0.
 INSTALLED=""
 if command -v dockerd >/dev/null 2>&1; then
   INSTALLED="$(dockerd --version 2>/dev/null | sed -n 's/^Docker version \([0-9][0-9.]*\).*/\1/p' | sed -n '1p' || true)"
 fi
 if [ -n "$INSTALLED" ] && [ "$INSTALLED" != "$DOCKER_VERSION_PIN" ]; then
-  if [ "$DRY_RUN" -eq 1 ]; then
-    log "dry-run: installed dockerd $INSTALLED differs from the pin $DOCKER_VERSION_PIN; a real run stops here and changes nothing"
-  else
-    die "dockerd $INSTALLED is installed but this script pins $DOCKER_VERSION_PIN. It is not replaced; remove the other version deliberately, then re-run. No change made."
-  fi
+  log "using preinstalled dockerd $INSTALLED from the platform image; the $DOCKER_VERSION_PIN pin applies only when this script installs Docker. No change made."
+  exit 0
 fi
 if [ "$INSTALLED" = "$DOCKER_VERSION_PIN" ] && [ "$DRY_RUN" -eq 0 ]; then
   log "docker $DOCKER_VERSION_PIN already installed"
