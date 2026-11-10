@@ -126,6 +126,73 @@ export const BUDGETS = {
     class: "POLICY",
     basis: "review interval for accepted scanner risks; not a disclosure deadline",
   },
+  // Documenso fuzz rate: one below the strictest cited route limit; passed as --rate-limit <value>/<window>.
+  FUZZ_RATE_LIMIT: {
+    value: 2,
+    formula:
+      "--rate-limit <value>/<effective limiter window>; the window is read back from the running stack before use (tw-iso X-10)",
+    class: "INVESTIGATIVE",
+    basis:
+      "one below the strictest cited Documenso route limit 3 (DOC_ROUTE_LIMITS forgotPassword, resendVerifyEmail, ai; doc plan F-1 and 4.9); window length UNVERIFIED; provisional",
+  },
+  // NEW-DOC-3 negatives: text-as-PDF, oversize, polyglot. Control plus cases stays below the upload limit 20.
+  DOC_UPLOAD_CASES: {
+    value: 3,
+    class: "INVESTIGATIVE",
+    basis:
+      "the three NEW-DOC-3 negatives (doc plan 4.5, doc.md:277, and F-1); control + 3 = 4 uploads, below DOC_ROUTE_LIMITS.upload 20",
+  },
+  // Documenso upload cap: fork default 50 MiB (not overridden by the harness) plus one byte.
+  DOC_UPLOAD_OVERSIZE_BYTES: {
+    value: 52_428_801,
+    class: "CITED",
+    basis:
+      "documenso f4105e47 packages/lib/constants/app.ts:5 default 50 MB, files.ts:46-49 rejects size > limit * 1024 * 1024; harness v0.4.0 sets no NEXT_PUBLIC_DOCUMENT_SIZE_UPLOAD_LIMIT; effective cap UNPROBED",
+  },
+  // NEW-TW-6 race trials (owner decision RC-16).
+  TW_DEMOTE_RACE_TRIALS: {
+    value: 5,
+    class: "INVESTIGATIVE",
+    basis:
+      "owner decision RC-16 (tw plan); basis P6 src/races/env.ts:38 UNVERIFIED; provisional",
+  },
+  // Medusa: two parallel requests are the smallest race (structural).
+  MED_RACE_PARALLEL_N: {
+    value: 2,
+    class: "INVESTIGATIVE",
+    basis:
+      "structural minimum for a race (med plan 3b, med.md:139); NEW-MED-2, NEW-MED-3, NEW-MED-6",
+  },
+  // Medusa: the same signed bytes delivered twice in total (structural).
+  MED_REPLAY_DELIVERIES: {
+    value: 2,
+    class: "INVESTIGATIVE",
+    basis: "one delivery plus one replay (med plan 3b, NEW-MED-5)",
+  },
+  // expect.poll deadline, never a sleep. No measured value yet.
+  WEBHOOK_SETTLE_MS: {
+    value: null,
+    formula:
+      "above the Medusa payment-webhook queue defaults delay 5000 ms x attempts 3 (route.ts:28-29); set from the first measured run",
+    class: "OPERATIONAL",
+    basis: "med plan 3b and 3c.9; UNPROBED; provisional",
+  },
+  // X closeout: Medusa async export wait (expect.poll deadline). UNPROBED.
+  CSV_EXPORT_POLL_MS: {
+    value: null,
+    formula:
+      "set from the first live Medusa export run; an expect.poll deadline, never a sleep",
+    class: "INVESTIGATIVE",
+    basis: "x plan 4.3 and 5.1 (lane foundation budgets); UNPROBED; provisional",
+  },
+  // X closeout: Twenty UI download wait. UNPROBED.
+  CSV_UI_DOWNLOAD_MS: {
+    value: null,
+    formula:
+      "set from the first live Twenty UI export run; a download-event deadline, never a sleep",
+    class: "INVESTIGATIVE",
+    basis: "x plan 4.3 and 5.2 (D-2); UNPROBED; provisional",
+  },
 } as const satisfies Record<string, Budget>;
 
 export type BudgetName = keyof typeof BUDGETS;
