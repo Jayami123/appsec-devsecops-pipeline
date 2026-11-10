@@ -165,8 +165,8 @@ export async function v2(
 }
 
 /** Next weekday (Mon-Fri) at 15:00 UTC, at least two days out. ISO string. */
-export function nextBookableStartIso(now: Date): string {
-  const d = new Date(now.getTime() + 2 * 86_400_000);
+export function nextBookableStartIso(now: Date, offsetDays = 2): string {
+  const d = new Date(now.getTime() + offsetDays * 86_400_000);
   d.setUTCHours(15, 0, 0, 0);
   while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString();
