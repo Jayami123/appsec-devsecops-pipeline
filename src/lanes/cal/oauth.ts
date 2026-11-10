@@ -27,19 +27,20 @@ async function trpcJson(
   web: APIRequestContext,
   path: string,
   json: unknown,
-): Promise<{ status: number; data: unknown }> {
+): Promise<{ status: number; data: unknown; text: string }> {
   const res = await web.post(`/api/trpc/${path}`, {
     headers: { "content-type": "application/json" },
     data: { json },
   });
+  const text = await res.text();
   let data: unknown;
   try {
     data =
-      ((await res.json()) as { result?: { data?: { json?: unknown } } }).result?.data?.json ?? null;
+      (JSON.parse(text) as { result?: { data?: { json?: unknown } } }).result?.data?.json ?? null;
   } catch {
     data = null;
   }
-  return { status: res.status(), data };
+  return { status: res.status(), data, text };
 }
 
 /** Creates an OAuth client for the logged-in owner (PENDING, usable by its owner). */
@@ -57,7 +58,8 @@ export async function submitOwnedClient(
   });
   if (res.status !== 200) throw new Error(`SUBMIT_CLIENT_FAILED status ${res.status}`);
   const data = res.data as { clientId?: string; clientSecret?: string } | null;
-  if (!data?.clientId || !data.clientSecret) throw new Error("SUBMIT_CLIENT_SHAPE");
+  if (!data?.clientId || !data.clientSecret)
+    throw new Error(`SUBMIT_CLIENT_SHAPE: ${res.text.slice(0, 240)}`);
   return { clientId: data.clientId, clientSecret: data.clientSecret, redirectUri };
 }
 
@@ -76,7 +78,7 @@ export async function issueCode(
   });
   if (res.status !== 200) throw new Error(`GENERATE_CODE_FAILED status ${res.status}`);
   const code = (res.data as { authorizationCode?: string } | null)?.authorizationCode;
-  if (!code) throw new Error("GENERATE_CODE_SHAPE");
+  if (!code) throw new Error(`GENERATE_CODE_SHAPE: ${res.text.slice(0, 240)}`);
   return code;
 }
 
