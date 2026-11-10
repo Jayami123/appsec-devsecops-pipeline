@@ -54,6 +54,9 @@ test.describe("P5-CAL-AUTHZ-002 anonymous mutations", () => {
       nextBookableStartIso(new Date(), 5),
     );
     expect(reschedule.status, "keyed PATCH (reschedule)").toBeLessThan(300);
+    // Reschedule creates a new uid and cancels the old one (D-CAL-B35): the cancel uses the new uid.
+    const rescheduledUid =
+      (reschedule.body as { data?: { uid?: string } } | null)?.data?.uid ?? uid;
     const create = await createBooking(
       api,
       owner.apiKey,
@@ -64,7 +67,7 @@ test.describe("P5-CAL-AUTHZ-002 anonymous mutations", () => {
     expect(create.status, `keyed POST (create): ${JSON.stringify(create.body).slice(0, 240)}`).toBe(
       201,
     );
-    const cancel = await cancelBooking(api, owner.apiKey, uid);
+    const cancel = await cancelBooking(api, owner.apiKey, rescheduledUid);
     expect(cancel.status, "keyed DELETE (cancel)").toBeLessThan(300);
   });
 

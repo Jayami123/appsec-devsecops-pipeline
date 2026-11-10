@@ -14,6 +14,8 @@ export interface CalActor {
   readonly email: string;
   readonly username: string;
   readonly userPrefix: string;
+  /** Password of this throwaway user, in memory only (needed for re-auth in setup routes). */
+  readonly password: string;
   /** Web (3000) context with the session cookie. */
   readonly web: APIRequestContext;
   /** API v2 key `cal_...`, in memory only. */
@@ -112,6 +114,7 @@ export async function createThrowawayActor(
       email,
       username,
       userPrefix: prefix,
+      password,
       web,
       apiKey,
       keyNote,
@@ -176,4 +179,21 @@ export function nextBookableStartIso(now: Date, offsetDays = 2): string {
 /** Unique actor label per use within a run: `<base>-<6 hex>` (login.ts allows [a-z0-9-]{1,20}). */
 export function labelFor(base: string): string {
   return `${base}-${randomBytes(3).toString("hex")}`;
+}
+
+/** NextAuth credentials login with a TOTP code (credentials provider totpCode, next-auth-options.ts:214). */
+export async function loginWithTotp(
+  web: APIRequestContext,
+  email: string,
+  password: string,
+  totpCode: string,
+): Promise<{ status: number; sessionUser: boolean }> {
+  const csrf = await web.get("/api/auth/csrf");
+  const { csrfToken } = (await csrf.json()) as { csrfToken: string };
+  const res = await web.post("/api/auth/callback/credentials", {
+    form: { csrfToken, email, password, totpCode, json: "true" },
+  });
+  const session = await web.get("/api/auth/session");
+  const body = (await session.json()) as { user?: unknown };
+  return { status: res.status(), sessionUser: body.user !== undefined && body.user !== null };
 }
