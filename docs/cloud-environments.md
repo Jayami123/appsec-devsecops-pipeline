@@ -190,16 +190,16 @@ PRODUCTS_ROOT=/home/user/products
 
 ## Lockfile and transport evidence (`qa-portfolio-harness`)
 
-- The lock records the harness as `git+ssh://git@github.com/Jayami123/qa-portfolio-harness.git#7d4a3ae36100a0150397eeac1c6fefefe5e64c15`.
+- The lock records the harness as `git+ssh://git@github.com/Jayami123/qa-portfolio-harness.git#31cafc0844d441a8567db89cd18612300c3d4b77` (tag `v0.4.0`; the v0.3.1 pin recorded `7d4a3ae`).
 - A fresh scratch `npm ci` (npm 10.9.9, empty npm cache, inherited sandbox CA and proxy variables kept,
   injected Git rewrites removed with `GIT_CONFIG_COUNT=0`, `GIT_CONFIG_GLOBAL=/dev/null`,
   `GIT_CONFIG_NOSYSTEM=1`, and SSH forced to fail with `GIT_SSH=/bin/false`) **exited 0** and installed the
-  harness at version 0.3.1.
-- The Git trace shows npm fetching the harness with `git clone https://github.com/Jayami123/qa-portfolio-harness.git`
-  over HTTPS. No SSH process ran. The anonymous codeload tarball returned HTTP 403, so the Git fallback supplied the
-  bytes.
+  harness at version 0.4.0. Checked 2026-11-10 on the v0.4.0 lock.
+- A logging `git` wrapper on `PATH` recorded the invocations: `git ls-remote https://github.com/Jayami123/qa-portfolio-harness.git`
+  and `git clone https://github.com/Jayami123/qa-portfolio-harness.git`, both over HTTPS. Zero SSH invocations. The anonymous
+  codeload tarball returned HTTP 403, so the Git fallback supplied the bytes.
 - Conclusion for this environment: the `git+ssh` spelling was fetched over HTTPS with SSH disabled. **SSH was
-  not required here.** The lock is preserved byte-identical; the transport is not changed. The sandbox's
+  not required here.** This bump changes only the harness entry's spec, version and commit; the transport spelling is the lock's own. The sandbox's
   injected `url.https://github.com/.insteadOf` rewrites were disabled for this test, so the result does not
   depend on them.
 
