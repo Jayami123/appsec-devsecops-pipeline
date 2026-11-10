@@ -263,3 +263,40 @@ test("p5-zap-nightly.yml triggers are exactly schedule and workflow_dispatch", (
     assert.deepEqual([...triggers(workflow("p5-zap-nightly.yml"))].sort(), NIGHTLY_TRIGGERS);
   }
 });
+
+test("no lane caller in ci.yml uses secrets: inherit", () => {
+  for (const lane of LANE_JOBS) {
+    const body = (jobs(ci).get(lane) ?? []).join("\n");
+    assert.doesNotMatch(body, /secrets:\s*inherit/, lane);
+  }
+  assert.doesNotMatch(ci, /secrets:\s*inherit/);
+});
+
+test("only the p5-med caller passes named secrets, and p5-med.yml declares each one as optional", () => {
+  const medLines = jobs(ci).get("p5-med") ?? [];
+  const start = medLines.findIndex((line) => /^ {4}secrets:\s*$/.test(line));
+  assert.ok(start >= 0, "p5-med caller must pass named secrets");
+  const names: string[] = [];
+  for (const line of medLines.slice(start + 1)) {
+    const key = /^ {6}([A-Z_]+):/.exec(line);
+    if (key) names.push(key[1] ?? "");
+    else if (/^ {0,5}\S/.test(line)) break;
+  }
+  const expected = [
+    "MEDUSA_ADMIN_EMAIL",
+    "MEDUSA_ADMIN_PASSWORD",
+    "STRIPE_API_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+  ];
+  assert.deepEqual(names, expected);
+  for (const lane of LANE_JOBS.filter((name) => name !== "p5-med")) {
+    assert.ok(
+      !(jobs(ci).get(lane) ?? []).some((line) => /^ {4}secrets\s*:/.test(line)),
+      `${lane} must not pass a secrets block`,
+    );
+  }
+  const med = workflow("p5-med.yml");
+  for (const name of expected) {
+    assert.match(med, new RegExp(`${name}:\\s*\\n\\s*required: false`), name);
+  }
+});

@@ -58,25 +58,27 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.p5_cal == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     uses: ./.github/workflows/p5-cal.yml
-    secrets: inherit
 
   p5-doc:
     needs: [changes]
     if: needs.changes.outputs.p5_doc == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     uses: ./.github/workflows/p5-doc.yml
-    secrets: inherit
 
   p5-med:
     needs: [changes]
     if: needs.changes.outputs.p5_med == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     uses: ./.github/workflows/p5-med.yml
-    secrets: inherit
+    # Named secrets only (least privilege; med plan section 3d). An unset repository secret arrives empty.
+    secrets:
+      MEDUSA_ADMIN_EMAIL: ${{ secrets.MEDUSA_ADMIN_EMAIL }}
+      MEDUSA_ADMIN_PASSWORD: ${{ secrets.MEDUSA_ADMIN_PASSWORD }}
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
 
   p5-tw:
     needs: [changes]
     if: needs.changes.outputs.p5_tw == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     uses: ./.github/workflows/p5-tw.yml
-    secrets: inherit
 
   p5-tw-iso:
     needs: [changes]
@@ -87,7 +89,6 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.p5_x == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     uses: ./.github/workflows/p5-x.yml
-    secrets: inherit
 
   p5-scans:
     needs: [changes]
