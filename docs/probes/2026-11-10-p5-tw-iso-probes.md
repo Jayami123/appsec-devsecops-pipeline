@@ -14,8 +14,8 @@ Status key: **CONFIRMED** (observed or read at the pin, matches the master plan)
 - Source reads at pins: **done** for the Twenty fork at `7cbdfec6`, the harness at `v0.3.1` (installed) and `v0.4.0` (tag), P6 at `0533e61` and P2 at `99a2fde`.
 - Harness `v0.4.0` claims (owner correction 3): **CONFIRMED**. `LOGIC_FUNCTION_TYPE` is forwarded, the named Twenty canary pass-through exists, `TWENTY_REQUIRE_FRESH=1` exists, and the limiter reset is **deferred** (not in `v0.4.0`).
 - Harness `v0.3.1` (the installed pin): `LOGIC_FUNCTION_TYPE` is absent and no canary name is forwarded. **CONFIRMED**.
-- One item is **CONTRADICTS** (section 4, item G1): owner decision X-2 names a `--no-deps` option that the harness does not have. Stopped and reported.
-- One item is **ENV** (section 4, item G3): the Node 24 binary at `/opt/node24` reports `v24.22.1`; the approved value is `v24.22.0`.
+- The earlier **CONTRADICTS** on X-2 (item G1) is **withdrawn**: `--no-deps` is the Playwright CLI flag, not a harness flag.
+- One **ENV** note (item G3): the session image's Node 24 reports `v24.22.1`; the pinned toolchain is `/opt/qa-portfolio/toolchains/node/24.22.0/bin/node` (Cursor image). No owner decision.
 - Two plan-internal reference errors are recorded as recorded corrections in the plan (section 15 of the plan), not as probe contradictions: a dangling `section 15.4` and `section 15.5` reference in the master plan rows, and a `v0.3.2` naming inconsistency in master plan section 5.
 
 ## 1. Environment and tool state
@@ -24,7 +24,7 @@ Status key: **CONFIRMED** (observed or read at the pin, matches the master plan)
 |---|---|---|
 | Repository runtime Node | `v22.23.4` (`.nvmrc` = `22`) | CONFIRMED |
 | `npm ci` at the branch head | exit `0`; installs the pinned harness `v0.3.1` into `node_modules/qa-portfolio-harness` (`package.json` version `0.3.1`) | CONFIRMED |
-| Node 24 at `/opt/node24/bin/node` | `v24.22.1`; npm `11.19.1` | ENV (approved `v24.22.0`, `scripts/bootstrap.sh:116-117` refuses any other value for Documenso). The `twenty` bootstrap path does not check NODE24 (exit `0` with NODE24 set). Owner decision in plan section 13. |
+| Node 24 at `/opt/node24/bin/node` | `v24.22.1`; npm `11.19.1` | ENV (approved `v24.22.0`, `scripts/bootstrap.sh:116-117` refuses any other value for Documenso). The `twenty` bootstrap path does not check NODE24 (exit `0` with NODE24 set). ENV note only; no owner decision. |
 | Docker CLI | `29.9.2` at `/usr/bin/docker` | present |
 | Docker daemon | `failed to connect to the docker API at unix:///var/run/docker.sock ... no such file or directory` | **BLOCKED**: no Docker in this session. Not started by hand (owner rule: never start dockerd or containerd by hand). |
 
@@ -72,7 +72,7 @@ Harness at `v0.3.1` is the installed pin. Harness at `v0.4.0` is read from the t
 |---|---|---|---|---|
 | B1 | No canary name forwarded at `v0.3.1` | **CONFIRMED** | 0 matches for `canary` in `src/`. Exact-name allowlists: `twenty-passthrough.ts:9-16` and `twenty-rate-limits.ts:7-14`. | none |
 | B2 | Named canary pass-through at `v0.4.0` | **CONFIRMED** (source) | `src/adapters/twenty-canary.ts:6-8` (env names `HARNESS_TWENTY_CANARY_NAME`, `HARNESS_TWENTY_CANARY_VALUE`, pattern `^[A-Z][A-Z0-9_]{2,63}$`), `:19-41` (`readTwentyCanary`), `:44-46` (value is an interpolation reference, never written). Wired in `twenty-runtime-override.ts:11`, `:97`, `:103`. | none |
-| B3 | P-12: canary presence proof in the parent environment | **UNPROBED** | `BLOCKED: no Docker in this session (pending the Docker foundation PR)`. Also no proof route is defined in `v0.3.1` or `v0.4.0`: the harness writes the canary into server and worker, and no harness-side readback exists. The plan defines the decision needed (plan section 6, D-P12). | Live stack needed. |
+| B3 | P-12: canary presence proof in the parent environment | **UNPROBED** | Route decided (plan section 6, D-P12): the parent compares sha256 of the set value with sha256 of the value passed to compose; neither is printed. `BLOCKED: no Docker in this session (pending the Docker foundation PR)`. If the server container's receipt cannot be proven through a normal route, SND-001 stays gated. | Live stack needed. |
 | B4 | Canary name must not collide with harness names | **CONFIRMED** | `twenty-runtime-override.ts:27-37` (reserved set includes `TWENTY_REQUIRE_FRESH`, the passthrough and rate-limit names and both canary names). | none |
 
 ### 4c. GraphQL rows on one default stack (GQL-001, GQL-002, GQL-003, GQL-005, GQL-006)
@@ -97,7 +97,7 @@ Source characterisation first, as the plan requires. The live values stay `UNPRO
 | D3 | The six limiter names are forwarded at `v0.3.1` | **CONFIRMED** | `twenty-rate-limits.ts:7-14`. | none |
 | D4 | Fresh functional-profile stack reachable at `v0.3.1` with the six names and no reset | **CONFIRMED** (static reach); live reachability **UNPROBED** | Names forwarded (D3); no reset capability exists at `v0.3.1` (fact 21). Live: `BLOCKED: no Docker in this session (pending the Docker foundation PR)`. | Live stack needed. |
 | D5 | `TWENTY_REQUIRE_FRESH=1` at `v0.4.0` | **CONFIRMED** (source) | `src/adapters/twenty-env.ts:157-166` (`readTwentyRequireFresh`: exact value `1`) and `:169-186` (`assertTwentyFreshOrRefuse`: refuses **before compose** when `qa-harness-twenty_db-data` or `qa-harness-twenty_server-local-data` exists). It is a **refusal guard, not a reset**. Changelog `[0.4.0]` and `README.md:431`. | Live stack needed to prove the refusal. |
-| D6 | Does D5 satisfy the section 9.6 fresh-stack contract? | **Decision required** (owner); see plan section 6, D-FRESH | A fresh stack on a host with no prior Twenty volumes satisfies "fresh" without any reset. Teardown with volume removal (`TWENTY_DOWN_VOLUMES=1`, `twenty.adapter.ts:189` at `v0.4.0`) is a whole-stack volume reset, which section 17 forbids as a P5 mechanism (`MP:927`). The plan therefore requires an ephemeral host and no volume removal. | Not a probe result; a plan decision. |
+| D6 | Fresh-stack contract (section 9.6) | **ACCEPTED (owner)**: a new CI job on an ephemeral runner, `up` run under `TWENTY_REQUIRE_FRESH=1`; no reset. UNPROBED until Docker is available. | plan section 6, D-FRESH |
 
 ### 4e. Source reads at the pin (fact 7, fact 20, SND-003, SND-004, SND-001 expectation)
 
@@ -126,9 +126,9 @@ Source characterisation first, as the plan requires. The live values stay `UNPRO
 
 | # | Item | Status | Evidence / reason |
 |---|---|---|---|
-| G1 | Owner decision X-2: `tw-limiter-last` runs "on its own fresh stack with `--no-deps`" | **CONTRADICTS** | **Expected**: a `--no-deps` option on the harness `up` command. **Observed**: `up.mjs:3-6` at `v0.3.1` takes only the product id (`parseProductId(process.argv.slice(2))`, then `adapter.up()`). A search for `no-deps` / `no_deps` in `src/`, `scripts/` and `docker/` found nothing at `v0.3.1` or `v0.4.0`. **STOP** on the flag. The plan keeps the job, the `needs: [tw-iso]` chain and the fresh-stack rule; the flag is recorded as unresolved for the owner (plan section 13). |
+| G1 | Owner decision X-2 `--no-deps` | **withdrawn** | `--no-deps` is the Playwright CLI flag (`npx playwright test --no-deps`), not a harness `up` flag. The `tw-limiter-last` job uses it (plan section 9.2). |
 | G2 | Fact 8 (P2 B-P21: an API key cannot create or activate a workflow version) | **CONFIRMED** (doc evidence) | `docs/probes/2026-11-03-p2-lane-tw-probes.md:42` at `99a2fde`. |
-| G3 | Node 24 pin | **ENV** | `/opt/node24/bin/node` reports `v24.22.1`; approved `v24.22.0` (`scripts/bootstrap.sh:116-117`). Affects the Documenso path (`bootstrap.sh` documenso section). The `twenty` path was not affected (exit `0`). Owner decision (plan section 13). |
+| G3 | Node 24 | **ENV note** | The session image `/opt/node24/bin/node` reports `v24.22.1`; the pinned toolchain is `/opt/qa-portfolio/toolchains/node/24.22.0/bin/node` (Cursor image). No owner decision. The `twenty` bootstrap path does not check NODE24 (exit 0). |
 | G4 | Merged CI contract for `p5-tw-iso` (no secrets) | **CONFIRMED** | `.github/workflows/ci.yml:81-84` (job `p5-tw-iso` with `needs`, `if`, `uses`, no `secrets`). `.github/workflows/p5-tw-iso.yml:1` (stub marker). Test 13 at `tests/unit/ci/workflow.test.ts:224-229`. |
 
 ## 5. Limiter readback record (X-10; required before any oracle relies on a limiter value)
@@ -155,10 +155,10 @@ Result: `UNPROBED`, reason `BLOCKED: no Docker in this session (pending the Dock
 |---|---|
 | All live items (A2, B3, C1 to C6 live, D1 live, D4 live, E2 live, E6 live, section 5) | `BLOCKED: no Docker in this session (pending the Docker foundation PR)` |
 | SND-001 to SND-004 at the installed pin | `BLOCKED: LOGIC_FUNCTION_TYPE not in harness v0.3.1` (gate: P5 pin bump to `v0.4.0`) |
-| SND-001 canary (presence proof) | `BLOCKED: canary presence proof not defined (P-12, plan D-P12)` and the no-Docker blocker |
+| SND-001 canary (presence proof) | `UNPROBED: P-12 parent-side presence check (plan D-P12); SND-001 stays gated if the server container's receipt cannot be proven through a normal route`, plus the no-Docker blocker |
 | GQL-004 | `BLOCKED: P-9 not probed (gate P-9)` and the no-Docker blocker |
-| G1 | `CONTRADICTS: --no-deps not in harness up interface (owner X-2)` |
-| G3 | `ENV: Node 24 reports v24.22.1, approved v24.22.0 (owner decision)` |
+| G1 | withdrawn: `--no-deps` is a Playwright CLI flag (X-2) |
+| G3 | `ENV: session Node 24 reports v24.22.1; pinned toolchain is 24.22.0 under the Cursor image (note only)` |
 
 ## 8. Checks
 
