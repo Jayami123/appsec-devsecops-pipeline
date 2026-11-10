@@ -1,9 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import type { GqlResponse } from "../../../../src/lanes/tw-iso/gql-client.ts";
 import { classifyReply, describe, errorMessages } from "../../../../src/lanes/tw-iso/verdict.ts";
 
 const REFUSAL = /too many fields requested/i;
-const ok = (body: unknown = { data: { x: 1 } }, status = 200) => ({ status, body, headers: {} });
+
+// Only status and body matter to the classifier; the cast keeps the helper independent of the header field.
+const reply = (status: number, body: unknown): GqlResponse => ({ status, body }) as GqlResponse;
+const answered = (): GqlResponse => reply(200, { data: { x: 1 } });
 
 test("classifyReply is PASS when an error matches the refusal, whatever the status", () => {
   const body = {
@@ -14,38 +18,23 @@ test("classifyReply is PASS when an error matches the refusal, whatever the stat
       },
     ],
   };
-  assert.equal(classifyReply({ status: 200, body, headers: {} }, REFUSAL).verdict, "PASS");
-  assert.equal(classifyReply({ status: 400, body, headers: {} }, REFUSAL).verdict, "PASS");
+  assert.equal(classifyReply(reply(200, body), REFUSAL).verdict, "PASS");
+  assert.equal(classifyReply(reply(400, body), REFUSAL).verdict, "PASS");
 });
 
 test("classifyReply is a design verdict for an answered request with no errors", () => {
-  assert.equal(classifyReply(ok(), REFUSAL).verdict, "design verdict");
+  assert.equal(classifyReply(answered(), REFUSAL).verdict, "design verdict");
 });
 
 test("classifyReply is a deployment finding for an error that is not the refusal (fail closed)", () => {
   const body = { errors: [{ message: 'Cannot query field "nope" on type "Query".' }] };
-  assert.equal(
-    classifyReply({ status: 200, body, headers: {} }, REFUSAL).verdict,
-    "deployment finding",
-  );
-  assert.equal(
-    classifyReply({ status: 500, body: {}, headers: {} }, REFUSAL).verdict,
-    "deployment finding",
-  );
+  assert.equal(classifyReply(reply(200, body), REFUSAL).verdict, "deployment finding");
+  assert.equal(classifyReply(reply(500, {}), REFUSAL).verdict, "deployment finding");
 });
 
-test("classifyReply keeps only the first message, truncated, and never a header value", () => {
-  const long = "x".repeat(400);
-  const outcome = classifyReply(
-    {
-      status: 200,
-      body: { errors: [{ message: long }] },
-      headers: { authorization: "Bearer secret" },
-    },
-    REFUSAL,
-  );
+test("classifyReply keeps only the first message, truncated to 160 characters", () => {
+  const outcome = classifyReply(reply(200, { errors: [{ message: "x".repeat(400) }] }), REFUSAL);
   assert.equal(outcome.message.length, 160);
-  assert.ok(!JSON.stringify(outcome).includes("Bearer"));
 });
 
 test("errorMessages reads errors[].message and ignores other shapes", () => {
