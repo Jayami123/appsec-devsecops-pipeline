@@ -8,7 +8,8 @@ import type { APIRequestContext } from "@playwright/test";
 
 export interface OAuthClient {
   readonly clientId: string;
-  readonly clientSecret: string;
+  /** null for a PKCE client: the fork issues a public client with no secret when enablePkce is true (submitClientForReview.handler.ts:27-32). */
+  readonly clientSecret: string | null;
   readonly redirectUri: string;
 }
 
@@ -57,10 +58,9 @@ export async function submitOwnedClient(
     enablePkce: true,
   });
   if (res.status !== 200) throw new Error(`SUBMIT_CLIENT_FAILED status ${res.status}`);
-  const data = res.data as { clientId?: string; clientSecret?: string } | null;
-  if (!data?.clientId || !data.clientSecret)
-    throw new Error(`SUBMIT_CLIENT_SHAPE: ${res.text.slice(0, 240)}`);
-  return { clientId: data.clientId, clientSecret: data.clientSecret, redirectUri };
+  const data = res.data as { clientId?: string; clientSecret?: string | null } | null;
+  if (!data?.clientId) throw new Error(`SUBMIT_CLIENT_SHAPE: ${res.text.slice(0, 240)}`);
+  return { clientId: data.clientId, clientSecret: data.clientSecret ?? null, redirectUri };
 }
 
 /** Issues a PKCE authorization code for the owned client. */
@@ -93,7 +93,7 @@ export async function exchange(
     form: {
       code,
       client_id: client.clientId,
-      client_secret: client.clientSecret,
+      ...(client.clientSecret === null ? {} : { client_secret: client.clientSecret }),
       grant_type: "authorization_code",
       redirect_uri: client.redirectUri,
       code_verifier: verifier,
