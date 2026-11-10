@@ -3,6 +3,9 @@
 // (D-CAL-B40): no credential in argv or on disk. Valid requests are checked from this side with the
 // throwaway key, which never leaves memory. Any 5xx is PRODUCT BUG (SUSPECTED) with the reproducing request.
 import { spawn } from "node:child_process";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { request as pwRequest } from "@playwright/test";
@@ -17,7 +20,8 @@ import { schemathesisArgs } from "../../../src/lanes/cal/fuzz.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 import { currentRunPrefix } from "../../../src/kit/run/prefix.ts";
 
-const SCHEMA = "src/lanes/cal/contracts/openapi-v2.json";
+// Absolute schema path: the fuzz process runs in its own scratch directory (its caches never enter the repo).
+const SCHEMA = resolve("src/lanes/cal/contracts/openapi-v2.json");
 
 test.describe("P5-CAL-PN-2 schemathesis", () => {
   test("P5-CAL-PN-2 valid requests answer 2xx", async ({ run }) => {
@@ -50,7 +54,8 @@ test.describe("P5-CAL-PN-2 schemathesis", () => {
       maxExamples: BUDGETS.FUZZ_MAX_EXAMPLES.value,
     });
     const exit = await new Promise<{ code: number | null; tail: string }>((resolve, reject) => {
-      const child = spawn(bin, args, { shell: false, stdio: ["ignore", "pipe", "pipe"] });
+      const cwd = mkdtempSync(join(tmpdir(), "p5-schemathesis-"));
+      const child = spawn(bin, args, { cwd, shell: false, stdio: ["ignore", "pipe", "pipe"] });
       let out = "";
       child.stdout.on("data", (chunk: Buffer) => {
         out = (out + chunk.toString("utf8")).slice(-4000);
