@@ -21,10 +21,10 @@ re_cal='^(src/lanes/cal/|tests/unit/lanes/cal/|tests/(contracts|webhooks|integra
 re_doc='^(src/lanes/doc/|tests/unit/lanes/doc/|tests/(contracts|webhooks|integration|serial|ui)/doc/|\.github/workflows/p5-doc\.yml$)'
 re_med='^(src/lanes/med/|tests/unit/lanes/med/|tests/(contracts|webhooks|integration|serial|ui)/med/|\.github/workflows/p5-med\.yml$)'
 re_tw='^(src/lanes/tw/|tests/unit/lanes/tw/|tests/(contracts|webhooks|integration|serial|ui)/tw/|\.github/workflows/p5-tw\.yml$)'
-re_tw_iso='^(src/lanes/tw-iso/|tests/iso/|tests/limiter-last/|\.github/workflows/p5-tw-iso\.yml$)'
-re_x='^(src/lanes/cal/csv-corpus\.ts$|src/lanes/x/|tests/closeout/medusa/|tests/closeout/twenty/|\.github/workflows/p5-x\.yml$)'
-# Shared paths run every lane. scripts/ is shared except scripts/scan/, which is matched by re_scanner first.
-re_shared='^(src/kit/|src/security/|package\.json$|package-lock\.json$|tsconfig\.json$|playwright\.config\.ts$|eslint\.config\.mjs$|\.github/workflows/ci\.yml$|\.github/workflows/foundation\.yml$|scripts/)'
+re_tw_iso='^(src/lanes/tw-iso/|tests/unit/lanes/tw-iso/|tests/iso/|tests/limiter-last/|\.github/workflows/p5-tw-iso\.yml$)'
+re_x='^(src/lanes/cal/csv-corpus\.ts$|src/lanes/x/|tests/unit/lanes/x/|tests/closeout/medusa/|tests/closeout/twenty/|\.github/workflows/p5-x\.yml$)'
+# Shared paths run every lane. scripts/ is shared except scripts/scan/, which is matched by re_scanner first. requirements/ holds the shared hashed tool locks.
+re_shared='^(requirements/|src/kit/|src/security/|package\.json$|package-lock\.json$|tsconfig\.json$|playwright\.config\.ts$|eslint\.config\.mjs$|\.github/workflows/ci\.yml$|\.github/workflows/foundation\.yml$|scripts/)'
 # Scanner-owned paths (L-PIPE): CodeQL and scanners only, no product lane.
 re_scanner='^(scripts/scan/|config/scan/|tests/unit/scan/|\.github/workflows/(p5-scans|codeql-reusable|p5-zap-nightly)\.yml$)'
 # Documentation-only paths that no lane or CodeQL depends on.

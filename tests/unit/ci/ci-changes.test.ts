@@ -124,3 +124,19 @@ test("a docs-only push flags no lane, no codeql and keeps scans", () => {
 test("a tests/unit/scan path flags codeql only", () => {
   expectFlags(classify(["tests/unit/scan/x.test.ts"], "pull_request"), [], true);
 });
+
+test("a tests/unit/lanes/x path flags x only", () => {
+  expectFlags(classify(["tests/unit/lanes/x/dry-run.test.ts"], "pull_request"), ["p5_x"], true);
+});
+
+test("a tests/unit/lanes/tw-iso path flags tw_iso only and not tw", () => {
+  expectFlags(
+    classify(["tests/unit/lanes/tw-iso/helper.test.ts"], "pull_request"),
+    ["p5_tw_iso"],
+    true,
+  );
+});
+
+test("a requirements path flags every lane and codeql", () => {
+  expectFlags(classify(["requirements/schemathesis.txt"], "pull_request"), EVERY_LANE, true);
+});
