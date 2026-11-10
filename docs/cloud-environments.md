@@ -124,7 +124,9 @@ get Docker in different ways. This section is the reference for both.
 ### a. What is automatic from the repository
 
 - **Claude Code cloud:** `.claude/settings.json` runs `.claude/hooks/start-docker.sh` as a second SessionStart command,
-  after `session-start.sh`. The hook starts `dockerd` when it is installed and `docker info` does not answer, waits up to
+  beside `session-start.sh`. The two commands run in parallel and neither depends on the other. The Claude Code hooks
+  docs (https://code.claude.com/docs/en/hooks) say matching hooks "run in parallel", and a non-zero exit is a
+  non-blocking error. The hook starts `dockerd` when it is installed and `docker info` does not answer, waits up to
   30 seconds, and logs in to Docker Hub when both optional variables are set. It never fails the session and never
   installs Docker. Outside a Claude Code cloud session it prints a skip message and exits 0.
 - **Cursor cloud:** `.cursor/Dockerfile` installs Docker Engine (its Docker block, lines 45-63), and
@@ -144,8 +146,10 @@ settings by hand. A committed file does not activate them.
    bash scripts/cloud-install.sh
    ```
 
-   Expected: both commands exit 0. `cloud-docker-install.sh` ends with `installed docker 28.5.2`. If a
-   `dockerd` of another version is already installed, it exits 1 and changes nothing. UNVERIFIED: that
+   Expected: both commands exit 0. `cloud-docker-install.sh` prints one of two lines, both exit 0:
+   `cloud-docker-install: installed docker 28.5.2` (it installed the pin), or
+   `cloud-docker-install: using preinstalled dockerd <ver> from the platform image; ...` (a `dockerd` is already
+   installed, as in the Claude Code cloud image; nothing is changed). UNVERIFIED: that
    `CLAUDE_PROJECT_DIR` is set while the setup script runs. If the `cd` fails, replace `${CLAUDE_PROJECT_DIR:?}` with
    the checkout's directory name (for example `cd appsec-devsecops-pipeline`).
 
@@ -175,12 +179,17 @@ settings by hand. A committed file does not activate them.
    | `ghcr.io`, `pkg-containers.githubusercontent.com` | the ZAP image (GitHub Container Registry). The blob host is UNVERIFIED until the first pull |
    | `pypi.org`, `files.pythonhosted.org` | pip packages |
 
-   Registry check (grep only; no compose file was run): the product compose files in the pinned harness (`qa-portfolio-harness` v0.3.1,
-   `node_modules/qa-portfolio-harness/docker/*.compose.yml`) name these images: `postgres:15`, `redis:7`,
-   `inbucket/inbucket`, `axllent/mailpit:v1.22.3`, `twentycrm/twenty:${TAG:-v2.44.0}` and
-   `gotenberg/gotenberg:8@sha256:…`. All are Docker Hub images, so the Docker Hub row covers them. No quay.io,
-   mcr.microsoft.com or other registry was found. UNVERIFIED: `cal.compose.yml`'s `postgres` service has no `image:` line
-   in this grep, so its image was not determined.
+   Registry check (grep only; no compose file was run). The harness pin is `v0.4.0` (PR #22, still open, not merged;
+   `main` still pins v0.3.1). The grep was of the v0.4.0 tag's `docker/*.yml` (commit `31cafc0`). The v0.3.1 copy in
+   `node_modules` names the same images, except the Twenty Redis digest pin. Images found: `postgres:15` (Documenso,
+   Medusa), `redis:7` (Medusa, Cal), `inbucket/inbucket`, `axllent/mailpit:v1.22.3`, `twentycrm/twenty:${TAG:-v2.44.0}`,
+   `gotenberg/gotenberg:8@sha256:…`, and `redis:8.10.3@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53`
+   (Twenty, `docker/twenty.compose.yml:59`, v0.4.0 only). All are Docker Hub images, so the Docker Hub row covers them.
+   No quay.io, mcr.microsoft.com or other registry was found. Cal's Postgres image is **UNVERIFIED**. The harness
+   `docker/cal.compose.yml` has no `image:` line; the Cal adapter (`src/adapters/cal.adapter.ts:159-164`, `:627-629`)
+   reads the Postgres service from `<cal fork>/packages/prisma/docker-compose.yml`. That fork is not under
+   `PRODUCTS_ROOT` (`/home/user/products`) in this session, and a disk-wide search for that file found nothing.
+   The fork is pinned at `CAL_REF=c2b7ac44c66f24ffef1662b276f0653988a609a3` (`scripts/bootstrap.sh:18`).
 
 5. **Verify in a NEW session** (not in the setup run). Run this command, wait about 60 seconds, and run it again:
 
@@ -188,8 +197,10 @@ settings by hand. A committed file does not activate them.
    docker info --format '{{.ServerVersion}}'
    ```
 
-   Expected both times: `28.5.2`, exit 0. Any other value, or exit 1, means the daemon is not running. Read the
-   `start-docker:` lines in the session start output and `/tmp/dockerd.log`.
+   Expected both times: a non-empty version and exit 0. Sessions observed on 2026-11-10 report `29.9.2` from the
+   platform image; that is the preinstalled daemon, not the 28.5.2 pin. Cursor cloud (the `.cursor/Dockerfile` build)
+   reports `28.5.2`. Any empty output or exit 1 means the daemon is not running: read the `start-docker:` lines in the
+   session start output and `/tmp/dockerd.log`. Every lane evidence file must record the server version it ran on.
 
 ### c. Owner steps: Cursor cloud
 
