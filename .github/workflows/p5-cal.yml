@@ -44,6 +44,44 @@ jobs:
         if: always()
         run: node node_modules/qa-portfolio-harness/scripts/down.mjs cal
 
+  cal-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # LANE_JOB_TIMEOUT_MIN cal (src/security/budgets.ts:112)
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Set the products root, run id and per-job Cal keys
+        run: |
+          echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"
+          echo "P5_RUN_ID=p5-qa-$(date -u +%Y%m%dt%H%M%Sz)-$(openssl rand -hex 4)" >> "$GITHUB_ENV"
+          for name in CRON_API_KEY CRON_SECRET; do
+            value="$(openssl rand -hex 24)"; echo "::add-mask::$value"; echo "$name=$value" >> "$GITHUB_ENV"
+          done
+          value="$(openssl rand -base64 32)"; echo "::add-mask::$value"; echo "DAILY_WEBHOOK_SECRET=$value" >> "$GITHUB_ENV"
+      - name: Record the Docker server version
+        run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: npm ci
+      - name: Bootstrap cal
+        run: bash scripts/bootstrap.sh cal
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start cal
+        run: node node_modules/qa-portfolio-harness/scripts/up.mjs cal
+      - name: Run the cal project
+        run: npx playwright test --project=cal-ui --trace off
+      - name: Stop cal
+        if: always()
+        run: node node_modules/qa-portfolio-harness/scripts/down.mjs cal
+
   cal-serial:
     runs-on: ubuntu-latest
     timeout-minutes: 30 # LANE_JOB_TIMEOUT_MIN cal (src/security/budgets.ts:112)
@@ -72,6 +110,11 @@ jobs:
         run: npm ci
       - name: Bootstrap cal
         run: bash scripts/bootstrap.sh cal
+      - name: Install the hashed Schemathesis lock
+        run: |
+          python3 -m venv "$RUNNER_TEMP/st-venv"
+          "$RUNNER_TEMP/st-venv/bin/pip" install --require-hashes -r requirements/schemathesis.txt
+          echo "SCHEMATHESIS_BIN=$RUNNER_TEMP/st-venv/bin/schemathesis" >> "$GITHUB_ENV"
       - name: Start cal
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs cal
       - name: Run the cal-serial project

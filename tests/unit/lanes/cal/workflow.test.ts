@@ -16,9 +16,8 @@ function jobs(source: string): Map<string, string> {
 
 const byJob = jobs(text);
 
-test("p5-cal.yml has cal-api and cal-serial jobs, each timeout 30 and contents: read", () => {
-  // cal-ui is not built in this lane build (no ui specs yet; decision D-CAL-B21).
-  assert.deepEqual([...byJob.keys()].sort(), ["cal-api", "cal-serial"]);
+test("p5-cal.yml has cal-api, cal-ui and cal-serial jobs, each timeout 30 and contents: read", () => {
+  assert.deepEqual([...byJob.keys()].sort(), ["cal-api", "cal-serial", "cal-ui"]);
   for (const [name, body] of byJob) {
     assert.match(body, /^ {4}timeout-minutes: 30\b/m, `${name} timeout`);
     assert.match(body, /^ {6}contents: read$/m, `${name} permissions`);
