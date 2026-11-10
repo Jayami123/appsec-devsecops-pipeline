@@ -1,0 +1,10 @@
+# Shared Schemathesis pin for every P5 lane (foundation-owned; lanes never pin it differently).
+# Basis: docs/plans/2026-11-10-p5-doc.md F-5 and O-8, docs/plans/2026-11-10-p5-med.md D-MED-5,
+# docs/plans/2026-11-10-p5-tw.md RC-13, docs/plans/2026-11-10-p5-cal.md section 4.4.
+# Regenerate the lock (uv 0.13.7, from the repository root):
+#   uv pip compile requirements/schemathesis.in --universal --python-version 3.11 --generate-hashes --output-file requirements/schemathesis.txt
+# --universal with --python-version 3.11 resolves one lock that is valid on every Python >= 3.11
+# (schemathesis 4.33.1 requires_python >= 3.11) and on Linux, macOS and Windows.
+# Install (always in a virtual environment, never system-wide):
+#   python3 -m venv <venv> && <venv>/bin/pip install --require-hashes -r requirements/schemathesis.txt
+schemathesis==4.33.1
