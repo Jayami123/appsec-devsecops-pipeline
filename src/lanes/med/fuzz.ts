@@ -9,6 +9,12 @@ export interface SchemathesisArgsInput {
   readonly maxTimeSeconds: number;
   /** Read-only: only GET operations are included (`--include-method GET`, schemathesis 4.33.1). */
   readonly readOnly: true;
+  /** Fixed generator seed (`--seed`, schemathesis 4.33.1) so the same inputs are generated on every run (B30). */
+  readonly seed: number;
+  /** Structured run report (`--report-json-path`): run-level summary. */
+  readonly reportJsonPath: string;
+  /** Event stream (`--report-ndjson-path`): per-case status codes, read back by the baseline comparison. */
+  readonly reportNdjsonPath: string;
 }
 
 /** Argument vector for `schemathesis run`. Spawned without a shell. */
@@ -32,5 +38,11 @@ export function schemathesisArgs(input: SchemathesisArgsInput): string[] {
     String(input.maxTimeSeconds),
     "--checks",
     "not_a_server_error",
+    "--seed",
+    String(input.seed),
+    "--report-json-path",
+    input.reportJsonPath,
+    "--report-ndjson-path",
+    input.reportNdjsonPath,
   ];
 }

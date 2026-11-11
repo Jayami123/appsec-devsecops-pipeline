@@ -1,0 +1,81 @@
+{
+  "schema": "p5-med-fuzz-baseline/1",
+  "recordedRun": "p5-qa-20261111t052920z-9e0ba28d",
+  "recordedDate": "2026-11-11",
+  "seed": 20261111,
+  "maxExamples": 200,
+  "maxTimeSeconds": 600,
+  "note": "Observed not_a_server_error failures (HTTP 500) on store GET operations. Entries are the union of run p5-qa-20261111t052920z-9e0ba28d (600 s budget, recordedRun) and one earlier 120 s probe with the same seed and example budget (its run id was not recorded), which also saw the Stateful tests phase. Owner decision B30: committed baseline, not expectedDefect.",
+  "entries": [
+    {
+      "operation": "GET /store/collections",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/currencies",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/payment-providers",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/product-categories",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/product-options",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/product-tags",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/product-types",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/product-variants",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/products/{id}",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/products",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/regions",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/return-reasons",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "GET /store/shipping-options",
+      "check": "not_a_server_error",
+      "status": 500
+    },
+    {
+      "operation": "Stateful tests",
+      "check": "not_a_server_error",
+      "status": 500
+    }
+  ]
+}

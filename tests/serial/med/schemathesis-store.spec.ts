@@ -1,24 +1,35 @@
 // P5-MED-FUZZ-001 (med plan 3c.11, D-MED-B3). Read-only Schemathesis run against the store OpenAPI, own fresh stack.
+// Owner decision B30: a fixed seed, and a committed baseline (src/lanes/med/fuzz-baseline.json) instead of
+// expectedDefect (the failures are generated, so they are not a single deterministic defect).
 import { spawn } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test, expect } from "../../../src/lanes/med/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 import { schemathesisArgs } from "../../../src/lanes/med/fuzz.ts";
+import {
+  compareToBaseline,
+  failureKey,
+  loadBaseline,
+  parseFuzzFailures,
+  type FuzzFailure,
+} from "../../../src/lanes/med/fuzz-baseline.ts";
 import { openRunStore } from "../../../src/lanes/med/setup.ts";
 import { storeRequest } from "../../../src/lanes/med/store-client.ts";
 
 const SCHEMA = resolve("src/lanes/med/contracts/store.openapi.full.yaml");
+const BASELINE = resolve("src/lanes/med/fuzz-baseline.json");
+/** Fixed generator seed (B30). The baseline must have been recorded with this seed. */
+const FUZZ_SEED = 20261111;
 
 function runSchemathesis(
   bin: string,
   args: string[],
   key: string,
+  workDir: string,
 ): Promise<{ code: number | null; output: string }> {
-  // Schemathesis writes its crash and cache files into the working directory: keep them out of the repository.
-  const workDir = mkdtempSync(join(process.env.RUNNER_TEMP ?? tmpdir(), "p5-fuzz-"));
   return new Promise((resolveRun, reject) => {
     // The publishable key is a public storefront key (Medusa), minted for this run and revoked in cleanup.
     // It is passed as a header at spawn time; no shell is used.
@@ -38,6 +49,10 @@ function runSchemathesis(
       resolveRun({ code, output });
     });
   });
+}
+
+function describe(failure: FuzzFailure): string {
+  return `${failure.operation} ${failure.check} HTTP ${failure.status ?? "none"}`;
 }
 
 test.describe("P5-MED-FUZZ-001", () => {
@@ -66,35 +81,61 @@ test.describe("P5-MED-FUZZ-001", () => {
       throw new Error(
         "ENV: SCHEMATHESIS_BIN is not set (the hashed Schemathesis lock must be installed)",
       );
+    const baseline = loadBaseline(JSON.parse(readFileSync(BASELINE, "utf8")) as unknown);
+    const maxExamples = BUDGETS.FUZZ_MAX_EXAMPLES.value;
+    const maxTimeSeconds = BUDGETS.FUZZ_WALL_MIN.value * 60;
+    if (
+      baseline.seed !== FUZZ_SEED ||
+      baseline.maxExamples !== maxExamples ||
+      baseline.maxTimeSeconds !== maxTimeSeconds
+    ) {
+      throw new Error(
+        "TEST BUG: fuzz-baseline.json was recorded with a different seed or budget; re-record it",
+      );
+    }
+
     const store = await openRunStore(request, run);
+    // Schemathesis writes its crash, cache and report files into the working directory: keep them out of the repository.
+    const workDir = mkdtempSync(join(process.env.RUNNER_TEMP ?? tmpdir(), "p5-fuzz-"));
     const args = schemathesisArgs({
       schemaPath: SCHEMA,
       baseUrl: apiBaseUrl("medusa"),
-      maxExamples: BUDGETS.FUZZ_MAX_EXAMPLES.value,
-      maxTimeSeconds: BUDGETS.FUZZ_WALL_MIN.value * 60,
+      maxExamples,
+      maxTimeSeconds,
       readOnly: true,
+      seed: FUZZ_SEED,
+      reportJsonPath: join(workDir, "report.json"),
+      reportNdjsonPath: join(workDir, "events.ndjson"),
     });
-    const result = await runSchemathesis(bin, args, store.key.value);
+    const result = await runSchemathesis(bin, args, store.key.value, workDir);
+    // Exit 0 = no failures; exit 1 = failures recorded (judged against the baseline below). Anything else is ENV.
+    expect(
+      [0, 1],
+      `schemathesis tool error (exit ${result.code ?? "signal"}); ENV, not a product result`,
+    ).toContain(result.code);
+
     // Defence in depth: the run key value never reaches a log or annotation, even if a tool echoes it.
-    const output = result.output.split(store.key.value).join("<redacted-key>");
-    const serverErrors = (output.match(/ST101 Server error/g) ?? []).length;
-    const failingPaths = [
-      ...new Set(
-        [...output.matchAll(/https?:\/\/[^/\s]+(\/store\/[^\s'?]*)/g)].map((match) =>
-          (match[1] ?? "").replace(/prod_[A-Za-z0-9]+|reg_[A-Za-z0-9]+|cart_[A-Za-z0-9]+/g, "<id>"),
-        ),
-      ),
-    ].sort();
+    const events = readFileSync(join(workDir, "events.ndjson"), "utf8")
+      .split(store.key.value)
+      .join("<redacted-key>");
+    const observed = parseFuzzFailures(events);
+    const { unexpected, stale } = compareToBaseline(observed, baseline.entries);
+    const runId = process.env.P5_RUN_ID ?? "unset";
+
     console.log(
-      `FUZZ-001 (schemathesis ${result.code ?? "signal"}): ST101 server-error findings=${serverErrors}; store paths in reproductions: ${failingPaths.join(", ") || "none"}`,
+      `FUZZ-001 run ${runId} (seed ${FUZZ_SEED}): observed ${observed.length} failing check(s); baseline ${baseline.entries.length}; unexpected ${unexpected.length}; stale ${stale.length}`,
     );
+    for (const failure of unexpected) console.log(`FUZZ-001 unexpected: ${describe(failure)}`);
     testInfo.annotations.push({
       type: "fuzz-summary",
-      description: `exit=${result.code ?? "signal"}; ST101 server errors=${serverErrors}; paths=${failingPaths.length}`,
+      description: `run ${runId}: observed ${observed.length}; unexpected ${unexpected.length}; stale ${stale.length}`,
     });
+    for (const failure of stale) {
+      testInfo.annotations.push({ type: "baseline-stale", description: describe(failure) });
+    }
     expect(
-      result.code,
-      "schemathesis exit 0 (no not_a_server_error failure within the budget). Tool errors are ENV.",
-    ).toBe(0);
+      unexpected.map(failureKey),
+      `server error not in the committed baseline (src/lanes/med/fuzz-baseline.json): ${unexpected.map(describe).join("; ")}`,
+    ).toEqual([]);
   });
 });
