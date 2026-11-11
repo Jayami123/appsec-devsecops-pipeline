@@ -124,7 +124,9 @@ export async function useTemplateStatus(
   baseUrl: string,
   templateId: number,
 ): Promise<{ status: number; detail: string }> {
-  const res = await request.post(`${baseUrl}${V2_PATH}/template/use`, { data: { templateId } });
+  const res = await request.post(`${baseUrl}${V2_PATH}/template/use`, {
+    data: { templateId, recipients: [] },
+  });
   const detail = res.ok() ? "" : redactArtefact((await res.text()).slice(0, 200));
   return { status: res.status(), detail };
 }

@@ -53,11 +53,20 @@ test.describe("P5-DOC-NEW-DOC-1", () => {
     );
     const page = await anon.get(`${base}/sign/${env.tokenA}`, { maxRedirects: 0 });
     const body = await page.text();
-    // Oracle: the page held by token A must not disclose recipient B's address or field id.
-    expect(body, "PRODUCT BUG (SUSPECTED) if token A's page discloses recipient B").not.toContain(
-      env.b.email,
-    );
-    expect(body).not.toContain(`"fieldId":${env.b.fieldId}`);
+    // Oracle (plan 4.5): token A must not reach recipient B's signing credential or B's field.
+    // Recipient B's address on the page is recorded as an observation below, not as a defect (D-DOC-B53).
+    expect(
+      body,
+      "PRODUCT BUG (SUSPECTED) if token A's page discloses recipient B's signing token",
+    ).not.toContain(env.tokenB);
+    expect(
+      body,
+      "PRODUCT BUG (SUSPECTED) if token A's page discloses recipient B's field",
+    ).not.toContain(`"fieldId":${env.b.fieldId}`);
+    test.info().annotations.push({
+      type: "observation",
+      description: `co-recipient address present on token A page: ${String(body.includes(env.b.email))}`,
+    });
   });
 
   test("NEW-DOC-1 token A cannot sign as recipient B and B state is unchanged", async ({
