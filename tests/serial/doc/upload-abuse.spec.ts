@@ -3,11 +3,14 @@
 // budgets.ts:32-38). Serial: it consumes the upload window, so it runs on its own stack (C13).
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 import { docRouteLimit } from "../../../src/lanes/doc/limits.ts";
 import { minimalPdf } from "../../../src/lanes/doc/pdf.ts";
 
 const UPLOAD_PATH = "/api/files/upload-pdf";
+const INVALID_PDF_DEFECT =
+  "P5-DOC-NEW-DOC-3: apps/remix/server/api/files/files.ts:55-58 maps INVALID_DOCUMENT_FILE to 500; normalize-pdf.ts:11-13";
 let uploads = 0;
 
 async function upload(
@@ -38,6 +41,7 @@ test.describe("P5-DOC-NEW-DOC-3", () => {
       "application/pdf",
       Buffer.from("plain text, not a PDF\n"),
     );
+    expectedDefect(INVALID_PDF_DEFECT);
     expect(status, "PRODUCT BUG (SUSPECTED) if accepted").toBeGreaterThanOrEqual(400);
     expect(status).toBeLessThan(500);
   });
@@ -56,6 +60,7 @@ test.describe("P5-DOC-NEW-DOC-3", () => {
     const owner = actorOf(actors, "owner");
     const polyglot = Buffer.from("%PDF-1.4\n<html><script>0</script></html>\n%%EOF\n");
     const status = await upload(owner.request, "p5-polyglot.pdf", "application/pdf", polyglot);
+    expectedDefect(INVALID_PDF_DEFECT);
     expect(status, "PRODUCT BUG (SUSPECTED) if accepted").toBeGreaterThanOrEqual(400);
     expect(status).toBeLessThan(500);
     // Last case: the whole run stays below the cited upload limit (control + DOC_UPLOAD_CASES), read by name.

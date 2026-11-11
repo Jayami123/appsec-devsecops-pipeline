@@ -5,6 +5,7 @@
 // DEPLOYMENT FINDING (the test fails visibly), never a PASS of "protected" (doc plan section 4.7).
 import { test, expect, actorOf, type ActorHandle } from "../../../src/lanes/doc/actors.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { runBurst } from "../../../src/security/burst.ts";
 import { totp, base32Decode, TOTP_DIGITS } from "../../../src/lanes/doc/totp.ts";
 
@@ -13,6 +14,7 @@ const AUTHORIZE = "/api/auth/email-password/authorize";
 
 /** Shared across the three tests of this file, which run in order on one worker. */
 let secret = "";
+let recoveryCodes: string[] = [];
 let burstStatuses: number[] = [];
 
 async function csrfFor(member: ActorHandle): Promise<string> {
@@ -36,6 +38,11 @@ test.describe("P5-DOC-MI-15", () => {
       data: { code: currentCode() },
     });
     expect(enable.status(), "control: correct code accepted at enable").toBe(200);
+    recoveryCodes = ((await enable.json()) as { recoveryCodes?: string[] }).recoveryCodes ?? [];
+    expect(
+      recoveryCodes.length,
+      "control: enable returns recovery codes for cleanup",
+    ).toBeGreaterThan(0);
     expect(currentCode()).toHaveLength(TOTP_DIGITS);
   });
 
@@ -64,6 +71,10 @@ test.describe("P5-DOC-MI-15", () => {
       .info()
       .annotations.push({ type: "burst-status-counts", description: countsOf(result.statuses) });
     expect(result.attempts).toBe(burstStatuses.length);
+    // Red-row: after setup (the burst ran), before the product assertion that is expected to fail.
+    expectedDefect(
+      "P5-DOC-MI-15: packages/auth/server/index.ts:70 defaults AppError without statusCode to 500; InvalidTwoFactorCode at packages/auth/server/routes/email-password.ts:156",
+    );
     for (const status of burstStatuses) {
       expect(status, "each wrong code is refused").toBeGreaterThanOrEqual(400);
       expect(status).toBeLessThan(500);
@@ -73,6 +84,8 @@ test.describe("P5-DOC-MI-15", () => {
   test("MI-15 correct code after the burst shows account state", async ({ actors }) => {
     const member = actorOf(actors, "member");
     const base = apiBaseUrl("documenso");
+    const backupCode = recoveryCodes[0];
+    expect(backupCode, "cleanup token from enable").toBeTruthy();
     try {
       const after = await member.request.post(`${base}${AUTHORIZE}`, {
         data: {
@@ -92,11 +105,11 @@ test.describe("P5-DOC-MI-15", () => {
         "DEPLOYMENT FINDING: no 429 inside the TOTP burst; the row cannot claim the account is protected",
       ).toBe(true);
     } finally {
-      // Cleanup: disable two-factor with a fresh correct code (two-factor.ts:78). Runs even on failure.
+      // Cleanup: disable two-factor with a recovery code (two-factor.ts:78, :109 returns 201).
       const disabled = await member.request.post(`${base}${TWO_FACTOR}/disable`, {
-        data: { totpCode: currentCode() },
+        data: { backupCode },
       });
-      expect(disabled.status(), "cleanup: two-factor disabled").toBe(200);
+      expect(disabled.status(), "cleanup: two-factor disabled").toBe(201);
     }
   });
 });
