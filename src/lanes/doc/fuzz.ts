@@ -34,8 +34,27 @@ export function schemathesisArgs(input: SchemathesisInput): string[] {
     "--rate-limit",
     input.rateLimit,
   ];
+  args.push("--no-color");
   for (const path of input.excludePaths ?? []) {
     args.push("--exclude-path", path);
   }
   return args;
+}
+
+/**
+ * The environment for the Schemathesis process (D-DOC-B34). The session cookie travels here and is read by
+ * doc_schemathesis_hooks.py (SCHEMATHESIS_HOOKS); it never appears in the argument list.
+ */
+export function schemathesisEnv(input: {
+  readonly cookie: string;
+  readonly hooksDir: string;
+  readonly base: NodeJS.ProcessEnv;
+}): NodeJS.ProcessEnv {
+  return {
+    ...input.base,
+    P5_DOC_FUZZ_COOKIE: input.cookie,
+    SCHEMATHESIS_HOOKS: "doc_schemathesis_hooks",
+    PYTHONPATH: input.hooksDir,
+    PYTHONDONTWRITEBYTECODE: "1",
+  };
 }
