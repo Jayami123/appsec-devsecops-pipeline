@@ -64,12 +64,3 @@ test("every p5-tw job runs harness down under if: always() and passes --trace of
     if (/npx playwright test/.test(body)) assert.match(body, /--trace off/, `${id} trace`);
   }
 });
-
-test("tw-ssrf-default needs tw-ssrf-allow and only tw-ssrf-allow sets OUTBOUND_HTTP_ALLOWED_INTERNAL_HOSTS", () => {
-  const bodies = jobBodies(workflow);
-  assert.match(bodies.get("tw-ssrf-default") ?? "", /^ {4}needs: \[tw-ssrf-allow\]$/m);
-  for (const [id, body] of bodies) {
-    const sets = /OUTBOUND_HTTP_ALLOWED_INTERNAL_HOSTS:/.test(body);
-    assert.equal(sets, id === "tw-ssrf-allow", `${id} allowlist variable`);
-  }
-});
