@@ -41,7 +41,12 @@ jobs:
         if: always()
         run: cat results/tw-iso/p12-proof.json >> "$GITHUB_STEP_SUMMARY"
       - name: Run the tw-iso project
-        run: npx playwright test --project=tw-iso --trace off
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/tw-iso-report.json
+        run: npx playwright test --project=tw-iso --trace off --reporter=list,json
+      - name: Write the tw-iso job summary (expected failures listed by defect ID)
+        if: always()
+        run: node scripts/write-ci-job-summary.ts tw-iso "$RUNNER_TEMP/tw-iso-report.json"
       - name: Stop twenty
         if: always()
         run: node node_modules/qa-portfolio-harness/scripts/down.mjs twenty
