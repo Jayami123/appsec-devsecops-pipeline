@@ -153,13 +153,12 @@ settings by hand. A committed file does not activate them.
    `CLAUDE_PROJECT_DIR` is set while the setup script runs. If the `cd` fails, replace `${CLAUDE_PROJECT_DIR:?}` with
    the checkout's directory name (for example `cd appsec-devsecops-pipeline`).
 
-2. **Environment variables** (non-secret; the same values for setup and for sessions; set them only if the defaults are
-   not wanted):
+2. **Environment variables** (non-secret). Defaults apply; nothing to set by hand:
 
-   ```text
-   PRODUCTS_ROOT=/home/user/products
-   QA_TOOLCHAIN_ROOT=/home/user/.cache/qa-portfolio/toolchains
-   ```
+   - `PRODUCTS_ROOT` defaults to `$HOME/products` (`scripts/cloud-install.sh`, `.claude/hooks/session-start.sh`). An explicit value still wins.
+   - `QA_TOOLCHAIN_ROOT` defaults to `$HOME/.cache/qa-portfolio/toolchains`.
+
+   Set either only to override those defaults. An unset `HOME` with no explicit `PRODUCTS_ROOT` fails setup and the SessionStart hook with a clear error.
 
 3. **Optional secrets** (Docker Hub pull-rate limits): `DOCKERHUB_USERNAME` (the lowercase Docker Hub account name) and
    `DOCKERHUB_TOKEN` (a read-only access token). Set both or neither. Store them only as environment secrets, never in a
@@ -208,12 +207,12 @@ Dockerfile.
 
 1. In the Cursor cloud-agent environment settings, select this repository's `.cursor/environment.json` and
    `.cursor/Dockerfile`. Build from the default branch.
-2. Set the same non-secret variables. `QA_TOOLCHAIN_ROOT` matches the Dockerfile's `ENV` value:
+2. Non-secret variables: nothing to set by hand.
 
-   ```text
-   PRODUCTS_ROOT=/home/user/products
-   QA_TOOLCHAIN_ROOT=/opt/qa-portfolio/toolchains
-   ```
+   - `PRODUCTS_ROOT` defaults to `$HOME/products`. On this Dockerfile that is `/home/ubuntu/products` (`USER ubuntu`, `WORKDIR /home/ubuntu`).
+   - `QA_TOOLCHAIN_ROOT` is already `ENV QA_TOOLCHAIN_ROOT=/opt/qa-portfolio/toolchains` in `.cursor/Dockerfile`.
+
+   Set either only to override those defaults.
 
 3. Optional: the same `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets as in section b.
 4. If egress is restricted, allow the hosts in the table in section b.
@@ -228,7 +227,7 @@ The pin is `requirements/schemathesis.in` (`schemathesis==4.33.1`) and the fully
 
 ## PRODUCTS_ROOT (one value for bootstrap and the harness)
 
-The harness reads `PRODUCTS_ROOT` only from the process environment and resolves an unset or relative value against the current directory (harness v0.4.0 `src/config.ts:11`, `:37-48`). So: always export an absolute `PRODUCTS_ROOT` before bootstrap and harness commands. Both clouds default to `/home/user/products` (`scripts/cloud-install.sh:24`, `.claude/hooks/session-start.sh:19`, `:75-78`). Locally, run `bash scripts/bootstrap.sh --print-products-root` to see the path bootstrap will use; when the value came from `.env` or the default, bootstrap prints the exact `export PRODUCTS_ROOT=...` line. A relative value or an unwritable default now fails instead of falling back to `$HOME/products`. In CI, every lane job that clones or calls the harness sets it for the whole job, first step: `echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"` (enforced by `tests/unit/ci/workflow.test.ts`).
+The harness reads `PRODUCTS_ROOT` only from the process environment and resolves an unset or relative value against the current directory (harness v0.4.0 `src/config.ts:11`, `:37-48`). So: always export an absolute `PRODUCTS_ROOT` before bootstrap and harness commands. Cloud setup (`scripts/cloud-install.sh`) and the SessionStart hook (`.claude/hooks/session-start.sh`) default to `$HOME/products` when `PRODUCTS_ROOT` is unset; an explicit `PRODUCTS_ROOT` still wins; an unset `HOME` with no `PRODUCTS_ROOT` fails with a clear error. That default is writable on both clouds: Claude Code cloud uses the cloud user's `HOME`, and Cursor cloud uses `/home/ubuntu` (`.cursor/Dockerfile` `USER ubuntu`). Locally, run `bash scripts/bootstrap.sh --print-products-root` to see the path bootstrap will use; when the value came from `.env` or the default, bootstrap prints the exact `export PRODUCTS_ROOT=...` line. Bootstrap's own default is `../products` next to this repository; a relative value or an unwritable default fails instead of falling back to `$HOME/products`. In CI, every lane job that clones or calls the harness sets it for the whole job, first step: `echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"` (enforced by `tests/unit/ci/workflow.test.ts`).
 
 ## Claude Code
 
@@ -252,16 +251,10 @@ The harness reads `PRODUCTS_ROOT` only from the process environment and resolves
 
 ### C. AFTER F0-2 and BEFORE THE FIRST LANE
 
-- Saved setup command (owner selects it): `bash scripts/cloud-install.sh`. The script sets its own default
-  `PRODUCTS_ROOT=/home/user/products` and provisions the runtimes before `npm ci` and the bootstrap.
-- Owner-only, manual (non-secret; never a product secret):
-
-```bash
-QA_TOOLCHAIN_ROOT=/home/user/.cache/qa-portfolio/toolchains
-PRODUCTS_ROOT=/home/user/products
-```
-
-  Set these only if the defaults are not wanted; otherwise the defaults apply. The same values must be used
+- Saved setup command (owner selects it): `bash scripts/cloud-install.sh`. The script defaults
+  `PRODUCTS_ROOT` to `$HOME/products` and provisions the runtimes before `npm ci` and the bootstrap.
+- Owner-only, manual (non-secret; never a product secret): nothing. `PRODUCTS_ROOT` and
+  `QA_TOOLCHAIN_ROOT` take their script defaults. Set them only to override. The same values must be used
   for setup and later sessions.
 - Automatic once selected: the setup command, and the hook exports for each session.
 - Network hosts: `github.com` and `raw.githubusercontent.com` (permitted source access), `codeload.github.com`
@@ -292,14 +285,8 @@ Cursor stays on its existing lean selection until the owner selects this reposit
 
 - Owner selects this repository's environment file and Dockerfile in the saved Cursor settings. Install and
   start run automatically only once that selection is active; a committed file does not activate itself.
-- Verify the writable product root on the actual Cursor host, then pass the same explicit values to setup
-  and later sessions (replace the example paths with the verified ones):
-
-```bash
-QA_TOOLCHAIN_ROOT=/opt/qa-portfolio/toolchains
-PRODUCTS_ROOT=/home/user/products
-```
-
+- Owner-only, manual: nothing. `PRODUCTS_ROOT` defaults to `$HOME/products` (`/home/ubuntu/products` on
+  this Dockerfile). `QA_TOOLCHAIN_ROOT` is already set in `.cursor/Dockerfile`. Set them only to override.
 - The same network hosts as the Claude Code section apply.
 
 ## Lockfile and transport evidence (`qa-portfolio-harness`)

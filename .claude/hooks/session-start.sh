@@ -16,7 +16,6 @@ NODE22_MIN="22.22.0"
 NODE22_PROVISION_VERSION="22.23.3"
 NODE24_VERSION="24.22.0"
 MANIFEST_NAME=".qa-toolchain-manifest"
-DEFAULT_PRODUCTS_ROOT="/home/user/products"
 DEFAULT_TOOLCHAIN_SUBDIR=".cache/qa-portfolio/toolchains"
 
 fail() { printf 'session-start: ERROR %s\n' "$*" >&2; exit 1; }
@@ -72,7 +71,14 @@ NODE24="$NODE24_DIR/bin/node"
 
 # Products root: an absolute path, never inside node_modules. Existence is not required here:
 # product-free sessions have no product workspace yet.
-PRODUCTS="${PRODUCTS_ROOT:-$DEFAULT_PRODUCTS_ROOT}"
+# Selection contract (identical in scripts/cloud-install.sh): an explicit PRODUCTS_ROOT
+# wins; otherwise $HOME/products; HOME unset with no PRODUCTS_ROOT is an error.
+PRODUCTS_ROOT="${PRODUCTS_ROOT:-}"
+if [ -z "$PRODUCTS_ROOT" ]; then
+  [ -n "${HOME:-}" ] || fail "HOME is unset and PRODUCTS_ROOT is not set; no products root."
+  PRODUCTS_ROOT="$HOME/products"
+fi
+PRODUCTS="$PRODUCTS_ROOT"
 case "$PRODUCTS" in /*) ;; *) fail "PRODUCTS_ROOT must be an absolute path." ;; esac
 case "$PRODUCTS" in *$'\n'*) fail "PRODUCTS_ROOT contains a newline." ;; esac
 case "$PRODUCTS" in */node_modules | */node_modules/*) fail "PRODUCTS_ROOT must not be inside node_modules." ;; esac

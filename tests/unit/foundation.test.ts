@@ -131,6 +131,7 @@ test("hook exports absolute NODE22/NODE24 and a Node 22-first PATH in cloud mode
     HOME: scratch,
     CLAUDE_CODE_REMOTE: "true",
     QA_TOOLCHAIN_ROOT: root,
+    PRODUCTS_ROOT: "/tmp/p5-hook-products",
     CLAUDE_ENV_FILE: envFile,
   });
   assert.equal(result.status, 0, result.stderr);
@@ -224,6 +225,7 @@ test("control: a normal (non-symlinked) Node 24 installation directory is accept
     HOME: scratch,
     CLAUDE_CODE_REMOTE: "true",
     QA_TOOLCHAIN_ROOT: root,
+    PRODUCTS_ROOT: "/tmp/p5-hook-products",
     CLAUDE_ENV_FILE: envFile,
   });
   assert.equal(result.status, 0, result.stderr);
