@@ -56,6 +56,10 @@ jobs:
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs documenso
       - name: Run the doc project
         run: npx playwright test --project=doc --trace off
+      - name: Documenso web log, error lines only (masked; failure evidence)
+        if: failure()
+        run: |
+          grep -iE "error|uncaught|exception|fatal|signal|killed|exit" node_modules/qa-portfolio-harness/.harness/documenso-web.log | tail -n 80 | cut -c1-300 | sed -E "s/(sessionId|csrfToken|cookie|authorization|token|password|secret)[=: ][^ ]*/\\1=***/Ig" || true
       - name: Stop documenso
         if: always()
         run: node node_modules/qa-portfolio-harness/scripts/down.mjs documenso
@@ -113,6 +117,10 @@ jobs:
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs documenso
       - name: Run the doc-serial project
         run: npx playwright test --project=doc-serial --no-deps --trace off
+      - name: Documenso web log, error lines only (masked; failure evidence)
+        if: failure()
+        run: |
+          grep -iE "error|uncaught|exception|fatal|signal|killed|exit" node_modules/qa-portfolio-harness/.harness/documenso-web.log | tail -n 80 | cut -c1-300 | sed -E "s/(sessionId|csrfToken|cookie|authorization|token|password|secret)[=: ][^ ]*/\\1=***/Ig" || true
       - name: Stop documenso
         if: always()
         run: node node_modules/qa-portfolio-harness/scripts/down.mjs documenso

@@ -2,13 +2,15 @@
 // The contract is src/lanes/doc/contracts/openapi.json (sha256 in its PROVENANCE.md), served under /api/v2. The
 // binary is the hashed venv (SCHEMATHESIS_BIN). The owner's session cookie reaches Schemathesis ONLY through the
 // environment (P5_DOC_FUZZ_COOKIE) and the hook module doc_schemathesis_hooks.py: never argv, never an artefact.
-// Any 5xx is PRODUCT BUG (SUSPECTED); the output is redacted before it is attached (redact.ts:17).
+// Any 5xx is PRODUCT BUG (SUSPECTED). The file runs LAST in doc-serial (zz- prefix; Playwright orders files by name), so a
+// server that stops during this run cannot fail the rows that run before it (CI run 42977163430; D-DOC-B54).
 import { execFile } from "node:child_process";
 import { resolve } from "node:path";
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 import { redactArtefact } from "../../../src/security/redact.ts";
+import { sanitizeRequestError } from "../../../src/lanes/doc/call-log.ts";
 import { rateLimitArg, schemathesisArgs, schemathesisEnv } from "../../../src/lanes/doc/fuzz.ts";
 import { V2_PATH } from "../../../src/lanes/doc/envelope-api.ts";
 
@@ -82,6 +84,10 @@ test.describe("P5-DOC-PN-3", () => {
       description: redactArtefact(summary.join(" | ")),
     });
     const serverErrors = plain.match(/Server error/gi)?.length ?? 0;
-    expect(serverErrors, "PRODUCT BUG (SUSPECTED): a generated request returned 5xx").toBe(0);
+    // The summary names the operations and statuses (credentials masked by sanitizeRequestError).
+    expect(
+      serverErrors,
+      `PRODUCT BUG (SUSPECTED): a generated request returned 5xx. ${sanitizeRequestError(summary.join(" | "))}`,
+    ).toBe(0);
   });
 });

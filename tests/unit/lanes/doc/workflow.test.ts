@@ -83,3 +83,15 @@ test("both doc jobs run on ubuntu-24.04 and their bootstrap step skips browser d
     assert.match(step, /run: bash scripts\/bootstrap\.sh documenso/, `${name} bootstrap command`);
   }
 });
+
+test("both doc jobs print masked Documenso web log evidence only on failure", () => {
+  for (const name of ["doc-api", "doc-serial"]) {
+    const body = jobBlock(name);
+    const start = body.indexOf("      - name: Documenso web log");
+    assert.ok(start >= 0, `${name} evidence step`);
+    const step = body.slice(start, body.indexOf("      - name: Stop documenso", start));
+    assert.match(step, /^ {8}if: failure\(\)$/m, `${name} evidence runs only on failure`);
+    assert.match(step, /documenso-web\.log/, `${name} evidence reads the server log`);
+    assert.match(step, /sed -E .*\*\*\*/, `${name} evidence masks credential values`);
+  }
+});
