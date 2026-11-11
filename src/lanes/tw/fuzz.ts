@@ -6,6 +6,23 @@ import { BUDGETS } from "../../security/budgets.ts";
 /** The core OpenAPI document (ROUTE probed live: 200 with a key, 403 without). */
 export const CORE_OPENAPI_PATH = "/rest/open-api/core";
 
+/**
+ * Stated scope (owner decision 3). The core document has 587 operations in 45 tags (13 each). This run covers five
+ * tags, 65 operations, so it completes inside FUZZ_WALL_MIN. Out of scope: the other 40 tags (522 operations),
+ * which the owner may extend in a later run once a budget for them is measured.
+ */
+export const FUZZ_INCLUDE_TAGS: readonly string[] = [
+  "companies",
+  "people",
+  "opportunities",
+  "tasks",
+  "notes",
+];
+/** The phases run: examples and fuzzing. The coverage and stateful phases are out of scope for this row. */
+export const FUZZ_PHASES = "examples,fuzzing";
+/** A fixed seed makes a run repeatable. It is not a budget (basis: reproducibility of one scoped run). */
+export const FUZZ_SEED = 20261111;
+
 /** Oracle: no generated example may produce a server error. No --rate-limit: Twenty has no rate budget. */
 export const FUZZ_CHECKS = "not_a_server_error";
 
@@ -22,6 +39,11 @@ export function schemathesisArgs(input: {
     FUZZ_CHECKS,
     "--max-examples",
     String(BUDGETS.FUZZ_MAX_EXAMPLES.value),
+    "--seed",
+    String(FUZZ_SEED),
+    "--phases",
+    FUZZ_PHASES,
+    ...FUZZ_INCLUDE_TAGS.flatMap((tag) => ["--include-tag", tag]),
   ];
 }
 
