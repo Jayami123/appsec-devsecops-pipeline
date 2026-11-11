@@ -42,10 +42,30 @@ test.describe("P5-CAL-RED-001 success redirect", () => {
     expect(res.status, "internal successRedirectUrl accepted").toBe(201);
   });
 
-  test("RED-001 external successRedirectUrl is rejected or warned", async ({ run }) => {
+  test("RED-001 external successRedirectUrl is owner-configured, not booker input (design verdict)", async ({
+    run,
+  }) => {
+    // The target comes from the event type (packages/features/bookings/lib/bookingSuccessRedirect.ts:202-203);
+    // only an authenticated owner can write it (apps/web/modules/event-types/components/tabs/advanced/EventAdvancedTab.tsx:942).
+    // Booker query parameters are forwarded, not used as the target (bookingSuccessRedirect.ts:214-225).
+    test.info().annotations.push({
+      type: "design-verdict",
+      description:
+        "owner-configured external redirect: the organiser sets the target; the booker cannot (bookingSuccessRedirect.ts:202-203; EventAdvancedTab.tsx:942)",
+    });
     const { api, actor } = await setup(run, "red");
-    const res = await createWithRedirect(api, actor, "https://example.org/p5-external");
-    expect(res.status, "external successRedirectUrl refused").toBeGreaterThanOrEqual(400);
+    const owner = await createWithRedirect(api, actor, "https://example.org/p5-external");
+    expect(owner.status, "owner sets an external successRedirectUrl (design)").toBe(201);
+    const anonymous = await v2(api, null, "POST", "/v2/event-types", V2_EVENT_TYPES_VERSION, {
+      title: "p5 anon redirect",
+      slug: `p5-anon-red-${Date.now()}`,
+      lengthInMinutes: 30,
+      successRedirectUrl: "https://example.org/p5-anon",
+    });
+    expect(
+      [401, 403],
+      `anonymous event type with an external redirect, status ${anonymous.status}`,
+    ).toContain(anonymous.status);
   });
 });
 

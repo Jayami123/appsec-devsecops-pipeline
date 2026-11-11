@@ -51,3 +51,7 @@ test("every p5-cal playwright step passes --trace off", () => {
     assert.match(run, /--trace off/, run);
   }
 });
+
+test("p5-cal.yml never sets or reads P5_CHROMIUM_PATH (local-only override, D-CAL-B47)", () => {
+  assert.doesNotMatch(text, /P5_CHROMIUM_PATH/);
+});

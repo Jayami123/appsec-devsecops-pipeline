@@ -30,7 +30,7 @@ test.describe("P5-CAL-HDR-001 booker page", () => {
     expect(page.status(), "booker page answers 200").toBe(200);
   });
 
-  test("P5-CAL-HDR-001 booker headers include X-Frame-Options and X-Content-Type-Options", async ({
+  test("P5-CAL-HDR-001 booker headers: X-Content-Type-Options present, framing is a design verdict", async ({
     request,
   }) => {
     const base = loadEnv().CAL_BASE_URL.replace(/\/$/, "");
@@ -40,7 +40,20 @@ test.describe("P5-CAL-HDR-001 booker page", () => {
     const page = await request.get(`${base}/${username}`);
     expect(page.status(), "precondition: the booker page answers 200").toBe(200);
     const headers = page.headers();
-    expect(headers["x-frame-options"], "X-Frame-Options present").toBeDefined();
+    // Framing (owner rule, same as D-MED-7): a missing frame header on the booker page is a design verdict,
+    // not a product bug. The booker is embeddable by design: embed routes exist for it
+    // (apps/web/app/(booking-page-wrapper)/[user]/[type]/embed/page.tsx) and embed.js is served
+    // (apps/web/next.config.ts:330-331, :459). X-Frame-Options is set only for /auth and /signup (:427, :436).
+    const frameState = {
+      xFrameOptions: headers["x-frame-options"] ?? "absent",
+      cspFrameAncestors: (headers["content-security-policy"] ?? "").includes("frame-ancestors")
+        ? "present"
+        : "absent",
+    };
+    test.info().annotations.push({
+      type: "design-verdict",
+      description: `booker framing ${JSON.stringify(frameState)}: embeddable by design (next.config.ts:330-331, :459; embed routes); depends on CAP-001 for the booker uid page`,
+    });
     expect(headers["x-content-type-options"], "X-Content-Type-Options present").toBeDefined();
   });
 });

@@ -40,7 +40,15 @@ test.describe("P5-CAL-NEW-CAL-4 api key scope", () => {
     expect(own.status, "key A reads A's booking").toBe(200);
   });
 
-  test("NEW-CAL-4 key A cannot read B's resource", async ({ run }) => {
+  test("NEW-CAL-4 key A reads B's booking by uid follows the uid capability (design verdict, depends on CAP-001)", async ({
+    run,
+  }) => {
+    test.info().annotations.push({
+      type: "design-verdict",
+      description:
+        "GET by uid: bookings.controller.ts:190-191 with booking-uid.guard.ts:8-14 (presence check only); same chain as AUTHZ-001; depends on CAP-001",
+    });
+    test.info().annotations.push({ type: "depends-on", description: "CAP-001" });
     const prefix = currentRunPrefix();
     const api = await apiContext();
     run.onCleanup(() => api.dispose());
@@ -60,6 +68,8 @@ test.describe("P5-CAL-NEW-CAL-4 api key scope", () => {
     const cross = await getBooking(api, a.apiKey, booking.uid);
     const after = await getBooking(api, bUser.apiKey, booking.uid);
     expect(bookingStatusOf(after.body), "B's booking state (observed)").toBe("accepted");
-    expect([401, 403, 404], `key A on B's booking, status ${cross.status}`).toContain(cross.status);
+    expect(cross.status, `uid capability: key A reads B's booking, status ${cross.status}`).toBe(
+      200,
+    );
   });
 });

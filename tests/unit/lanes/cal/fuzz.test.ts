@@ -24,3 +24,14 @@ test("schemathesis args never contain a credential value", () => {
     assert.doesNotMatch(arg, /authorization|bearer|cal_|secret|apikey/i, arg);
   }
 });
+
+test("schemathesis args exclude the one operation whose body the fuzzer cannot generate", () => {
+  const args = schemathesisArgs({
+    schemaPath: "src/lanes/cal/contracts/openapi-v2.json",
+    baseUrl: "http://127.0.0.1:5555",
+    maxExamples: 1,
+  });
+  const at = args.indexOf("--exclude-operation-id");
+  assert.ok(at >= 0);
+  assert.equal(args[at + 1], "BookingsController_2024_08_13_createBooking");
+});

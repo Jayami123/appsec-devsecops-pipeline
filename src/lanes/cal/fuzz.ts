@@ -19,5 +19,9 @@ export function schemathesisArgs(input: SchemathesisInput): string[] {
     "not_a_server_error",
     "--suppress-health-check",
     "too_slow",
+    // POST /v2/bookings is excluded: Schemathesis cannot generate test data for its oneOf request body
+    // (Schema Error at load, live run 3). The create path is exercised with valid bodies by the keyed specs.
+    "--exclude-operation-id",
+    "BookingsController_2024_08_13_createBooking",
   ];
 }

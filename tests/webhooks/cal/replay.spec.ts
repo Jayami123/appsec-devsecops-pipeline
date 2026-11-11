@@ -6,6 +6,7 @@
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { DAILY_ROUTE, dailyDelivery } from "../../../src/lanes/cal/webhook.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { DAILY_SIGNATURE_HEADER, DAILY_TIMESTAMP_HEADER } from "../../../src/kit/webhooks/sign.ts";
 
 const PROBE = { type: "p5.probe.unknown-event", payload: { note: "p5 WH-002 replay probe" } };
@@ -44,6 +45,9 @@ test.describe("P5-CAL-WH-002 replay", () => {
     const first = await request.post(url, { headers, data: signed.body });
     expect(first.status(), "control: first delivery passes the gate").toBe(200);
     const replay = await request.post(url, { headers, data: signed.body });
+    expectedDefect(
+      "P5-CAL-WH-002: apps/web/app/api/recorded-daily-video/route.ts:70-75 checks the HMAC over the timestamp header and keeps no nonce; live cal run 5 accepted the identical replay with 200",
+    );
     expect(replay.status(), "identical replay is refused").toBeGreaterThanOrEqual(400);
   });
 });

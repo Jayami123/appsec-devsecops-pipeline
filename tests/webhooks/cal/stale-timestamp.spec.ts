@@ -5,6 +5,7 @@
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { DAILY_ROUTE, dailyDelivery, staleTimestamp } from "../../../src/lanes/cal/webhook.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { DAILY_SIGNATURE_HEADER, DAILY_TIMESTAMP_HEADER } from "../../../src/kit/webhooks/sign.ts";
 
 const PROBE = { type: "p5.probe.unknown-event", payload: { note: "p5 WH-003 stale probe" } };
@@ -45,6 +46,9 @@ test.describe("P5-CAL-WH-003 stale timestamp", () => {
       data: signed.body,
     });
     // Gate refusal is the property: a stale delivery must not pass (403 at route.ts:73-75 or a 4xx).
+    expectedDefect(
+      "P5-CAL-WH-003: apps/web/app/api/recorded-daily-video/route.ts:70-75 has no timestamp age check (verify.ts:99-101 records no tolerance); live cal run 5 accepted the stale signed delivery with 200",
+    );
     expect(res.status(), "stale delivery refused").toBeGreaterThanOrEqual(400);
   });
 });
