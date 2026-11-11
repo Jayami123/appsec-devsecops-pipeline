@@ -14,5 +14,5 @@
 | Cleanup | owner session signed out in the worker fixture (sign-out.ts:15) |
 | Fork | Documenso `f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c` (scripts/bootstrap.sh:16) |
 | Harness | `qa-portfolio-harness` v0.4.0 (node_modules/qa-portfolio-harness/package.json:3) |
-| Live status (this PR) | CI run 42979416596: control pass; one ST101 on embeddingPresign.createEmbeddingPresignToken |
-| Live run ID | 42979416596 |
+| Live status (this PR) | CI run 43001721212: control pass; generated pass (baseline matched; no new pair) |
+| Live run ID | 43001721212 |
