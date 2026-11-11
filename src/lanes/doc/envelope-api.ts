@@ -63,17 +63,20 @@ export async function addSigner(
 }
 
 /** Sends the envelope (distribute, envelope/distribute). The signing mail carries the /sign/<token> link. */
+/** Sends the envelope (distribute). A refusal throws with the redacted product response (D-DOC-B49). */
 export async function distributeEnvelope(
   request: APIRequestContext,
   baseUrl: string,
   envelopeId: string,
-): Promise<number> {
+): Promise<void> {
   const res = await request.post(`${baseUrl}${V2_PATH}/envelope/distribute`, {
     data: { envelopeId },
   });
-  return res.status();
+  if (!res.ok())
+    throw new Error(
+      `distribute returned ${res.status()}: ${redactArtefact((await res.text()).slice(0, 200))}`,
+    );
 }
-
 /** Creates a TEMPLATE with one PDF (POST /envelope/create with type TEMPLATE). Returns the envelope id. */
 export async function createTemplate(
   request: APIRequestContext,
@@ -115,11 +118,13 @@ export async function getTemplateStatus(
 }
 
 /** Creates an envelope from a template (POST /template/use, templateId numeric). Returns the status. */
+/** Creates an envelope from a template (POST /template/use). Returns the status and the redacted detail (D-DOC-B49). */
 export async function useTemplateStatus(
   request: APIRequestContext,
   baseUrl: string,
   templateId: number,
-): Promise<number> {
+): Promise<{ status: number; detail: string }> {
   const res = await request.post(`${baseUrl}${V2_PATH}/template/use`, { data: { templateId } });
-  return res.status();
+  const detail = res.ok() ? "" : redactArtefact((await res.text()).slice(0, 200));
+  return { status: res.status(), detail };
 }

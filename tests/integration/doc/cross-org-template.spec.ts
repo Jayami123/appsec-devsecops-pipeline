@@ -54,8 +54,8 @@ test.describe("P5-DOC-AUTHZ-002", () => {
     const id = await legacyTemplateId(owner.request, base, templateEnv);
     // Control: the owner can create an envelope from its own template (same request shape, same template).
     const control = await useTemplateStatus(owner.request, base, id);
-    expect(control, "control: owner uses its template").toBeLessThan(300);
-    const status = await useTemplateStatus(orgB.request, base, id);
+    expect(control.status, `control: owner uses its template: ${control.detail}`).toBeLessThan(300);
+    const status = (await useTemplateStatus(orgB.request, base, id)).status;
     expect(
       status,
       "PRODUCT BUG (SUSPECTED) if another organisation created an envelope",

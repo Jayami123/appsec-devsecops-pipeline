@@ -36,12 +36,8 @@ test.describe("P5-DOC-NEW-DOC-5", () => {
     const documentId = documentIdOf(body.secondaryId);
     const itemId = body.envelopeItems[0]?.id ?? "";
     expect(itemId.length, "envelope item id").toBeGreaterThan(0);
-    expect(await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId, "P5 A")).toBeLessThan(
-      300,
-    );
-    expect(await signFieldWithToken(anon, base, env.tokenB, env.b.fieldId, "P5 B")).toBeLessThan(
-      300,
-    );
+    expect(await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId)).toBeLessThan(300);
+    expect(await signFieldWithToken(anon, base, env.tokenB, env.b.fieldId)).toBeLessThan(300);
     expect(await completeWithToken(anon, base, env.tokenA, documentId)).toBeLessThan(300);
     expect(await completeWithToken(anon, base, env.tokenB, documentId)).toBeLessThan(300);
     const control = await owner.request.get(
@@ -76,12 +72,8 @@ test.describe("P5-DOC-NEW-DOC-5", () => {
     const body = (await read.json()) as { secondaryId: string; envelopeItems: { id: string }[] };
     const documentId = documentIdOf(body.secondaryId);
     const itemId = body.envelopeItems[0]?.id ?? "";
-    expect(await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId, "P5 A")).toBeLessThan(
-      300,
-    );
-    expect(await signFieldWithToken(anon, base, env.tokenB, env.b.fieldId, "P5 B")).toBeLessThan(
-      300,
-    );
+    expect(await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId)).toBeLessThan(300);
+    expect(await signFieldWithToken(anon, base, env.tokenB, env.b.fieldId)).toBeLessThan(300);
     expect(await completeWithToken(anon, base, env.tokenA, documentId)).toBeLessThan(300);
     expect(await completeWithToken(anon, base, env.tokenB, documentId)).toBeLessThan(300);
     // Control for the non-recipient: the owner downloads the same item in this test as well.

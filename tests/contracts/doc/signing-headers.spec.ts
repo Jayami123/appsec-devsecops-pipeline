@@ -48,7 +48,7 @@ async function sentSigningPath(
   onCleanup(() => deleteEnvelopeStatus(request, base, envelopeId));
   const signer = `${prefix}-hdr001-${randomBytes(4).toString("hex")}@p5.test`;
   expect(await addSigner(request, base, envelopeId, signer, "P5 signer"), "add signer").toBe(200);
-  expect(await distributeEnvelope(request, base, envelopeId), "distribute").toBe(200);
+  await distributeEnvelope(request, base, envelopeId);
   const link = await waitForSigningLink(request, signer, prefix);
   return new URL(link).pathname;
 }

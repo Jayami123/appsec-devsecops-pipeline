@@ -9,6 +9,11 @@ import { expect, type APIRequestContext } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { createEnvelope, V2_PATH } from "./envelope-api.ts";
 import { extractFirstLink, latestMessageBodyFor } from "./inbucket.ts";
+import { redactArtefact } from "../../security/redact.ts";
+
+/** A 1x1 PNG as a data URL: the value of a SIGNATURE field. */
+export const SIGNATURE_VALUE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
 export interface SignerSpec {
   readonly email: string;
@@ -47,7 +52,7 @@ export async function addSignersWithFields(
       envelopeId,
       data: recipients.map((r, index) => ({
         recipientId: r.id,
-        type: "NAME",
+        type: "SIGNATURE",
         page: 1,
         positionX: 10,
         positionY: 10 + index * 10,
@@ -66,27 +71,29 @@ export async function addSignersWithFields(
 }
 
 /** Sends the envelope (envelope/distribute). The signing mail then carries /sign/<token>. */
+/** Sends the envelope (distribute). A refusal throws with the redacted product response (D-DOC-B49). */
 export async function sendEnvelope(
   request: APIRequestContext,
   baseUrl: string,
   envelopeId: string,
-): Promise<number> {
+): Promise<void> {
   const res = await request.post(`${baseUrl}${V2_PATH}/envelope/distribute`, {
     data: { envelopeId },
   });
-  return res.status();
+  if (!res.ok())
+    throw new Error(
+      `distribute returned ${res.status()}: ${redactArtefact((await res.text()).slice(0, 200))}`,
+    );
 }
-
 /** Signs one NAME field with a recipient token (tRPC envelope.field.sign). Returns the status; never throws. */
 export async function signFieldWithToken(
   request: APIRequestContext,
   baseUrl: string,
   token: string,
   fieldId: number,
-  value: string,
 ): Promise<number> {
   const res = await request.post(`${baseUrl}/api/trpc/envelope.field.sign`, {
-    data: { json: { token, fieldId, fieldValue: { type: "NAME", value } } },
+    data: { json: { token, fieldId, fieldValue: { type: "SIGNATURE", value: SIGNATURE_VALUE } } },
   });
   return res.status();
 }
@@ -170,8 +177,7 @@ export async function sendTwoSignerEnvelope(
     },
   ]);
   if (a === undefined || b === undefined) throw new Error("TEST BUG: two signers expected");
-  const sent = await sendEnvelope(owner, baseUrl, envelopeId);
-  if (sent !== 200) throw new Error(`distribute returned ${sent}`);
+  await sendEnvelope(owner, baseUrl, envelopeId);
   const tokenA = await signingTokenFor(owner, a.email, runPrefix);
   const tokenB = await signingTokenFor(owner, b.email, runPrefix);
   return { envelopeId, a, b, tokenA, tokenB };

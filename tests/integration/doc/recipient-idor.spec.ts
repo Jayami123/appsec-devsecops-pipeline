@@ -32,7 +32,7 @@ test.describe("P5-DOC-NEW-DOC-1", () => {
     );
     const page = await anon.get(`${base}/sign/${env.tokenA}`, { maxRedirects: 0 });
     expect(page.status(), "control: own signing page").toBe(200);
-    const signed = await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId, "P5 A");
+    const signed = await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId);
     expect(signed, "control: token A signs its own field").toBeGreaterThanOrEqual(200);
     expect(signed).toBeLessThan(300);
   });
@@ -82,7 +82,7 @@ test.describe("P5-DOC-NEW-DOC-1", () => {
     expect(await fieldInserted(owner.request, base, env.b.fieldId), "before: B field empty").toBe(
       false,
     );
-    const refused = await signFieldWithToken(anon, base, env.tokenA, env.b.fieldId, "P5 forged");
+    const refused = await signFieldWithToken(anon, base, env.tokenA, env.b.fieldId);
     expect(refused, "PRODUCT BUG (SUSPECTED) if token A signed B's field").toBeGreaterThanOrEqual(
       400,
     );

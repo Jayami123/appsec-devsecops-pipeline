@@ -32,7 +32,7 @@ test.describe("P5-DOC-NEW-DOC-2", () => {
       },
     );
     expect(await fieldInserted(owner.request, base, env.a.fieldId)).toBe(false);
-    const signed = await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId, "P5 A");
+    const signed = await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId);
     expect(signed).toBeGreaterThanOrEqual(200);
     expect(signed).toBeLessThan(300);
     expect(await fieldInserted(owner.request, base, env.a.fieldId), "after: own field set").toBe(
@@ -59,7 +59,7 @@ test.describe("P5-DOC-NEW-DOC-2", () => {
       },
     );
     expect(await fieldInserted(owner.request, base, env.b.fieldId)).toBe(false);
-    const refused = await signFieldWithToken(anon, base, env.tokenA, env.b.fieldId, "P5 tamper");
+    const refused = await signFieldWithToken(anon, base, env.tokenA, env.b.fieldId);
     expect(refused, "PRODUCT BUG (SUSPECTED) if token A set B's field").toBeGreaterThanOrEqual(400);
     expect(
       await fieldInserted(owner.request, base, env.b.fieldId),
@@ -89,16 +89,12 @@ test.describe("P5-DOC-NEW-DOC-2", () => {
       `${base}/api/v2/envelope/${encodeURIComponent(env.envelopeId)}`,
     );
     const documentId = documentIdOf(((await read.json()) as { secondaryId: string }).secondaryId);
-    expect(await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId, "P5 A")).toBeLessThan(
-      300,
-    );
-    expect(await signFieldWithToken(anon, base, env.tokenB, env.b.fieldId, "P5 B")).toBeLessThan(
-      300,
-    );
+    expect(await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId)).toBeLessThan(300);
+    expect(await signFieldWithToken(anon, base, env.tokenB, env.b.fieldId)).toBeLessThan(300);
     expect(await completeWithToken(anon, base, env.tokenA, documentId)).toBeLessThan(300);
     expect(await completeWithToken(anon, base, env.tokenB, documentId)).toBeLessThan(300);
     expect(await getEnvelopeStatus(owner.request, base, env.envelopeId)).toBe(200);
-    const refused = await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId, "P5 changed");
+    const refused = await signFieldWithToken(anon, base, env.tokenA, env.a.fieldId);
     expect(
       refused,
       "PRODUCT BUG (SUSPECTED) if a completed envelope accepted a field write",
