@@ -2,10 +2,20 @@ name: p5-cal
 
 on:
   workflow_call:
+    # Owner-approved exception to D-CAL-B8 (D-CAL-B58): one named secret, read only by the three steps below.
+    secrets:
+      STRIPE_API_KEY:
+        required: false
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# No job-level or workflow-level secret env. STRIPE_API_KEY is set only in the step env of the gate
+# ("Require the Stripe test key"), the harness start ("Start cal") and the lane test step, copied from
+# Jayami123/api-webhook-db-test-suite .github/workflows/p2-cal.yml (ref 99a2fdebbb60aac196fcb0fce16911e36a0d5c0a,
+# lines 18-22 and 47-94). The gate runs before the harness starts. Forks never reach this workflow
+# (ci.yml:59 is the same-repo guard).
 
 jobs:
   cal-api:
@@ -34,11 +44,34 @@ jobs:
         run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Install
         run: npm ci
+      - name: Require the Stripe test key (never printed)
+        timeout-minutes: 2
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STRIPE_API_KEY:-}" ]; then
+            echo "::error::STRIPE_API_KEY is not set. Add the test-mode key as a repository secret; the cal lane stops here by design."
+            exit 1
+          fi
+          # Test mode only: a live key must never reach the lane. The value is matched, never printed.
+          case "$STRIPE_API_KEY" in
+            sk_test_*) ;;
+            *)
+              echo "::error::STRIPE_API_KEY must be a Stripe test-mode secret key (it starts with sk_test_). The cal lane was not started."
+              exit 1
+              ;;
+          esac
+          echo "STRIPE_API_KEY is a test-mode key (value not printed)."
       - name: Bootstrap cal
         run: bash scripts/bootstrap.sh cal
       - name: Start cal
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs cal
       - name: Run the cal project
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
         run: npx playwright test --project=cal --trace off
       - name: Stop cal
         if: always()
@@ -70,13 +103,36 @@ jobs:
         run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Install
         run: npm ci
+      - name: Require the Stripe test key (never printed)
+        timeout-minutes: 2
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STRIPE_API_KEY:-}" ]; then
+            echo "::error::STRIPE_API_KEY is not set. Add the test-mode key as a repository secret; the cal lane stops here by design."
+            exit 1
+          fi
+          # Test mode only: a live key must never reach the lane. The value is matched, never printed.
+          case "$STRIPE_API_KEY" in
+            sk_test_*) ;;
+            *)
+              echo "::error::STRIPE_API_KEY must be a Stripe test-mode secret key (it starts with sk_test_). The cal lane was not started."
+              exit 1
+              ;;
+          esac
+          echo "STRIPE_API_KEY is a test-mode key (value not printed)."
       - name: Bootstrap cal
         run: bash scripts/bootstrap.sh cal
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start cal
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs cal
-      - name: Run the cal project
+      - name: Run the cal-ui project
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
         run: npx playwright test --project=cal-ui --trace off
       - name: Stop cal
         if: always()
@@ -108,6 +164,25 @@ jobs:
         run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Install
         run: npm ci
+      - name: Require the Stripe test key (never printed)
+        timeout-minutes: 2
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STRIPE_API_KEY:-}" ]; then
+            echo "::error::STRIPE_API_KEY is not set. Add the test-mode key as a repository secret; the cal lane stops here by design."
+            exit 1
+          fi
+          # Test mode only: a live key must never reach the lane. The value is matched, never printed.
+          case "$STRIPE_API_KEY" in
+            sk_test_*) ;;
+            *)
+              echo "::error::STRIPE_API_KEY must be a Stripe test-mode secret key (it starts with sk_test_). The cal lane was not started."
+              exit 1
+              ;;
+          esac
+          echo "STRIPE_API_KEY is a test-mode key (value not printed)."
       - name: Bootstrap cal
         run: bash scripts/bootstrap.sh cal
       - name: Install the hashed Schemathesis lock
@@ -116,8 +191,12 @@ jobs:
           "$RUNNER_TEMP/st-venv/bin/pip" install --require-hashes -r requirements/schemathesis.txt
           echo "SCHEMATHESIS_BIN=$RUNNER_TEMP/st-venv/bin/schemathesis" >> "$GITHUB_ENV"
       - name: Start cal
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs cal
       - name: Run the cal-serial project
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
         run: npx playwright test --project=cal-serial --no-deps --trace off
       - name: Stop cal
         if: always()

@@ -55,7 +55,16 @@ test.describe("P5-CAL-PN-2 schemathesis", () => {
     });
     const exit = await new Promise<{ code: number | null; tail: string }>((resolve, reject) => {
       const cwd = mkdtempSync(join(tmpdir(), "p5-schemathesis-"));
-      const child = spawn(bin, args, { cwd, shell: false, stdio: ["ignore", "pipe", "pipe"] });
+      // The fuzz process gets no Stripe key: STRIPE_API_KEY stays with the harness steps only (D-CAL-B58).
+      const childEnv = Object.fromEntries(
+        Object.entries(process.env).filter(([key]) => key !== "STRIPE_API_KEY"),
+      );
+      const child = spawn(bin, args, {
+        cwd,
+        env: childEnv,
+        shell: false,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
       let out = "";
       child.stdout.on("data", (chunk: Buffer) => {
         out = (out + chunk.toString("utf8")).slice(-4000);
