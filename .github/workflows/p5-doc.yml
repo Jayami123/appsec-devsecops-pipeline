@@ -12,7 +12,9 @@ permissions:
 # product routes (D-DOC-B6). The Node 24.22.0 runtime for Documenso is pinned per job (D-DOC-B9).
 jobs:
   doc-api:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    # Same pin as Jayami123/api-webhook-db-test-suite .github/workflows/p2-doc.yml:47 and :152 at 99a2fde.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60 # LANE_JOB_TIMEOUT_MIN doc (src/security/budgets.ts), provisional
     permissions:
       contents: read
@@ -46,6 +48,9 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: Bootstrap documenso
+        # The product install must not download browsers (P2 sets the same variable: p2-doc.yml:35-36 at 99a2fde).
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
         run: bash scripts/bootstrap.sh documenso
       - name: Start documenso
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs documenso
@@ -59,7 +64,9 @@ jobs:
     needs: [doc-api]
     # !cancelled(): the serial rows still report when an api row is red (D-DOC-B16). The stacks are independent.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    # Same pin as Jayami123/api-webhook-db-test-suite .github/workflows/p2-doc.yml:47 and :152 at 99a2fde.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60 # LANE_JOB_TIMEOUT_MIN doc (src/security/budgets.ts), provisional
     permissions:
       contents: read
@@ -93,6 +100,9 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: Bootstrap documenso
+        # The product install must not download browsers (P2 sets the same variable: p2-doc.yml:35-36 at 99a2fde).
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
         run: bash scripts/bootstrap.sh documenso
       - name: Install the hashed Schemathesis lock
         run: |

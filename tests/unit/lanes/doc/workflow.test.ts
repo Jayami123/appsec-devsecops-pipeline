@@ -60,3 +60,26 @@ test("every p5-doc playwright step passes --trace off", () => {
   assert.ok(runs.length >= 2, "expected one playwright run per job");
   for (const run of runs) assert.match(run, /--trace off/, run);
 });
+
+test("both doc jobs run on ubuntu-24.04 and their bootstrap step skips browser downloads", () => {
+  for (const name of ["doc-api", "doc-serial"]) {
+    const body = jobBlock(name);
+    assert.match(body, /^ {4}runs-on: ubuntu-24\.04$/m, `${name} runner pin`);
+    assert.doesNotMatch(body, /runs-on: ubuntu-latest/, `${name} must not float to ubuntu-latest`);
+    // The bootstrap step carries the skip variable in its own env block (the product install only).
+    const start = body.indexOf("      - name: Bootstrap documenso");
+    assert.ok(start >= 0, `${name} bootstrap step`);
+    const step = body.slice(
+      start,
+      body.indexOf("\n      - name:", start + 1) < 0
+        ? undefined
+        : body.indexOf("\n      - name:", start + 1),
+    );
+    assert.match(
+      step,
+      /^ {10}PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"$/m,
+      `${name} skip variable on bootstrap`,
+    );
+    assert.match(step, /run: bash scripts\/bootstrap\.sh documenso/, `${name} bootstrap command`);
+  }
+});
