@@ -8,8 +8,6 @@ import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { runBurst } from "../../../src/security/burst.ts";
 import { totp, base32Decode, TOTP_DIGITS } from "../../../src/lanes/doc/totp.ts";
 
-test.use({ actorLabels: ["owner", "member"] });
-
 const TWO_FACTOR = "/api/auth/two-factor";
 const AUTHORIZE = "/api/auth/email-password/authorize";
 

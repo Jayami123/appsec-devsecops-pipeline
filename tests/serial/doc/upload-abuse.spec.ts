@@ -7,8 +7,6 @@ import { BUDGETS } from "../../../src/security/budgets.ts";
 import { docRouteLimit } from "../../../src/lanes/doc/limits.ts";
 import { minimalPdf } from "../../../src/lanes/doc/pdf.ts";
 
-test.use({ actorLabels: ["owner", "member"] });
-
 const UPLOAD_PATH = "/api/files/upload-pdf";
 let uploads = 0;
 
