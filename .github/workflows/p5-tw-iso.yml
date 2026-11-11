@@ -1,4 +1,3 @@
-# P5-STUB: remove this line when the first real job lands
 name: p5-tw-iso
 
 on:
@@ -8,16 +7,46 @@ on:
 permissions:
   contents: read
 
+# No secrets key (X-11; tw-iso.md section 9.1). The canary value is generated in memory by the proof
+# script and is never written to disk or to $GITHUB_ENV (D-P12).
 jobs:
-  stub:
+  tw-iso:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30 # LANE_JOB_TIMEOUT_MIN twIso (src/security/budgets.ts:112)
+    permissions:
+      contents: read
     steps:
-      - name: Record stub status
-        id: status
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # PRODUCTS_ROOT and the run id are set for the whole job here (D-TWISO-B8). Twenty needs no Node 24 setup.
+      - name: Set the products root and the run id for the whole job
         run: |
-          echo "status=not-implemented" >> "$GITHUB_OUTPUT"
-          {
-            echo "### P5 tw-iso lane"
-            echo "NOT IMPLEMENTED: no tests or scanners in this lane yet."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"
+          echo "P5_RUN_ID=p5-qa-$(date -u +%Y%m%dt%H%M%Sz)-$(openssl rand -hex 4)" >> "$GITHUB_ENV"
+      - name: Record the Docker server version
+        run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: npm ci
+      - name: Bootstrap twenty
+        run: bash scripts/bootstrap.sh twenty
+      - name: Start twenty through the harness with the P-12 canary proof (LOGIC_FUNCTION_TYPE=LOCAL)
+        run: node src/lanes/tw-iso/canary-proof.ts
+      - name: Record the P-12 proof booleans
+        if: always()
+        run: cat results/tw-iso/p12-proof.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Run the tw-iso project
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/tw-iso-report.json
+        run: npx playwright test --project=tw-iso --trace off --reporter=list,json
+      - name: Write the tw-iso job summary (expected failures listed by defect ID)
+        if: always()
+        run: node scripts/write-ci-job-summary.ts tw-iso "$RUNNER_TEMP/tw-iso-report.json"
+      - name: Stop twenty
+        if: always()
+        run: node node_modules/qa-portfolio-harness/scripts/down.mjs twenty

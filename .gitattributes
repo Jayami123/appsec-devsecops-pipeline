@@ -4,3 +4,4 @@
 *.pdf binary
 .claude/hooks/*.sh text eol=lf
 scripts/*.sh text eol=lf
+src/lanes/med/contracts/store.openapi.full.yaml linguist-generated=true
