@@ -23,7 +23,7 @@ test("provisionActors signs up each label once and records every attempt", async
       budget: LABELS.length,
       signUp: () => {
         calls += 1;
-        return Promise.resolve({ cookies: [], origins: [] });
+        return Promise.resolve({ storageState: { cookies: [], origins: [] }, teamId: 1 });
       },
     });
     assert.equal(calls, LABELS.length);
@@ -39,7 +39,7 @@ test("a worker restart does not trigger a sign-up", async () => {
   let calls = 0;
   const signUp = () => {
     calls += 1;
-    return Promise.resolve({ cookies: [], origins: [] });
+    return Promise.resolve({ storageState: { cookies: [], origins: [] }, teamId: 1 });
   };
   try {
     await provisionActors({
@@ -78,7 +78,7 @@ test("provisionActors refuses to exceed the sign-up budget before any sign-up", 
         budget: LABELS.length,
         signUp: () => {
           calls += 1;
-          return Promise.resolve({});
+          return Promise.resolve({ storageState: {}, teamId: 1 });
         },
       }),
       /BUDGET/,

@@ -37,6 +37,8 @@ export const test = laneTest.extend<
           const request = await playwright.request.newContext({
             baseURL: baseUrl,
             storageState: stored.storagePath,
+            // The product takes the team only from this header (context.ts:27; D-DOC-B45).
+            extraHTTPHeaders: { "x-team-id": String(stored.teamId) },
           });
           contexts.push(request);
           byLabel[stored.label] = { actor: stored.actor, request };

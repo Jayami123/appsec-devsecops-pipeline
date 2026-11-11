@@ -20,6 +20,7 @@ interface Manifest {
     readonly label: ActorLabel;
     readonly email: string;
     readonly password: string;
+    readonly teamId: number;
   }[];
 }
 
@@ -28,14 +29,15 @@ export interface ProvisionInput {
   readonly runPrefix: string;
   readonly labels: readonly ActorLabel[];
   readonly budget: number;
-  /** Creates and verifies one account and returns its Playwright storageState. */
-  readonly signUp: (actor: ThrowawayActor) => Promise<unknown>;
+  /** Creates and verifies one account; returns its Playwright storageState and personal team id (D-DOC-B45). */
+  readonly signUp: (actor: ThrowawayActor) => Promise<{ storageState: unknown; teamId: number }>;
 }
 
 export interface StoredActor {
   readonly label: ActorLabel;
   readonly actor: ThrowawayActor;
   readonly storagePath: string;
+  readonly teamId: number;
 }
 
 export function actorDir(runPrefix: string, root = "test-results"): string {
@@ -79,9 +81,16 @@ export async function provisionActors(input: ProvisionInput): Promise<Manifest> 
     // Count the attempt BEFORE calling the product, and persist it, so a failed attempt is never forgotten.
     manifest.signups += 1;
     writeManifest(input.dir, manifest);
-    const state = await input.signUp(actor);
-    writeFileSync(join(input.dir, `${label}.storage.json`), JSON.stringify(state), { mode: 0o600 });
-    manifest.actors.push({ label, email: actor.email, password: actor.password });
+    const result = await input.signUp(actor);
+    writeFileSync(join(input.dir, `${label}.storage.json`), JSON.stringify(result.storageState), {
+      mode: 0o600,
+    });
+    manifest.actors.push({
+      label,
+      email: actor.email,
+      password: actor.password,
+      teamId: result.teamId,
+    });
     writeManifest(input.dir, manifest);
   }
   return manifest;
@@ -98,5 +107,6 @@ export function loadActors(dir: string, runPrefix: string): StoredActor[] {
     label: record.label,
     actor: { label: record.label, email: record.email, password: record.password },
     storagePath: join(dir, `${record.label}.storage.json`),
+    teamId: record.teamId,
   }));
 }
