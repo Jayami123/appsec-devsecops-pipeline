@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "seed": 1,
+  "entries": [
+    {
+      "operation": "embeddingPresign.createEmbeddingPresignToken",
+      "errorType": "ST101"
+    }
+  ]
+}
