@@ -6,12 +6,15 @@ import type { APIRequestContext } from "@playwright/test";
 import { apiBaseUrl } from "../../kit/env.ts";
 import { currentRunPrefix } from "../../kit/run/prefix.ts";
 import { loadActors, actorDir } from "./actor-store.ts";
+import { guardRequest } from "./call-log.ts";
 import { test as laneTest } from "./run-fixture.ts";
 import type { ActorLabel, ThrowawayActor } from "./login.ts";
 
 export interface ActorHandle {
   readonly actor: ThrowawayActor;
+  /** Guarded: rejected calls carry no call log and no credentials (call-log.ts; D-DOC-B51). */
   readonly request: APIRequestContext;
+  readonly teamId: number;
 }
 
 export interface ActorSet {
@@ -41,7 +44,11 @@ export const test = laneTest.extend<
             extraHTTPHeaders: { "x-team-id": String(stored.teamId) },
           });
           contexts.push(request);
-          byLabel[stored.label] = { actor: stored.actor, request };
+          byLabel[stored.label] = {
+            actor: stored.actor,
+            request: guardRequest(request),
+            teamId: stored.teamId,
+          };
         }
         await use({ baseUrl, runPrefix, byLabel });
       } finally {

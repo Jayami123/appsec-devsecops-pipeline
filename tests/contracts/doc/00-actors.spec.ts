@@ -5,6 +5,7 @@ import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { actorDir, provisionActors } from "../../../src/lanes/doc/actor-store.ts";
 import { createThrowawayAccount, type ThrowawayActor } from "../../../src/lanes/doc/login.ts";
 import { resolvePersonalTeamId } from "../../../src/lanes/doc/teams.ts";
+import { guardRequest } from "../../../src/lanes/doc/call-log.ts";
 import { DOC_API_LABELS } from "../../../src/lanes/doc/actor-store.ts";
 
 test.describe("P5-DOC-SETUP", () => {
@@ -16,7 +17,7 @@ test.describe("P5-DOC-SETUP", () => {
       labels: DOC_API_LABELS,
       budget: DOC_API_LABELS.length,
       signUp: async (actor: ThrowawayActor) => {
-        const request = await playwright.request.newContext({ baseURL: base });
+        const request = guardRequest(await playwright.request.newContext({ baseURL: base }));
         try {
           await createThrowawayAccount(request, base, actor, run.prefix);
           const teamId = await resolvePersonalTeamId(request, base);
