@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   cal-api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30 # LANE_JOB_TIMEOUT_MIN cal (src/security/budgets.ts:112)
     permissions:
       contents: read
@@ -78,7 +78,7 @@ jobs:
         run: node node_modules/qa-portfolio-harness/scripts/down.mjs cal
 
   cal-ui:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30 # LANE_JOB_TIMEOUT_MIN cal (src/security/budgets.ts:112)
     permissions:
       contents: read
@@ -139,7 +139,7 @@ jobs:
         run: node node_modules/qa-portfolio-harness/scripts/down.mjs cal
 
   cal-serial:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30 # LANE_JOB_TIMEOUT_MIN cal (src/security/budgets.ts:112)
     permissions:
       contents: read

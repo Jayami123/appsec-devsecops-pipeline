@@ -108,3 +108,10 @@ test("every p5-cal playwright step passes --trace off", () => {
 test("p5-cal.yml never sets or reads P5_CHROMIUM_PATH (local-only override, D-CAL-B47)", () => {
   assert.doesNotMatch(text, /P5_CHROMIUM_PATH/);
 });
+
+test("the three cal jobs run on ubuntu-24.04, not ubuntu-latest (the pinned Playwright does not support the newer image)", () => {
+  assert.deepEqual(
+    [...byJob.keys()].map((job) => /^ {4}runs-on: (\S+)$/m.exec(byJob.get(job) ?? "")?.[1] ?? ""),
+    ["ubuntu-24.04", "ubuntu-24.04", "ubuntu-24.04"],
+  );
+});
