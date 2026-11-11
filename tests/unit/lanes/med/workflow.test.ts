@@ -151,3 +151,35 @@ test("no src/lanes/med or tests/*/med file references MEDUSA_ADMIN_", () => {
     );
   }
 });
+
+// Round-two fix (D-MED-B41): the harness calls a bare `pnpm`; the hosted runner has none (CI run 42969782653).
+// Each med job must put pnpm 10.11.1 on PATH before Bootstrap and Start medusa.
+test("every p5-med job puts pnpm 10.11.1 on PATH before Bootstrap and Start medusa", () => {
+  const pnpmRun = "npm install -g pnpm@10.11.1 && pnpm --version";
+  for (const job of jobsOf(workflow)) {
+    const steps = stepsOf(job.lines);
+    const indexOf = (predicate: (step: { name: string; body: string }) => boolean) =>
+      steps.findIndex(predicate);
+    const pnpm = indexOf(
+      (step) => step.name.startsWith("Put pnpm on PATH") && step.body.includes(pnpmRun),
+    );
+    const bootstrap = indexOf((step) => step.name === "Bootstrap medusa");
+    const start = indexOf((step) => step.name === "Start medusa");
+    assert.ok(pnpm >= 0, `${job.name}: pnpm step with the exact pinned install is required`);
+    assert.ok(pnpm < bootstrap, `${job.name}: pnpm step must run before Bootstrap medusa`);
+    assert.ok(bootstrap < start, `${job.name}: Bootstrap medusa must run before Start medusa`);
+  }
+});
+
+test("every action in p5-med.yml is pinned to a full commit SHA and no pnpm action is used", () => {
+  const uses = [...workflow.matchAll(/^\s*(?:- )?uses:\s*(\S+)/gm)].map((match) => match[1] ?? "");
+  assert.ok(uses.length >= 2, "expected pinned actions");
+  for (const ref of uses) {
+    assert.match(ref, /@[0-9a-f]{40}$/, `${ref} must be pinned to a full commit SHA`);
+    assert.doesNotMatch(
+      ref,
+      /pnpm/i,
+      `${ref}: pnpm is installed by the pinned npm step, not an action`,
+    );
+  }
+});

@@ -40,6 +40,12 @@ jobs:
         run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Install
         run: npm ci
+      # Put pnpm on PATH for the harness. Same approach as Jayami123/api-webhook-db-test-suite
+      # .github/workflows/p2-med.yml:99-101 (npm install -g pnpm@<version>), pinned to the DTC starter
+      # packageManager pnpm@10.11.1 (medusa-dtc-starter package.json:4; bootstrap.sh MEDUSA_PNPM).
+      - name: Put pnpm on PATH for the harness (pinned to the bootstrap version)
+        timeout-minutes: 5
+        run: npm install -g pnpm@10.11.1 && pnpm --version
       - name: Bootstrap medusa
         run: bash scripts/bootstrap.sh medusa
       - name: Start medusa
@@ -93,6 +99,12 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/st-venv"
           "$RUNNER_TEMP/st-venv/bin/pip" install --require-hashes -r requirements/schemathesis.txt
           echo "SCHEMATHESIS_BIN=$RUNNER_TEMP/st-venv/bin/schemathesis" >> "$GITHUB_ENV"
+      # Put pnpm on PATH for the harness. Same approach as Jayami123/api-webhook-db-test-suite
+      # .github/workflows/p2-med.yml:99-101 (npm install -g pnpm@<version>), pinned to the DTC starter
+      # packageManager pnpm@10.11.1 (medusa-dtc-starter package.json:4; bootstrap.sh MEDUSA_PNPM).
+      - name: Put pnpm on PATH for the harness (pinned to the bootstrap version)
+        timeout-minutes: 5
+        run: npm install -g pnpm@10.11.1 && pnpm --version
       - name: Bootstrap medusa
         run: bash scripts/bootstrap.sh medusa
       - name: Start medusa
