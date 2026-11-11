@@ -11,6 +11,7 @@ import {
   throwawayPassword,
 } from "../../../src/lanes/tw/login.ts";
 import { acceptInvite } from "../../../src/lanes/tw/invite.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { awaitInviteLink, joinWorkspace } from "../../../src/lanes/tw/member.ts";
 
 test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
@@ -35,5 +36,11 @@ test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
     refused = true;
     message = error instanceof Error ? error.message.slice(0, 120) : "unknown";
   }
+  // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Fork: the invite
+  // path is auth.resolver.ts:523-532 (signUpInWorkspace, metadata). Live: the second accept with the same
+  // correct password returned success; a different password was refused (no takeover observed).
+  expectedDefect(
+    "NEW-TW-5: second accept of one invite hash succeeds for the same member. Fork: auth.resolver.ts:523-532 (signUpInWorkspace). Live (tw-api run): same password accepted, different password refused, membership unchanged.",
+  );
   expect(refused, `the second accept is refused (${message || "accepted"})`).toBe(true);
 });

@@ -14,6 +14,7 @@ import {
 import { acceptInvite, sendInvite } from "../../../src/lanes/tw/invite.ts";
 import { awaitInviteLink } from "../../../src/lanes/tw/member.ts";
 import { gql } from "../../../src/lanes/tw/gql.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { roleIdByLabel } from "../../../src/lanes/tw/keys.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 
@@ -137,6 +138,12 @@ test("NEW-TW-6: a demoted member's concurrent update is 2xx-and-persisted or 4xx
   await setRole(restricted);
   const beforeSequential = await readName();
   const sequential = await update(`${run.prefix}-after-demotion`);
+  // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Fork:
+  // user-role.service.ts:95-135 assigns with createMany only (:126) and never removes the prior role target.
+  // Live: a demoted member's update is accepted for at least 5.2 s, persisted, also on a fresh sign-in.
+  expectedDefect(
+    "NEW-TW-6: a demoted member keeps the prior role's write access. Fork: user-role.service.ts:126 (createMany only; no delete of the previous role target). Live (demoted-member-race run): post-demotion update accepted and persisted.",
+  );
   expect(
     sequential.status >= 400 && sequential.status < 500,
     "the post-demotion update is refused",

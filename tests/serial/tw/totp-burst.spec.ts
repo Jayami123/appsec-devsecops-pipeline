@@ -135,9 +135,12 @@ test("P5-TW-2FA-001: a burst of wrong one-time codes is limited or recorded", as
     description: `attempts=${burst.attempts} outcomes=${[...new Set(outcomes)].join(",")} http=${[...new Set(burst.statuses)].join(",")}`,
   });
   expect(outcomes.includes("accepted"), "no wrong code is accepted").toBe(false);
+  // Deployment finding (owner decision 2; med RL-001 pattern): the verdict is an annotation and the test passes.
   const limited = outcomes.includes("limited");
-  expect(
-    limited,
-    "a limit at or before TOTP_BURST (absent: deployment finding, not proof of no lockout)",
-  ).toBe(true);
+  testInfo.annotations.push({
+    type: limited ? "pass" : "deployment-finding",
+    description: limited
+      ? "limit observed within TOTP_BURST"
+      : "no limit within TOTP_BURST (deployment finding, not proof of no lockout)",
+  });
 });

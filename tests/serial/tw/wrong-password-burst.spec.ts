@@ -51,9 +51,13 @@ test("P5-TW-RL-001: a wrong-password burst on one throwaway account is limited o
     type: "burst",
     description: `attempts=${burst.attempts} statuses=${[...new Set(burst.statuses)].join(",")}`,
   });
+  // Deployment finding (owner decision 2; med RL-001 pattern): the verdict is an annotation and the test
+  // passes. A limit inside the budget is recorded as a pass; no limit is recorded as a deployment finding.
   const limited = limitedAt.length > 0;
-  expect(
-    limited,
-    "a limit at or before BRUTE_FORCE_ATTEMPTS (absent: deployment finding, not proof of no lockout)",
-  ).toBe(true);
+  testInfo.annotations.push({
+    type: limited ? "pass" : "deployment-finding",
+    description: limited
+      ? `limit observed within BRUTE_FORCE_ATTEMPTS (first at attempt ${limitedAt[0]})`
+      : "no limit within BRUTE_FORCE_ATTEMPTS (deployment finding, not proof of no lockout; no rate-limit headers, rule 10 readback unavailable)",
+  });
 });
