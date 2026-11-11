@@ -9,7 +9,7 @@
 | Expected coverage | about 20 examples at 2 per minute inside 10 minutes, fewer than 200; the shortfall is recorded, never called full coverage |
 | Auth | owner session cookie through the environment (P5_DOC_FUZZ_COOKIE) and the hook module src/lanes/doc/doc_schemathesis_hooks.py (SCHEMATHESIS_HOOKS); never argv (D-DOC-B34) |
 | Isolation | last file in tests/serial/doc (zz-) |
-| Scope limit | content-type hook is a deliberate scope limit linked to P5-DOC-PF-001 (D-DOC-B63, D-DOC-B70) |
+| Scope limit | request-shaping hook is a deliberate scope limit (D-DOC-B63) |
 | Budget | FUZZ_RATE_LIMIT 2; FUZZ_MAX_EXAMPLES 200; FUZZ_WALL_MIN 10; FUZZ_SEED 1 |
 | Cleanup | owner session signed out in the worker fixture (sign-out.ts:15) |
 | Fork | Documenso `f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c` (scripts/bootstrap.sh:16) |
