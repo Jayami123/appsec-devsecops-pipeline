@@ -1,13 +1,20 @@
-// P5-TW-MASS-001 (tw-api). The control is a normal company create (companies POST, data.createCompany).
-// The negative sends client-supplied id, deletedAt and createdBy. The oracle: the server ignores the
-// client id, returns deletedAt null, and records createdBy as the acting user (the control's value).
+// P5-TW-MASS-001 (tw-api), split into three titles (owner decision 1). Each title has the same control: a
+// normal company create (companies POST, data.createCompany), which must be 201 with a server-assigned id.
+// Fork citations (packages/twenty-server/src/engine/api/common):
+// - id: common-query-runners/common-create-one-query-runner.service.ts:101-102 validates a client-supplied id
+//   as a UUID, so a client id on create is supported by design: a design verdict (passes).
+// - deletedAt: the only insert-time null reset is on the upsert-update branch
+//   (common-query-runners/common-create-many-query-runner/common-create-many-query-runner.service.ts:532);
+//   no insert-time rule exists in the fork: a design verdict (passes), recorded with the stored value.
+// - createdBy: the isSystem strip is on the update branch only (same file, :790-792); processRecordsToInsert
+//   (:559-598) has no strip. Live: a client createdBy.source is stored. PRODUCT BUG (SUSPECTED), marked with
+//   expectedDefect right before the unchanged assertion (owner decision 2).
 import { randomUUID } from "node:crypto";
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { adminSetupSession } from "../../../src/lanes/tw/login.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 
-// Unique per run: a fixed id collides with a row from an earlier run (TEST BUG fixed).
-const FORGED_ID = randomUUID();
 type Company = {
   id: string;
   deletedAt: string | null;
@@ -31,20 +38,93 @@ async function createCompany(
   };
 }
 
-test("P5-TW-MASS-001: client-supplied id, createdBy and deletedAt are ignored", async ({ run }) => {
+async function destroy(base: string, bearer: string, id: string): Promise<number> {
+  // Soft-deleted rows may refuse a plain delete; the status is recorded, never assumed.
+  const response = await fetch(`${base}/rest/companies/${id}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${bearer}` },
+  });
+  return response.status;
+}
+
+test("P5-TW-MASS-001 (id): a client-supplied UUID id on create is a design verdict", async ({
+  run,
+}, testInfo) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const created: string[] = [];
   run.onCleanup(async () => {
-    for (const id of created) {
-      await fetch(`${base}/rest/companies/${id}`, {
-        method: "DELETE",
-        headers: { authorization: `Bearer ${admin.accessToken}` },
-      });
-    }
+    for (const id of created) await destroy(base, admin.accessToken, id);
   });
+  const control = await createCompany(base, admin.accessToken, {
+    name: `${run.prefix}-mass-id-ctl`,
+  });
+  expect(control.status, "control: a normal create is 201").toBe(201);
+  const controlCompany = control.company;
+  if (controlCompany === undefined)
+    throw new Error("TEST BUG: the control create returned no company");
+  created.push(controlCompany.id);
 
-  const control = await createCompany(base, admin.accessToken, { name: `${run.prefix}-mass-ctl` });
+  const clientId = randomUUID();
+  const negative = await createCompany(base, admin.accessToken, {
+    name: `${run.prefix}-mass-id-neg`,
+    id: clientId,
+  });
+  expect(negative.status, "a valid client UUID is accepted").toBe(201);
+  const company = negative.company;
+  if (company === undefined) throw new Error("TEST BUG: the negative create returned no company");
+  created.push(company.id);
+  testInfo.annotations.push({
+    type: "design-verdict",
+    description: `client UUID id on create is stored as the record id (${company.id === clientId ? "matches" : "differs"}); design per common-create-one-query-runner.service.ts:101-102`,
+  });
+  expect(company.id, "design: the client UUID is the record id").toBe(clientId);
+});
+
+test("P5-TW-MASS-001 (deletedAt): a client-supplied deletedAt on create is recorded as a design verdict", async ({
+  run,
+}, testInfo) => {
+  const base = apiBaseUrl("twenty");
+  const admin = await adminSetupSession(base); // setup only (D-TW-B5)
+  const created: string[] = [];
+  run.onCleanup(async () => {
+    for (const id of created) await destroy(base, admin.accessToken, id);
+  });
+  const control = await createCompany(base, admin.accessToken, {
+    name: `${run.prefix}-mass-del-ctl`,
+  });
+  expect(control.status, "control: a normal create is 201").toBe(201);
+  if (control.company === undefined)
+    throw new Error("TEST BUG: the control create returned no company");
+  created.push(control.company.id);
+  expect(control.company.deletedAt, "control: a normal create has no deletedAt").toBeNull();
+
+  const negative = await createCompany(base, admin.accessToken, {
+    name: `${run.prefix}-mass-del-neg`,
+    deletedAt: "2020-01-01T00:00:00Z",
+  });
+  expect(negative.status, "the create is accepted").toBe(201);
+  if (negative.company === undefined)
+    throw new Error("TEST BUG: the negative create returned no company");
+  created.push(negative.company.id);
+  testInfo.annotations.push({
+    type: "design-verdict",
+    description: `client deletedAt on create is stored: ${String(negative.company.deletedAt)}; no insert-time rule in the fork (null reset only on the update branch, common-create-many-query-runner.service.ts:532)`,
+  });
+});
+
+test("P5-TW-MASS-001 (createdBy): a client-supplied createdBy on create is ignored", async ({
+  run,
+}) => {
+  const base = apiBaseUrl("twenty");
+  const admin = await adminSetupSession(base); // setup only (D-TW-B5)
+  const created: string[] = [];
+  run.onCleanup(async () => {
+    for (const id of created) await destroy(base, admin.accessToken, id);
+  });
+  const control = await createCompany(base, admin.accessToken, {
+    name: `${run.prefix}-mass-cb-ctl`,
+  });
   expect(control.status, "control: a normal create is 201").toBe(201);
   const controlCompany = control.company;
   if (controlCompany === undefined)
@@ -52,9 +132,7 @@ test("P5-TW-MASS-001: client-supplied id, createdBy and deletedAt are ignored", 
   created.push(controlCompany.id);
 
   const negative = await createCompany(base, admin.accessToken, {
-    name: `${run.prefix}-mass-neg`,
-    id: FORGED_ID,
-    deletedAt: "2020-01-01T00:00:00Z",
+    name: `${run.prefix}-mass-cb-neg`,
     createdBy: { name: "forged", source: "IMPORT" },
   });
   expect(negative.status).toBe(201);
@@ -62,8 +140,9 @@ test("P5-TW-MASS-001: client-supplied id, createdBy and deletedAt are ignored", 
   if (company === undefined) throw new Error("TEST BUG: the negative create returned no company");
   created.push(company.id);
 
-  expect.soft(company.id, "the client-supplied id is not used").not.toBe(FORGED_ID);
-  expect.soft(company.deletedAt, "the client-supplied deletedAt is ignored").toBeNull();
+  expectedDefect(
+    "P5-TW-MASS-001: createdBy is stored from the client. Fork: common-create-many-query-runner.service.ts:559-598 (insert path) has no createdBy strip; the isSystem strip is on the update branch only (:790-792). Live (tw-api run): client IMPORT stored, control MANUAL.",
+  );
   expect
     .soft(company.createdBy.source, "createdBy is the acting user, not the client value")
     .toBe(controlCompany.createdBy.source);
