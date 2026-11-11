@@ -21,7 +21,6 @@ NODE22_MIN="22.22.0"
 NODE22_PROVISION_VERSION="22.23.3"
 NODE24_VERSION="24.22.0"
 NPM24_MIN="11.17.0"
-DEFAULT_PRODUCTS_ROOT="/home/user/products"
 DEFAULT_TOOLCHAIN_SUBDIR=".cache/qa-portfolio/toolchains"
 MANIFEST_NAME=".qa-toolchain-manifest"
 DIST_BASE="https://nodejs.org/dist"
@@ -42,7 +41,7 @@ Usage: bash scripts/cloud-install.sh [--toolchain-only]
   --toolchain-only  provision/verify Node 22 and Node 24, then exit 0 before npm ci and bootstrap
 Environment:
   QA_TOOLCHAIN_ROOT  explicit absolute toolchain base (default: $HOME/.cache/qa-portfolio/toolchains)
-  PRODUCTS_ROOT      full mode only; absolute; default /home/user/products
+  PRODUCTS_ROOT      full mode only; absolute; default $HOME/products
 USAGE
 }
 
@@ -73,6 +72,29 @@ set_toolchain_root() {
   case "$TOOLCHAIN_ROOT" in
     *$'\n'*) die "toolchain root contains a newline" ;;
   esac
+}
+
+# Selection contract (identical in .claude/hooks/session-start.sh): an explicit PRODUCTS_ROOT
+# wins; otherwise $HOME/products; HOME unset with no PRODUCTS_ROOT is an error.
+set_products_root_default() {
+  PRODUCTS_ROOT="${PRODUCTS_ROOT:-}"
+  if [ -z "$PRODUCTS_ROOT" ]; then
+    [ -n "${HOME:-}" ] || die "HOME is unset and PRODUCTS_ROOT is not set (ENV)"
+    PRODUCTS_ROOT="$HOME/products"
+  fi
+}
+
+set_products_root() {
+  set_products_root_default
+  case "$PRODUCTS_ROOT" in
+    /*) ;;
+    *) die "PRODUCTS_ROOT must be an absolute path (got a relative value)" ;;
+  esac
+  case "$PRODUCTS_ROOT" in
+    */node_modules | */node_modules/*) die "PRODUCTS_ROOT must not be inside node_modules" ;;
+  esac
+  mkdir -p "$PRODUCTS_ROOT" || die "cannot create PRODUCTS_ROOT=$PRODUCTS_ROOT"
+  [ -w "$PRODUCTS_ROOT" ] || die "PRODUCTS_ROOT=$PRODUCTS_ROOT is not writable"
 }
 
 set_arch() {
@@ -201,16 +223,7 @@ main() {
     exit 0
   fi
 
-  PRODUCTS_ROOT="${PRODUCTS_ROOT:-$DEFAULT_PRODUCTS_ROOT}"
-  case "$PRODUCTS_ROOT" in
-    /*) ;;
-    *) die "PRODUCTS_ROOT must be an absolute path (got a relative value)" ;;
-  esac
-  case "$PRODUCTS_ROOT" in
-    */node_modules | */node_modules/*) die "PRODUCTS_ROOT must not be inside node_modules" ;;
-  esac
-  mkdir -p "$PRODUCTS_ROOT" || die "cannot create PRODUCTS_ROOT=$PRODUCTS_ROOT"
-  [ -w "$PRODUCTS_ROOT" ] || die "PRODUCTS_ROOT=$PRODUCTS_ROOT is not writable"
+  set_products_root
   log "PRODUCTS_ROOT=$PRODUCTS_ROOT"
 
   [ -f package-lock.json ] || die "package-lock.json is missing; cannot run npm ci"
