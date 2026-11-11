@@ -4,6 +4,7 @@
 // GET /envelope/{envelopeId}. Pure HTTP; no assertions here (the specs assert).
 import type { APIRequestContext } from "@playwright/test";
 import { minimalPdf } from "./pdf.ts";
+import { redactArtefact } from "../../security/redact.ts";
 
 export const V2_PATH = "/api/v2";
 
@@ -19,7 +20,11 @@ export async function createEnvelope(
       files: { name: "p5-doc.pdf", mimeType: "application/pdf", buffer: minimalPdf() },
     },
   });
-  if (!res.ok()) throw new Error(`envelope create returned ${res.status()}`);
+  if (!res.ok()) {
+    // The first 200 characters of the product response, redacted: a 500 is classified from this, never guessed.
+    const detail = redactArtefact((await res.text()).slice(0, 200));
+    throw new Error(`envelope create returned ${res.status()}: ${detail}`);
+  }
   return ((await res.json()) as { id: string }).id;
 }
 
