@@ -58,6 +58,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.p5_cal == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     uses: ./.github/workflows/p5-cal.yml
+    # Named secrets only (D-CAL-B58, B60): the cal lane reads one secret, the test-mode Stripe key.
+    secrets:
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
 
   p5-doc:
     needs: [changes]

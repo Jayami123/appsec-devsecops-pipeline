@@ -3,10 +3,9 @@ title = "P5 gitleaks config: this repository only"
 [extend]
 useDefault = true
 
-# Only entries that suppress a real default-rule hit. Today: one (probe 2c and 2h).
-# Scope: the single generic-api-key rule (targetRules), one path, and the verbatim
-# line 28 text (regexTarget "line"; an anchored regex does not match in gitleaks 8.30.1).
-# Validated by extend-only probes (PR body, L2): other values and other paths still report.
+# Only entries that suppress a real default-rule hit. Today: two (L2 vectors.ts:28; D-CAL-B61).
+# Scope: the single generic-api-key rule (targetRules), one path, and one value or line.
+# Validated by extend-only probes (PR body, L2 and D-CAL-B61): other values and other paths still report.
 [[allowlists]]
 description = "PR #3 row 16: vectors.ts:28, synthetic test vector (default-rule hit)"
 targetRules = ["generic-api-key"]
@@ -14,6 +13,20 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''^tests/unit/webhooks/vectors\.ts$''']
 regexes = ['''DAILY_SECRET_B64 = "ZGFpbHktdmVjdG9yLWtleS1ieXRlcw=="''']
+
+# D-CAL-B61: owner-approved, scoped exception. Provenance: upstream Cal public v2 OpenAPI
+# documentation example (vendored byte-identical in 9542ea7 from P2 99a2fde
+# contracts/cal/openapi-v2.json). Reason: generic-api-key at openapi-v2.json:7080 is that
+# OAuth-client example, not a credential. Path AND this one example value only; never the
+# file, a directory, or the rule. regexTarget is omitted: gitleaks 8.30.1 tests regexes
+# against the found secret when it is empty (the equivalent of anchoring to the value);
+# regexTarget "line" cannot use an anchored value regex (L2 comment; D-CAL-B61 probe).
+[[allowlists]]
+description = "D-CAL-B61: Cal v2 OpenAPI OAuth-client example (upstream docs example, not a credential)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^src/lanes/cal/contracts/openapi-v2\.json$''']
+regexes = ['''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJuYW1lIjoib2F1dGgtY2xpZW50Iiwi$''']
 
 # Reviewed in PR #3 with no default-rule hit (not entries here):
 #   row 1  src/kit/env.ts:71          row 9   src/kit/webhooks/sign.ts:39

@@ -264,6 +264,24 @@ test("p5-zap-nightly.yml triggers are exactly schedule and workflow_dispatch", (
   }
 });
 
+test("the p5-cal caller passes exactly STRIPE_API_KEY, named and never inherited (D-CAL-B60)", () => {
+  const cal = jobs(ci).get("p5-cal") ?? [];
+  const start = cal.findIndex((line) => /^ {4}secrets:\s*$/.test(line));
+  assert.ok(start >= 0, "p5-cal caller must pass named secrets");
+  const names: string[] = [];
+  for (const line of cal.slice(start + 1)) {
+    const key = /^ {6}([A-Z_]+):/.exec(line);
+    if (key) names.push(key[1] ?? "");
+    else if (/^ {0,5}\S/.test(line)) break;
+  }
+  assert.deepEqual(names, ["STRIPE_API_KEY"]);
+  assert.ok(
+    cal.includes("      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}"),
+    "the value is the repository secret of the same name",
+  );
+  assert.doesNotMatch(cal.join("\n"), /secrets:\s*inherit/);
+});
+
 test("no lane caller in ci.yml uses secrets: inherit", () => {
   for (const lane of LANE_JOBS) {
     const body = (jobs(ci).get(lane) ?? []).join("\n");
@@ -289,7 +307,7 @@ test("only the p5-med caller passes named secrets, and p5-med.yml declares each 
     "STRIPE_WEBHOOK_SECRET",
   ];
   assert.deepEqual(names, expected);
-  for (const lane of LANE_JOBS.filter((name) => name !== "p5-med")) {
+  for (const lane of LANE_JOBS.filter((name) => name !== "p5-med" && name !== "p5-cal")) {
     assert.ok(
       !(jobs(ci).get(lane) ?? []).some((line) => /^ {4}secrets\s*:/.test(line)),
       `${lane} must not pass a secrets block`,
