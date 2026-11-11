@@ -68,3 +68,53 @@ export async function distributeEnvelope(
   });
   return res.status();
 }
+
+/** Creates a TEMPLATE with one PDF (POST /envelope/create with type TEMPLATE). Returns the envelope id. */
+export async function createTemplate(
+  request: APIRequestContext,
+  baseUrl: string,
+  title: string,
+): Promise<string> {
+  const res = await request.post(`${baseUrl}${V2_PATH}/envelope/create`, {
+    multipart: {
+      payload: JSON.stringify({ title, type: "TEMPLATE" }),
+      files: { name: "p5-template.pdf", mimeType: "application/pdf", buffer: minimalPdf() },
+    },
+  });
+  if (!res.ok()) throw new Error(`template create returned ${res.status()}`);
+  return ((await res.json()) as { id: string }).id;
+}
+
+/** The numeric legacy template id from the envelope secondaryId ("template_<n>"). Throws on any other form. */
+export async function legacyTemplateId(
+  request: APIRequestContext,
+  baseUrl: string,
+  envelopeId: string,
+): Promise<number> {
+  const res = await request.get(`${baseUrl}${V2_PATH}/envelope/${encodeURIComponent(envelopeId)}`);
+  if (!res.ok()) throw new Error(`template read returned ${res.status()}`);
+  const secondary = ((await res.json()) as { secondaryId?: string }).secondaryId ?? "";
+  const match = /^template_(\d+)$/.exec(secondary);
+  if (!match) throw new Error("TEST BUG: secondaryId is not template_<n>");
+  return Number(match[1]);
+}
+
+/** Reads a template by its legacy numeric id (GET /template/{templateId}, the vendored contract). */
+export async function getTemplateStatus(
+  request: APIRequestContext,
+  baseUrl: string,
+  templateId: number,
+): Promise<number> {
+  const res = await request.get(`${baseUrl}${V2_PATH}/template/${templateId}`);
+  return res.status();
+}
+
+/** Creates an envelope from a template (POST /template/use, templateId numeric). Returns the status. */
+export async function useTemplateStatus(
+  request: APIRequestContext,
+  baseUrl: string,
+  templateId: number,
+): Promise<number> {
+  const res = await request.post(`${baseUrl}${V2_PATH}/template/use`, { data: { templateId } });
+  return res.status();
+}
