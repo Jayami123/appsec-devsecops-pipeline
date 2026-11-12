@@ -1,9 +1,42 @@
-export type CaseStatus = "planned" | "alias" | "dropped" | "gated";
+/**
+ * planned: a KEEP row not yet run in CI. verified: a test exists and a CI run passed it (the run and file are
+ * recorded in `verification`). gated: a named blocker stops the row (the blocker is recorded). alias and dropped
+ * are dispositions, not runs.
+ */
+export type CaseStatus = "planned" | "alias" | "dropped" | "gated" | "verified";
 
 /** A private-first entry carries exactly an ID and a status: nothing else (AGENTS.md). */
 export type PrivateEntry = { readonly id: string; readonly status: "held-private" };
 
 const PRIVATE_KEYS: readonly string[] = ["id", "status"];
+
+/**
+ * The private-first IDs named by a parsed ledger, in ledger order. Throws when the private array is missing or an
+ * entry is not exactly {id, status: "held-private"} (fail closed: a bad ledger must not disable redaction).
+ */
+export function privateIdsOf(ledger: unknown): string[] {
+  const list =
+    typeof ledger === "object" && ledger !== null
+      ? (ledger as { readonly private?: unknown }).private
+      : undefined;
+  if (!Array.isArray(list)) throw new Error("ledger.private is missing or not an array");
+  return list.map((entry: unknown) => {
+    if (!isPrivateEntry(entry))
+      throw new Error("ledger.private entry is not {id, status: held-private}");
+    return entry.id;
+  });
+}
+
+/** The first private ID that appears in `text` as a whole token (so MI-3 does not match MI-30), or undefined. */
+export function privateIdIn(text: string, ids: readonly string[]): string | undefined {
+  for (const id of ids) {
+    const token = new RegExp(
+      `(?<![A-Za-z0-9-])${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![A-Za-z0-9-])`,
+    );
+    if (token.test(text)) return id;
+  }
+  return undefined;
+}
 
 /** True only for an object whose keys are exactly id and status, with the held-private status. */
 export function isPrivateEntry(x: unknown): x is PrivateEntry {

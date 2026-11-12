@@ -1,11 +1,6 @@
-// P5-TW-GQL-002 (tw-iso.md 8.6). Requested field count around the effective cap (D-TWISO-B29).
-// Real fields only (overFieldsQuery). The refusal message reports the requested count, so the boundary checks
-// the counter itself. The cap comes from the readback (no named budget; tw-iso.md section 13 item 11).
-// Confirmed product defect (D-TWISO-B35): an authenticated workspace query above the cap is answered, not refused,
-// because the direct-execution route answers before the complexity hook (use-direct-execution.hook.ts:25, :100)
-// and checks only root resolvers (direct-execution.service.ts:518-528). The anonymous control sends the same
-// document through the hook path and gets the cap refusal. The defect is declared as an expected failure with
-// expectedDefect (src/kit/ci/known-defect.ts): the summary lists it, and a fixed product shows as an unexpected pass.
+// P5-TW-GQL-002: held-private (D3). Details are not recorded in the repository (AGENTS.md, master plan 4.7).
+// The defect is declared with expectedDefect (src/kit/ci/known-defect.ts), so a fixed product shows as an
+// unexpected pass.
 import { actorWithCleanup } from "../../../src/lanes/tw-iso/actor-fixture.ts";
 import { productDefectState } from "../../../src/lanes/tw-iso/defect-state.ts";
 import { gqlPost } from "../../../src/lanes/tw-iso/gql-client.ts";
@@ -19,9 +14,7 @@ import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { expect, test } from "../../../src/lanes/tw-iso/run-fixture.ts";
 
 const CAP_MESSAGE = /too many fields requested/i;
-const DEFECT_EVIDENCE =
-  "P5-TW-GQL-002: src/engine/api/graphql/direct-execution/hooks/use-direct-execution.hook.ts:25 and :100 answer a workspace query before the complexity hook (use-validate-graphql-query-complexity.hook.ts:42, cap at :75-79); direct-execution.service.ts:518-528 checks root resolvers only; live: authenticated cap+1 (2001 requested) answered HTTP 200 with no errors, the same document anonymously refused 'Too many fields requested: 2001 - Maximum allowed fields: 2000'; run " +
-  (process.env["P5_RUN_ID"] ?? "unknown");
+const DEFECT_EVIDENCE = "P5-TW-GQL-002: held-private (D3)";
 
 test("P5-TW-GQL-002 control: cheap query returns 200", async ({ run }) => {
   const actor = await actorWithCleanup(run, 11);
@@ -63,7 +56,7 @@ test("P5-TW-GQL-002 query above the effective field cap is refused or recorded a
   );
   const finding =
     state === "confirmed"
-      ? `PRODUCT BUG (SUSPECTED): authenticated cap+1 answered (status ${overReply.status}); the same document is refused anonymously by the same cap (${anonymousVerdict}); direct-execution.service.ts:518-528 checks root resolvers only`
+      ? `PRODUCT BUG (SUSPECTED): authenticated cap+1 answered (status ${overReply.status}); the same document is refused anonymously (${anonymousVerdict}); held-private (D3)`
       : `design verdict: authenticated cap+1 answered (status ${overReply.status}); anonymous control not refused either (${anonymousVerdict})`;
   test.info().annotations.push({
     type: "verdict",
