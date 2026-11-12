@@ -300,3 +300,170 @@ describe("P5 job summary: CLI (S17 to S20)", () => {
     }
   });
 });
+
+describe("P5 job summary: every title and private-first redaction (S21 to S27)", () => {
+  const PRIVATE_ID = "P5-TW-GQL-002";
+  const SECRET = "SENTINEL-EVIDENCE refused by a fixture path";
+
+  test("S21 the every-title table lists each title with its status", () => {
+    const summary = parseJobReport(
+      "cal",
+      report([
+        { title: "P5-CAL-AUTHZ-001 ok", status: "expected", expectedStatus: "passed" },
+        {
+          title: "P5-CAL-WH-002 red",
+          status: "expected",
+          expectedStatus: "failed",
+          annotations: [{ type: "issue", description: "P5-CAL-WH-002: a public defect (f.ts:1)" }],
+        },
+        { title: "t-failed", status: "unexpected", expectedStatus: "passed" },
+        { title: "t-skip", status: "skipped", expectedStatus: "skipped" },
+        { title: "t-flaky", status: "flaky", expectedStatus: "passed" },
+      ]),
+    );
+    assert.deepEqual(
+      summary.titles.map((row) => [row.testId, row.status]),
+      [
+        ["P5-CAL-AUTHZ-001", "passed"],
+        ["P5-CAL-WH-002", "expected failure"],
+        ["", "failed"],
+        ["", "skipped"],
+        ["", "flaky"],
+      ],
+    );
+    const text = formatJobSummary(summary, ENV);
+    assert.match(text, /### Every title/);
+    assert.match(text, /\| cal-api \| P5-CAL-AUTHZ-001 \| P5-CAL-AUTHZ-001 ok \| passed \|/);
+    assert.match(text, /\| cal-api \| \(no ID\) \| t-skip \| skipped \|/);
+  });
+
+  test("S22 a held-private title shows its ID and status only: no title text, defect or evidence", () => {
+    const summary = parseJobReport(
+      "tw-iso",
+      report(
+        [
+          {
+            title: `${PRIVATE_ID} query above the cap`,
+            status: "expected",
+            expectedStatus: "failed",
+            annotations: [{ type: "issue", description: `${PRIVATE_ID}: ${SECRET}` }],
+          },
+        ],
+        "tw-iso",
+      ),
+    );
+    const text = formatJobSummary(summary, { ...ENV, privateIds: [PRIVATE_ID] });
+    assert.match(text, /\| tw-iso \| P5-TW-GQL-002 \| \(held-private\) \| expected failure \|/);
+    assert.match(text, /Known defects still reproducing: 1 held-private/);
+    assert.doesNotMatch(text, /still reproducing: none/);
+    assert.doesNotMatch(text, /SENTINEL-EVIDENCE|query above the cap/);
+  });
+
+  test("S23 an unexpected held-private failure is listed by ID only", () => {
+    const summary = parseJobReport(
+      "tw-iso",
+      report(
+        [{ title: `${PRIVATE_ID} broke`, status: "unexpected", expectedStatus: "passed" }],
+        "tw-iso",
+      ),
+    );
+    const text = formatJobSummary(summary, { ...ENV, privateIds: [PRIVATE_ID] });
+    assert.match(text, /^- P5-TW-GQL-002 \(held-private\)$/m);
+    assert.doesNotMatch(text, /broke/);
+  });
+
+  test("S24 a public expected failure keeps its defect and evidence beside a held-private one", () => {
+    const summary = parseJobReport(
+      "tw-iso",
+      report(
+        [
+          {
+            title: `${PRIVATE_ID} held`,
+            status: "expected",
+            expectedStatus: "failed",
+            annotations: [{ type: "issue", description: `${PRIVATE_ID}: ${SECRET}` }],
+          },
+          {
+            title: "P5-TW-PUB-001 public",
+            status: "expected",
+            expectedStatus: "failed",
+            annotations: [{ type: "issue", description: "B2: a public evidence line" }],
+          },
+        ],
+        "tw-iso",
+      ),
+    );
+    const text = formatJobSummary(summary, { ...ENV, privateIds: [PRIVATE_ID] });
+    assert.match(
+      text,
+      /\| P5-TW-PUB-001 \| P5-TW-PUB-001 public \| B2 \| a public evidence line \|/,
+    );
+    assert.doesNotMatch(text, /SENTINEL-EVIDENCE/);
+  });
+
+  test("S25 the run-page line claims the reports attach only as the upload step's artifact", () => {
+    const text = formatJobSummary(
+      parseJobReport("cal", report([{ status: "expected", expectedStatus: "passed" }])),
+      ENV,
+    );
+    assert.match(
+      text,
+      /Run page: https:\/\/example\.test\/run\/1\. The reports attach to this run as p5-cal-report when the upload step succeeds\./,
+    );
+    assert.doesNotMatch(text, /Run page with the artifacts/);
+  });
+
+  test("S26 the CLI stops with exit 1 when the ledger cannot be read, so redaction is never skipped", () => {
+    const dir = mkdtempSync(join(tmpdir(), "p5-summary-"));
+    try {
+      const res = spawnSync(
+        process.execPath,
+        [
+          join(process.cwd(), "scripts/write-ci-job-summary.ts"),
+          "cal",
+          join(process.cwd(), PROBE_FIXTURE),
+        ],
+        { encoding: "utf8", cwd: dir, env: { PATH: process.env["PATH"] ?? "" } },
+      );
+      assert.equal(res.status, 1, res.stderr);
+      assert.match(res.stderr, /cannot read the private-first IDs/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("S27 the CLI keeps held-private evidence out of stdout for a real report", () => {
+    const dir = mkdtempSync(join(tmpdir(), "p5-summary-"));
+    try {
+      const file = join(dir, "report.json");
+      writeFileSync(
+        file,
+        JSON.stringify(
+          report(
+            [
+              {
+                title: `${PRIVATE_ID} held`,
+                status: "expected",
+                expectedStatus: "failed",
+                annotations: [{ type: "issue", description: `${PRIVATE_ID}: ${SECRET}` }],
+              },
+            ],
+            "tw-iso",
+          ),
+        ),
+      );
+      const res = spawnSync(process.execPath, ["scripts/write-ci-job-summary.ts", "tw-iso", file], {
+        encoding: "utf8",
+        env: { PATH: process.env["PATH"] ?? "" },
+      });
+      assert.equal(res.status, 0, res.stderr);
+      assert.match(
+        res.stdout,
+        /\| tw-iso \| P5-TW-GQL-002 \| \(held-private\) \| expected failure \|/,
+      );
+      assert.doesNotMatch(res.stdout, /SENTINEL-EVIDENCE/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

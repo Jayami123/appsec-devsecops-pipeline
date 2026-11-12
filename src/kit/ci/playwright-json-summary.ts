@@ -4,6 +4,8 @@
 // unexpected-failure titles, markup escaping, fail-fast on unknown statuses, one report per call.
 // Keep in sync by hand. erasableSyntaxOnly: no enums, no parameter properties, no namespaces.
 
+import { privateIdIn } from "../../security/findings.ts";
+
 export interface ProjectTotals {
   readonly project: string;
   readonly passed: number;
@@ -27,12 +29,31 @@ export interface SweepRow {
   readonly tests: number;
 }
 
+/** One row per test (per project): the title and its outcome, for the every-title table. */
+export interface TitleRow {
+  readonly project: string;
+  readonly testId: string; // "" when the title has no ID
+  readonly title: string;
+  readonly status: "passed" | "expected failure" | "failed" | "skipped" | "flaky";
+}
+
 export interface JobSummary {
   readonly label: string;
   readonly projects: readonly ProjectTotals[];
   readonly expectedFailures: readonly ExpectedFailureRow[];
   readonly unexpectedFailures: readonly string[];
   readonly sweeps: readonly SweepRow[] | undefined; // undefined = no sweep annotation in the report
+  readonly titles: readonly TitleRow[];
+}
+
+/** The outcome of one test node, read after its status has been validated. */
+function outcomeOf(node: Record<string, unknown>): TitleRow["status"] {
+  const status = node["status"];
+  if (status === "skipped") return "skipped";
+  if (status === "flaky") return "flaky";
+  if (status === "unexpected") return "failed";
+  if (node["expectedStatus"] === "failed") return "expected failure";
+  return "passed";
 }
 
 const ISSUE = "issue";
@@ -160,12 +181,20 @@ export function parseJobReport(label: string, raw: unknown): JobSummary {
     }
   }
 
+  const titles: TitleRow[] = tests.map(({ title, project, node }) => ({
+    project,
+    testId: TEST_ID.exec(title)?.[1] ?? "",
+    title,
+    status: outcomeOf(node),
+  }));
+
   return {
     label,
     projects: [...byProject].map(([project, c]) => ({ project, ...c })),
     expectedFailures,
     unexpectedFailures,
     sweeps: sawSweep ? [...sweeps].map(([product, s]) => ({ product, ...s })) : undefined,
+    titles,
   };
 }
 
@@ -199,10 +228,22 @@ export function evidenceCell(evidence: string, repo: string, sha: string): strin
   return `${text} ([${file}](https://github.com/${repo}/blob/${sha}/${file}${line}))`;
 }
 
-export function formatJobSummary(
-  s: JobSummary,
-  env: { repo: string; sha: string; runUrl: string },
-): string {
+export interface SummaryEnv {
+  readonly repo: string;
+  readonly sha: string;
+  readonly runUrl: string;
+  /** Private-first IDs from the ledger. Rows that name one show the ID and status only (D3). */
+  readonly privateIds?: readonly string[];
+}
+
+const HELD = "(held-private)";
+
+/** The private ID a text names, or undefined. Titles that name none are shown as written. */
+function heldId(text: string, env: SummaryEnv): string | undefined {
+  return privateIdIn(text, env.privateIds ?? []);
+}
+
+export function formatJobSummary(s: JobSummary, env: SummaryEnv): string {
   const lines: string[] = [`## P5 ${s.label}: run summary`, ""];
   lines.push(
     "| project | passed | failed | skipped | expected failures | flaky |",
@@ -224,28 +265,54 @@ export function formatJobSummary(
     "",
   );
 
-  if (s.expectedFailures.length > 0) {
+  lines.push("### Every title", "");
+  if (s.titles.length === 0) {
+    lines.push("No titles in this report.", "");
+  } else {
+    lines.push("| project | test ID | title | status |", "| --- | --- | --- | --- |");
+    for (const row of s.titles) {
+      const id = heldId(row.title, env);
+      // A held-private title shows its ID and status only: no title text, no evidence.
+      const testId = row.testId !== "" ? escapeCell(row.testId) : "(no ID)";
+      const title = id === undefined ? escapeCell(row.title) : HELD;
+      lines.push(`| ${escapeCell(row.project)} | ${testId} | ${title} | ${row.status} |`);
+    }
+    lines.push("");
+  }
+
+  // Public expected failures keep their defect and evidence. Held-private ones are left to the title table.
+  const publicExpected = s.expectedFailures.filter((row) => heldId(row.title, env) === undefined);
+  const heldExpected = s.expectedFailures.length - publicExpected.length;
+  if (publicExpected.length > 0) {
     lines.push(
       "### Expected failures (known defects, still reproducing)",
       "",
       "| test ID | test | defect | evidence |",
       "| --- | --- | --- | --- |",
     );
-    for (const row of s.expectedFailures) {
+    for (const row of publicExpected) {
       const defect = row.defectId === "" ? "**NO DEFECT ID**" : escapeCell(row.defectId);
       lines.push(
         `| ${escapeCell(row.testId || "(no ID)")} | ${escapeCell(row.title)} | ${defect} | ${evidenceCell(row.evidence, env.repo, env.sha)} |`,
       );
     }
     lines.push("");
+  } else if (heldExpected > 0) {
+    lines.push(
+      `Known defects still reproducing: ${heldExpected} held-private (see the every-title table for ID and status).`,
+      "",
+    );
   } else {
     lines.push("Known defects still reproducing: none", "");
   }
 
   if (s.unexpectedFailures.length > 0) {
     lines.push("### Unexpected failures", "");
-    for (const title of s.unexpectedFailures.slice(0, LIST_CAP))
-      lines.push(`- ${escapeCell(title)}`);
+    const shown = s.unexpectedFailures.map((title) => {
+      const id = heldId(title, env);
+      return id === undefined ? escapeCell(title) : `${id} ${HELD}`;
+    });
+    for (const title of shown.slice(0, LIST_CAP)) lines.push(`- ${title}`);
     const omitted = s.unexpectedFailures.length - LIST_CAP;
     if (omitted > 0) lines.push(`- ... and ${omitted} more (see the JUnit or the HTML report)`);
     lines.push("");
@@ -263,6 +330,9 @@ export function formatJobSummary(
     lines.push("");
   }
 
-  lines.push(`Run page with the artifacts: ${env.runUrl}`, "");
+  lines.push(
+    `Run page: ${env.runUrl}. The reports attach to this run as p5-${s.label}-report when the upload step succeeds.`,
+    "",
+  );
   return lines.join("\n");
 }

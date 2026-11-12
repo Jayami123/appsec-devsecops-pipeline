@@ -46,7 +46,8 @@ Each row names the P2 source at `99a2fde`. Only the changes in plan section 7.2.
 | `src/kit/invariants/after-test.ts` | `src/invariants/after-test.ts` | `../db/pg.ts` (type), `./engine.ts` | sweep after each test |
 | `src/kit/env.ts` | NEW, trimmed from P2 `src/env.ts` (section 7.2.1) | `node:net`, `zod` | all |
 | `scripts/db-roles.ts` | `scripts/db-roles.ts` | `../src/kit/env.ts` (`PRODUCT_IDS`, `ProductId`; P2 import was `../src/env.ts`, line 3), `../src/kit/db/roles-admin.ts` (`provisionProduct`, `teardownRoles`, `withAdmin`; P2 import was `../src/db/roles-admin.ts`, line 4) | vendored, not wired (no npm script; owner-approved script change required) |
-| `scripts/write-ci-job-summary.ts` | `scripts/write-ci-job-summary.ts` | `../src/kit/ci/playwright-json-summary.ts` (path adapted) | job summary |
+| `scripts/write-ci-job-summary.ts` | `scripts/write-ci-job-summary.ts` | `../src/kit/ci/playwright-json-summary.ts` (path adapted), `../src/security/findings.ts` (private IDs from the ledger) | job summary: one row per title, private-first items as ID and status only |
+| `scripts/prepare-ci-artifacts.ts` | new in FND (foundation PR) | `../src/kit/ci/report-redaction.ts`, `../src/security/findings.ts` | sanitises the uploaded Playwright JSON; removes the HTML and test-result folders when a private-first item ran |
 | `tests/unit/webhooks/vectors.ts` | same | none | sign and verify tests |
 
 Not vendored, with reason: P2 lane-specific code under `src/lanes/`, `src/clients/`, `src/contracts/`, `src/slo/`, `src/fixtures/`, `src/db/fixture.ts`, `src/auth/reaper-run.ts`, `src/auth/reaper-revoke.ts` (they revoke P2 keys; P5's revocation rows are separate), `src/auth/lifecycle.ts`, `src/auth/*` product clients.

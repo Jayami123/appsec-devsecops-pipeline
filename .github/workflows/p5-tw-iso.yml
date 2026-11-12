@@ -11,7 +11,8 @@ permissions:
 # script and is never written to disk or to $GITHUB_ENV (D-P12).
 jobs:
   tw-iso:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30 # LANE_JOB_TIMEOUT_MIN twIso (src/security/budgets.ts:112)
     permissions:
       contents: read
@@ -42,11 +43,27 @@ jobs:
         run: cat results/tw-iso/p12-proof.json >> "$GITHUB_STEP_SUMMARY"
       - name: Run the tw-iso project
         env:
-          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/tw-iso-report.json
-        run: npx playwright test --project=tw-iso --trace off --reporter=list,json
-      - name: Write the tw-iso job summary (expected failures listed by defect ID)
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-tw-iso.raw.json
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report
+          PLAYWRIGHT_HTML_OPEN: never
+        run: npx playwright test --project=tw-iso --trace off --reporter=list,json,html
+      - name: Sanitise the tw-iso report (private-first items reduced to ID and status)
         if: always()
-        run: node scripts/write-ci-job-summary.ts tw-iso "$RUNNER_TEMP/tw-iso-report.json"
+        run: node scripts/prepare-ci-artifacts.ts tw-iso "$RUNNER_TEMP/playwright-tw-iso.raw.json" results/playwright-tw-iso.json
+      - name: Write the tw-iso job summary (one row per title)
+        if: always()
+        run: node scripts/write-ci-job-summary.ts tw-iso results/playwright-tw-iso.json
+      - name: Upload the tw-iso reports and test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: p5-tw-iso-report
+          path: |
+            playwright-report/
+            results/playwright-tw-iso.json
+            test-results/
+          retention-days: 7
+          if-no-files-found: warn
       - name: Stop twenty
         if: always()
         run: node node_modules/qa-portfolio-harness/scripts/down.mjs twenty
