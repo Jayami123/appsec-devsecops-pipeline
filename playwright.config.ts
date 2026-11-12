@@ -12,6 +12,9 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["list"]],
+  // Record commit metadata only. Playwright's default also records the working-tree diff in the report, and the diff
+  // carries the text of this repository's changed lines (including held-private rows). The diff is never captured (D-FND-B30).
+  captureGitInfo: { commit: true, diff: false },
   use: {
     // Raw authenticated traces record request headers, including credentials: never recorded.
     trace: "off",
