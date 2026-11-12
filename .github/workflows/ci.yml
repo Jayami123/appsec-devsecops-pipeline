@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       p5_cal: ${{ steps.classify.outputs.p5_cal }}
@@ -104,7 +105,8 @@ jobs:
   gate:
     needs: [changes, foundation, p5-cal, p5-doc, p5-med, p5-tw, p5-tw-iso, p5-scans, p5-x]
     if: always()
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Check out the repository

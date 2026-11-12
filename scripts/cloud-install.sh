@@ -131,7 +131,7 @@ provision_node() {
     fi
     die "$target exists but is not a valid Node $ver installation (missing manifest or version mismatch). Not modified; resolve the conflict (ENV)."
   fi
-  mkdir -p "$TOOLCHAIN_ROOT/node"
+  mkdir -p "$TOOLCHAIN_ROOT/node" || die "cannot create $TOOLCHAIN_ROOT/node"
   STAGE_DIR="$(mktemp -d "$TOOLCHAIN_ROOT/node/.stage-$ver.XXXXXX")"
   base="$DIST_BASE/v$ver"
   start="$(date +%s)"
