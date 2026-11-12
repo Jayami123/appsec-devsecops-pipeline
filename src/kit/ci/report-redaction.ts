@@ -1,14 +1,23 @@
 // Private-first redaction for the Playwright JSON that CI uploads (D3, AGENTS.md, master plan section 13).
-// A spec whose title, or whose test JSON, names a private-first ID is rebuilt from scratch with only its ID, its
-// location, its outcome and its per-project status. Errors, annotations, attachments, steps and stdout are dropped by
-// construction, not by filtering. Pure: no file access. Unit-tested in tests/unit/kit/ci/report-redaction.test.ts.
+// Three passes, in order:
+//   1. A spec whose title, or whose test JSON, names a private-first ID is rebuilt from scratch with only its ID, its
+//      location, its outcome and its per-project status. Errors, annotations, attachments, steps and stdout are dropped
+//      by construction, not by filtering.
+//   2. Every other string in the report is checked. Playwright also writes text outside the specs (the root errors,
+//      the run configuration and its argv, git metadata, and file paths on suites and specs). A string that names a
+//      private ID is replaced by "<ID> (held-private)" and its JSON path is recorded, so the caller can say where.
+//   3. The caller runs privateLeftovers() on the result. A key that names an ID is not rewritten by pass 2, so it
+//      survives and the caller stops (fail closed).
+// Pure: no file access. Unit-tested in tests/unit/kit/ci/report-redaction.test.ts.
 import { privateIdIn } from "../../security/findings.ts";
 
 export interface RedactionResult {
   readonly report: Record<string, unknown>;
-  /** Number of specs rebuilt as held-private. Zero means the report had no private-first item. */
+  /** Number of specs rebuilt as held-private. Zero means no spec named a private-first ID. */
   readonly held: number;
   readonly heldIds: readonly string[];
+  /** JSON paths (no values) of strings outside the specs that named a private ID and were rewritten. */
+  readonly locations: readonly string[];
 }
 
 const HELD_SUFFIX = " (held-private)";
@@ -62,6 +71,41 @@ function redactSuite(
   }
 }
 
+/** True for a string that is already exactly "<private ID> (held-private)", which pass 2 must leave alone. */
+function isHeldMarker(value: string, ids: readonly string[]): boolean {
+  return ids.some((id) => value === `${id}${HELD_SUFFIX}`);
+}
+
+/**
+ * Pass 2: rewrites every string value that names a private ID, at any depth, and records its JSON path. Keys are not
+ * rewritten here, so a key that names an ID survives and the leftover check stops the run.
+ */
+function redactStrings(
+  value: unknown,
+  ids: readonly string[],
+  path: string,
+  locations: string[],
+): unknown {
+  if (typeof value === "string") {
+    if (isHeldMarker(value, ids)) return value;
+    const found = ids.filter((id) => privateIdIn(value, [id]) !== undefined);
+    if (found.length === 0) return value;
+    locations.push(path);
+    return found.map((id) => `${id}${HELD_SUFFIX}`).join("; ");
+  }
+  if (Array.isArray(value)) {
+    return value.map((item, index) => redactStrings(item, ids, `${path}[${index}]`, locations));
+  }
+  if (isRecord(value)) {
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) {
+      out[key] = redactStrings(item, ids, `${path}.${key}`, locations);
+    }
+    return out;
+  }
+  return value;
+}
+
 /** Redacts a parsed Playwright JSON report. Throws for a non-object root (fail closed). */
 export function redactPrivateReport(raw: unknown, ids: readonly string[]): RedactionResult {
   if (!isRecord(raw)) throw new Error("Playwright JSON report root must be an object");
@@ -70,14 +114,16 @@ export function redactPrivateReport(raw: unknown, ids: readonly string[]): Redac
   if (Array.isArray(report["suites"])) {
     for (const suite of report["suites"]) if (isRecord(suite)) redactSuite(suite, ids, heldIds);
   }
-  // Top-level errors are free text. Drop them when they name a private ID, or whenever anything was held.
-  if (
-    report["errors"] !== undefined &&
-    (heldIds.length > 0 || privateIdIn(JSON.stringify(report["errors"]), ids))
-  ) {
-    delete report["errors"];
+  const locations: string[] = [];
+  // Top-level errors are free text. Drop them whenever anything was held. Drop them, and record the location, when
+  // they name a private ID.
+  if (report["errors"] !== undefined) {
+    const namesId = privateIdIn(JSON.stringify(report["errors"]), ids) !== undefined;
+    if (heldIds.length > 0 || namesId) delete report["errors"];
+    if (namesId) locations.push("$.errors");
   }
-  return { report, held: heldIds.length, heldIds };
+  const rewritten = redactStrings(report, ids, "$", locations) as Record<string, unknown>;
+  return { report: rewritten, held: heldIds.length, heldIds, locations };
 }
 
 /**
@@ -88,4 +134,25 @@ export function privateLeftovers(report: unknown, ids: readonly string[]): strin
   const text = JSON.stringify(report);
   const stripped = ids.reduce((acc, id) => acc.split(`${id}${HELD_SUFFIX}`).join(""), text);
   return ids.filter((id) => privateIdIn(stripped, [id]) !== undefined);
+}
+
+/**
+ * JSON paths of object keys that name a private ID. A key is not rewritten by redactPrivateReport, so this is how the
+ * caller says where a surviving ID sits. Only paths are returned, never values.
+ */
+export function privateKeyPaths(
+  value: unknown,
+  ids: readonly string[],
+  path = "$",
+  out: string[] = [],
+): string[] {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => privateKeyPaths(item, ids, `${path}[${index}]`, out));
+  } else if (isRecord(value)) {
+    for (const [key, item] of Object.entries(value)) {
+      if (privateIdIn(key, ids) !== undefined) out.push(`${path}.${key}`);
+      privateKeyPaths(item, ids, `${path}.${key}`, out);
+    }
+  }
+  return out;
 }

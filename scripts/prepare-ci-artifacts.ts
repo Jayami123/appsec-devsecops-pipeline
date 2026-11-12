@@ -9,7 +9,11 @@
 //   1 = wrong argument count, unreadable ledger or JSON, a surviving private ID, or a redaction failure.
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { redactPrivateReport, privateLeftovers } from "../src/kit/ci/report-redaction.ts";
+import {
+  privateKeyPaths,
+  privateLeftovers,
+  redactPrivateReport,
+} from "../src/kit/ci/report-redaction.ts";
 import { privateIdsOf } from "../src/security/findings.ts";
 
 const LEDGER = "docs/findings/ledger.json";
@@ -50,23 +54,29 @@ try {
 
 const leftovers = privateLeftovers(redacted.report, privateIds);
 if (leftovers.length > 0) {
-  // Fail closed: a surviving private ID means the redaction is incomplete. Write nothing.
+  // Fail closed: a surviving private ID means the redaction is incomplete. Write nothing. The key paths (names only)
+  // say where the ID sits; a value is never printed.
+  const keys = privateKeyPaths(redacted.report, privateIds);
   fail(
-    `redaction incomplete for ${label}: a private-first ID survives outside its held title (${leftovers.length} ID(s))`,
+    `redaction incomplete for ${label}: a private-first ID survives outside its held title (${leftovers.length} ID(s))${keys.length > 0 ? `; key path(s): ${keys.join(", ")}` : ""}`,
   );
 }
 
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, `${JSON.stringify(redacted.report, null, 2)}\n`, "utf8");
 
-if (redacted.held > 0) {
-  // The HTML report and the failure output embed the raw error text of every test, so they are not uploaded.
+// The HTML report and the failure output embed the raw text of the report, so they are not uploaded when anything was
+// held or rewritten. The paths name JSON fields only (no values), so they can be printed.
+if (redacted.held > 0 || redacted.locations.length > 0) {
   rmSync("playwright-report", { recursive: true, force: true });
   rmSync("test-results", { recursive: true, force: true });
   process.stdout.write(
-    `::notice::${label}: ${redacted.held} held-private spec(s) ran; the HTML report and test results are not uploaded for this job.\n`,
+    `::notice::${label}: ${redacted.held} held-private spec(s) and ${redacted.locations.length} other rewritten field(s) ran; the HTML report and test results are not uploaded for this job.\n`,
   );
+  for (const location of redacted.locations.slice(0, 20)) {
+    process.stdout.write(`::notice::${label}: rewritten field ${location}\n`);
+  }
 }
 process.stdout.write(
-  `${label}: sanitised report written (${redacted.held} held-private spec(s)).\n`,
+  `${label}: sanitised report written (${redacted.held} held-private spec(s), ${redacted.locations.length} rewritten field(s)).\n`,
 );
