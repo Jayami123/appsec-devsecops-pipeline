@@ -248,3 +248,26 @@ tip had not moved, so no re-base was needed.
 - context: the first run of the check failed on two non-null assertions and on a spawnSync return type in the new test files.
 - choice: explicit casts and `SpawnSyncReturns<string>`. No assertion changed.
 - evidence: `npm run check` exit 0 (708 tests, 0 failing) after the fix.
+
+### D-FND-B28: root cause confirmed from CI run 43272719962
+
+- context: the sanitise step failed in every product lane with "a private-first ID survives outside its held title". The fix in B25 rewrote every string that names an ID, and the run's notices recorded where the IDs were.
+- established: the rewritten fields were Playwright's git metadata `config.metadata.gitDiff` and each project's copy of it (`$.config.projects[N].metadata.gitDiff`, `$.config.filteredProjects[N]...`). Per lane: cal-api, cal-ui, cal-serial, med-api, med-serial, doc-api, doc-serial, tw-api, tw-serial and tw-iso recorded 15 to 17 rewritten fields. The lanes with no held item recorded 0 held specs.
+- choice: no change to the redaction. The field is rewritten at the source, and the fail-closed check is unchanged.
+- not yet known: why Playwright records a diff in CI. A clean checkout records none locally (list-mode metadata is empty).
+- evidence: `gh run view 43272719962` job logs (rewritten-field notices); `src/kit/ci/report-redaction.ts`; `tests/unit/kit/ci/report-fields.test.ts`.
+
+### D-FND-B29: no HTML report in any lane, and the owner's choice
+
+- context: a rewritten field removes the job's HTML report, because the HTML carries the original text. Every lane rewrote `gitDiff`, so no lane uploaded HTML in run 43272719962.
+- options: (a) keep HTML off; (b) stop Playwright recording the diff in CI, so HTML can be uploaded again; (c) strip `gitDiff` from the raw file before the HTML is generated (not possible: the HTML reporter runs during the test step).
+- choice: (b), as the owner decided. See D-FND-B30.
+- evidence: the owner's decision in this session.
+
+### D-FND-B30: capture the commit, never the diff
+
+- context: D-FND-B29 option (b).
+- choice: `captureGitInfo: { commit: true, diff: false }` in `playwright.config.ts`. The commit metadata stays, the diff is never recorded, and no project overrides it. A unit test imports the real config and checks both points (`tests/unit/ci/playwright-config.test.ts`).
+- sanitiser: `src/kit/ci/report-redaction.ts` and `scripts/prepare-ci-artifacts.ts` are unchanged, and so is the fail-closed check. A lane with no held item and no rewritten field keeps its HTML report. tw-iso, where a held item ran, stays JSON-only (B2).
+- order: this change is committed with the B28 and B29 build-log entries.
+- evidence: the `captureGitInfo` setting in Playwright 1.64 (`node_modules/playwright/types/test.d.ts`, `captureGitInfo`).
