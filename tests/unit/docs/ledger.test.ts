@@ -1,11 +1,11 @@
 // Schema and derivation tests for docs/findings/ledger.json (plan 7.4 and 4.8). The schema is validated at
 // runtime with ajv, not only by type.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { assertNoPrivateExtras, isPrivateEntry } from "../../../src/security/findings.ts";
+import { assertNoPrivateExtras, isPrivateEntry, privateIdIn } from "../../../src/security/findings.ts";
 import { validateAcceptedRisks, type AcceptedRisk } from "../../../src/security/accepted-risk.ts";
 
 const read = (relative: string): string =>
@@ -13,9 +13,14 @@ const read = (relative: string): string =>
 
 interface Ledger {
   schema: number;
-  cases: { id: string; status: string; alias?: Record<string, string> }[];
+  cases: {
+    id: string;
+    status: string;
+    alias?: Record<string, string>;
+    verification?: { runId: string; job: string; testFile: string };
+  }[];
   private: Record<string, unknown>[];
-  findings: unknown[];
+  findings: { id: string; evidence: { file: string; line: number; runId: string } }[];
   accepted_risks: unknown[];
 }
 
@@ -63,25 +68,42 @@ test("a private entry with an extra key is rejected with PRIVATE_FIELD_REJECTED"
   assert.equal(validate(withExtra), false);
 });
 
-test("cases holds 74 entries: 56 planned, 8 gated, 8 alias, 2 dropped", () => {
+test("cases holds 73 entries: 8 planned, 31 verified, 24 gated, 8 alias, 2 dropped", () => {
   const count = (status: string): number => ledger.cases.filter((c) => c.status === status).length;
-  assert.equal(ledger.cases.length, 74);
-  assert.equal(count("planned"), 56);
-  assert.equal(count("gated"), 8);
+  assert.equal(ledger.cases.length, 73);
+  assert.equal(count("planned"), 8);
+  assert.equal(count("verified"), 31);
+  assert.equal(count("gated"), 24);
   assert.equal(count("alias"), 8);
   assert.equal(count("dropped"), 2);
 });
 
-test("exactly the eight foundation-gated cases are gated, each with its blocker", () => {
+test("exactly the 24 gated cases are gated, each with its blocker", () => {
   const GATED_IDS = [
+    "P5-CAL-CSV-001",
     "P5-CAL-CSV-002",
-    "P5-TW-FUZZ-001",
+    "P5-CAL-RL-002",
+    "P5-CAL-TEAM-001",
+    "P5-CAL-TOK-001",
+    "P5-CAL-XSS-002",
+    "P5-DOC-OIDC-001",
+    "P5-DOC-OIDC-002",
+    "P5-DOC-RBAC-001",
+    "P5-MED-RBAC-001",
+    "P5-MED-WH-001",
+    "P5-MED-WH-002",
     "P5-TW-GQL-004",
+    "P5-TW-HDR-001",
+    "P5-TW-MT-001",
+    "P5-TW-MT-002",
+    "P5-TW-RLS-002",
+    "P5-TW-RLS-003",
     "P5-TW-SEC-001",
     "P5-TW-SND-001",
     "P5-TW-SND-002",
     "P5-TW-SND-003",
     "P5-TW-SND-004",
+    "P5-TW-SSRF-001",
   ];
   const gated = ledger.cases.filter((c) => c.status === "gated");
   assert.deepEqual(gated.map((c) => c.id).sort(), GATED_IDS);
@@ -91,10 +113,41 @@ test("exactly the eight foundation-gated cases are gated, each with its blocker"
   }
 });
 
-test("private holds 8 entries and no id appears twice", () => {
+test("every verified case names a CI run, a job and a test file that exists in the repository", () => {
+  const verified = ledger.cases.filter((c) => c.status === "verified");
+  assert.equal(verified.length, 31);
+  for (const c of verified) {
+    assert.ok(c.verification, `${c.id} needs a verification record`);
+    assert.match(c.verification.runId, /^[0-9]+$/, `${c.id} run id`);
+    assert.ok(c.verification.job.length > 0, `${c.id} job`);
+    assert.ok(
+      existsSync(fileURLToPath(new URL(`../../../${c.verification.testFile}`, import.meta.url))),
+      `${c.id} test file ${c.verification.testFile} is missing`,
+    );
+  }
+});
+
+test("no gated or planned case is verified, and no verified case has a blocker", () => {
+  for (const c of ledger.cases) {
+    if (c.status !== "verified") assert.equal(c.verification, undefined, `${c.id} has verification but is ${c.status}`);
+    if (c.status === "verified") assert.equal((c as { blocker?: unknown }).blocker, undefined, c.id);
+  }
+});
+
+test("private holds 10 entries and no id appears twice", () => {
   const ids = ledger.private.map((entry) => String(entry.id));
-  assert.equal(ledger.private.length, 8);
+  assert.equal(ledger.private.length, 10);
   assert.equal(new Set(ids).size, ids.length);
+});
+
+test("no private-first ID appears in cases or findings (master plan 4.8)", () => {
+  const privateIds = ledger.private.map((entry) => String(entry.id));
+  for (const c of ledger.cases) {
+    assert.equal(privateIdIn(c.id, privateIds), undefined, `${c.id} is private`);
+  }
+  for (const f of ledger.findings) {
+    assert.equal(privateIdIn(f.id, privateIds), undefined, `${f.id} is private`);
+  }
 });
 
 test("every alias case has canonicalId, repo, ref, file, scopeCovered, residual and disposition", () => {
@@ -109,8 +162,15 @@ test("accepted_risks is empty (no risk is fabricated)", () => {
   assert.deepEqual(ledger.accepted_risks, []);
 });
 
-test("findings is empty until a run produces evidence", () => {
-  assert.deepEqual(ledger.findings, []);
+test("findings holds the four public expectedDefect rows, each with a file that exists", () => {
+  assert.deepEqual(
+    ledger.findings.map((f) => f.id),
+    ["P5-CAL-WH-002", "P5-CAL-WH-003", "P5-MED-AUTHZ-001", "P5-TW-MASS-001"],
+  );
+  for (const f of ledger.findings) {
+    assert.ok(f.evidence.runId.length > 0, `${f.id} run id`);
+    assert.ok(existsSync(fileURLToPath(new URL(`../../../${f.evidence.file}`, import.meta.url))), `${f.id} file`);
+  }
 });
 
 test("accepted_risks passes the accepted-risk date validator", () => {

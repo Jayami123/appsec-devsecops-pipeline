@@ -20,19 +20,31 @@
       "properties": {
         "id": { "type": "string", "pattern": "^(P5|PN|MI)-" },
         "product": { "enum": ["cal", "documenso", "medusa", "twenty", "repo", "cross"] },
-        "status": { "enum": ["planned", "gated", "alias", "dropped"] },
+        "status": { "enum": ["planned", "verified", "gated", "alias", "dropped"] },
         "title": { "type": "string", "minLength": 1 },
         "lane": { "type": "string", "minLength": 1 },
         "severity": { "type": ["string", "null"], "enum": ["Critical", "High", "Medium", "Low", "Info", null] },
         "alias": { "$ref": "#/definitions/alias" },
         "blocker": { "type": "string", "minLength": 1 },
-        "reason": { "type": "string", "minLength": 1 }
+        "reason": { "type": "string", "minLength": 1 },
+        "verification": { "$ref": "#/definitions/verification" }
       },
       "allOf": [
         { "if": { "properties": { "status": { "const": "alias" } } }, "then": { "required": ["alias"] } },
         { "if": { "properties": { "status": { "const": "gated" } } }, "then": { "required": ["blocker"] } },
-        { "if": { "properties": { "status": { "const": "dropped" } } }, "then": { "required": ["reason"] } }
+        { "if": { "properties": { "status": { "const": "dropped" } } }, "then": { "required": ["reason"] } },
+        { "if": { "properties": { "status": { "const": "verified" } } }, "then": { "required": ["verification"] } }
       ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "job", "testFile"],
+      "properties": {
+        "runId": { "type": "string", "pattern": "^[0-9]+$" },
+        "job": { "type": "string", "minLength": 1 },
+        "testFile": { "type": "string", "minLength": 1 }
+      }
     },
     "alias": {
       "type": "object",

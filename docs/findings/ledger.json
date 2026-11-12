@@ -4,18 +4,28 @@
     {
       "id": "P5-CAL-AUTHZ-001",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "Other user cannot GET/PUT/DELETE owner booking",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-api",
+        "testFile": "tests/integration/cal/authz-owner-booking.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-AUTHZ-002",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "Anonymous cannot mutate; UID read fields documented",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-api",
+        "testFile": "tests/contracts/cal/anon-mutation.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-CAP-001",
@@ -28,10 +38,11 @@
     {
       "id": "P5-CAL-TEAM-001",
       "product": "cal",
-      "status": "planned",
+      "status": "gated",
       "title": "Team A member cannot edit team B event type",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "blocker": "NOT BUILT: no test file in the repository; cal plan row P1 records no probe or oracle."
     },
     {
       "id": "P5-CAL-WH-002",
@@ -52,154 +63,213 @@
     {
       "id": "P5-CAL-CRON-001",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "Cron without key rejected, one row per cron route",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-serial",
+        "testFile": "tests/serial/cal/cron-no-key.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-OAUTH-001",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "Authorization code single-use",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-api",
+        "testFile": "tests/integration/cal/oauth-code-single-use.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-OAUTH-002",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "PKCE: wrong code_verifier rejected",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-api",
+        "testFile": "tests/integration/cal/oauth-pkce-wrong-verifier.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-2FA-001",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "Burst of wrong TOTP codes",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-serial",
+        "testFile": "tests/serial/cal/totp-burst.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-TOK-001",
       "product": "cal",
-      "status": "planned",
+      "status": "gated",
       "title": "Reset token concurrent redemption",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "blocker": "NOT BUILT: no test file; cal plan row P1 needs the investigative budget CAL_RESET_CONCURRENT_N, which is not set."
     },
     {
       "id": "P5-CAL-RL-002",
       "product": "cal",
-      "status": "planned",
+      "status": "gated",
       "title": "API key over quota returns 429",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "blocker": "BLOCKED: the effective limit read for the API-key default is not exposed to the lane (cal plan row P2); never PASS on the default value alone."
     },
     {
       "id": "P5-CAL-XSS-001",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "Script in event description not executed",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-ui",
+        "testFile": "tests/ui/cal/event-description-xss.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-XSS-002",
       "product": "cal",
-      "status": "planned",
+      "status": "gated",
       "title": "Description in confirmation email sanitised",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "blocker": "BLOCKED: gated until P-13 (the cal mail catcher) is shown (master plan section 13)."
     },
     {
       "id": "P5-CAL-RED-001",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "External successRedirectUrl rejected or warned",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-ui",
+        "testFile": "tests/ui/cal/success-redirect.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-CSV-001",
       "product": "cal",
-      "status": "planned",
+      "status": "gated",
       "title": "Export prefixes formula-like cells (organisation members table)",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "blocker": "BLOCKED: probe P-5 (an organisation for the export) is UNPROBED (cal plan row P0)."
     },
     {
       "id": "P5-CAL-HDR-001",
       "product": "cal",
-      "status": "planned",
+      "status": "verified",
       "title": "Booker response security headers",
       "lane": "L-CAL",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-cal / cal-api",
+        "testFile": "tests/contracts/cal/booker-headers.spec.ts"
+      }
     },
     {
       "id": "P5-DOC-AUTHZ-001",
       "product": "documenso",
-      "status": "planned",
+      "status": "verified",
       "title": "Other user GET/DELETE envelope denied",
       "lane": "L-DOC",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "43003908792",
+        "job": "p5-doc / doc-api",
+        "testFile": "tests/integration/doc/envelope-other-user.spec.ts"
+      }
     },
     {
       "id": "P5-DOC-AUTHZ-002",
       "product": "documenso",
-      "status": "planned",
+      "status": "verified",
       "title": "Cross-organisation template access denied",
       "lane": "L-DOC",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "43003908792",
+        "job": "p5-doc / doc-api",
+        "testFile": "tests/integration/doc/cross-org-template.spec.ts"
+      }
     },
     {
       "id": "P5-DOC-RBAC-001",
       "product": "documenso",
-      "status": "planned",
+      "status": "gated",
       "title": "EVERYONE role visibility sample cells",
       "lane": "L-DOC",
-      "severity": null
+      "severity": null,
+      "blocker": "NOT BUILT: no test file in the repository; doc plan row P2 (3d) names the visibility enum but no test has been added."
     },
     {
       "id": "P5-DOC-HDR-001",
       "product": "documenso",
-      "status": "planned",
+      "status": "verified",
       "title": "Signing page headers",
       "lane": "L-DOC",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "43003908792",
+        "job": "p5-doc / doc-api",
+        "testFile": "tests/contracts/doc/signing-headers.spec.ts"
+      }
     },
     {
       "id": "P5-DOC-OIDC-001",
       "product": "documenso",
-      "status": "planned",
+      "status": "gated",
       "title": "OAuth state replay rejected",
       "lane": "L-DOC",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: owner decision D9; probe P-8 (the OIDC mock IdP through normal harness routes) is not shown; no test file."
     },
     {
       "id": "P5-DOC-OIDC-002",
       "product": "documenso",
-      "status": "planned",
+      "status": "gated",
       "title": "`email_verified=false` not auto-linked",
       "lane": "L-DOC",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: owner decision D9; probe P-8 (the OIDC mock IdP through normal harness routes) is not shown; no test file."
     },
     {
       "id": "P5-MED-WH-001",
       "product": "medusa",
-      "status": "planned",
+      "status": "gated",
       "title": "Missing signature: payment unchanged",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: runs in job med-stripe only; the owner-approved Stripe key and the job's egress are not in place (D-MED-1); no test file."
     },
     {
       "id": "P5-MED-WH-002",
       "product": "medusa",
-      "status": "planned",
+      "status": "gated",
       "title": "Invalid signature: payment unchanged",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: runs in job med-stripe only (D-MED-1); no test file."
     },
     {
       "id": "P5-MED-AUTHZ-001",
@@ -212,90 +282,133 @@
     {
       "id": "P5-MED-AUTHZ-002",
       "product": "medusa",
-      "status": "planned",
+      "status": "verified",
       "title": "Publishable key alone cannot act as admin",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42980434504",
+        "job": "p5-med / med-api",
+        "testFile": "tests/contracts/med/publishable-key-admin.spec.ts"
+      }
     },
     {
       "id": "P5-MED-AUTHZ-003",
       "product": "medusa",
-      "status": "planned",
+      "status": "verified",
       "title": "Customer B cannot update customer A address",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42980434504",
+        "job": "p5-med / med-api",
+        "testFile": "tests/integration/med/address-other-customer.spec.ts"
+      }
     },
     {
       "id": "P5-MED-RBAC-001",
       "product": "medusa",
-      "status": "planned",
+      "status": "gated",
       "title": "Role without order write cannot cancel",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "blocker": "BLOCKED: D-MED-B33. Under the v0.4.0 pin the flag is set, but the fork has no 'rbac' module (AwilixResolutionError at seed); excluded from med-api by --grep-invert."
     },
     {
       "id": "P5-MED-FIELD-001",
       "product": "medusa",
-      "status": "planned",
+      "status": "verified",
       "title": "`fields=` rejects restricted customer PII on store",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42980434504",
+        "job": "p5-med / med-api",
+        "testFile": "tests/contracts/med/fields-pii.spec.ts"
+      }
     },
     {
       "id": "P5-MED-RL-001",
       "product": "medusa",
-      "status": "planned",
+      "status": "verified",
       "title": "Admin login wrong-password burst",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42980434504",
+        "job": "p5-med / med-serial",
+        "testFile": "tests/serial/med/admin-login-burst.spec.ts"
+      }
     },
     {
       "id": "P5-MED-CORS-001",
       "product": "medusa",
-      "status": "planned",
+      "status": "verified",
       "title": "Disallowed origin gets no ACAO",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42980434504",
+        "job": "p5-med / med-api",
+        "testFile": "tests/contracts/med/cors-origin.spec.ts"
+      }
     },
     {
       "id": "P5-MED-FUZZ-001",
       "product": "medusa",
-      "status": "planned",
+      "status": "verified",
       "title": "Schemathesis store API valid extras never 5xx",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42980434504",
+        "job": "p5-med / med-serial",
+        "testFile": "tests/serial/med/schemathesis-store.spec.ts"
+      }
     },
     {
       "id": "P5-MED-HDR-001",
       "product": "medusa",
-      "status": "planned",
+      "status": "verified",
       "title": "Admin `/app` and store API headers",
       "lane": "L-MED",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42980434504",
+        "job": "p5-med / med-api",
+        "testFile": "tests/contracts/med/admin-headers.spec.ts"
+      }
     },
     {
       "id": "P5-TW-MT-001",
       "product": "twenty",
-      "status": "planned",
+      "status": "gated",
       "title": "Apple user cannot read YC company",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "blocker": "NOT BUILT: the multi-workspace job shape (tw-multiws) is not built (tw plan row 3b, RC-6); no test file."
     },
     {
       "id": "P5-TW-MT-002",
       "product": "twenty",
-      "status": "planned",
+      "status": "gated",
       "title": "Signed file URL from one workspace not readable in another",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "blocker": "NOT BUILT: the multi-workspace job shape (tw-multiws) is not built (tw plan row 3b, RC-6); no test file."
     },
     {
       "id": "P5-TW-RBAC-001",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "Guest cannot create webhook",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42974221754",
+        "job": "p5-tw / tw-api",
+        "testFile": "tests/integration/tw/guest-webhook-create.spec.ts"
+      }
     },
     {
       "id": "P5-TW-RLS-001",
@@ -308,18 +421,20 @@
     {
       "id": "P5-TW-RLS-002",
       "product": "twenty",
-      "status": "planned",
+      "status": "gated",
       "title": "Hidden record absent from CSV export",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: probe P-4 (E1) is not shown; no test file in the repository."
     },
     {
       "id": "P5-TW-RLS-003",
       "product": "twenty",
-      "status": "planned",
+      "status": "gated",
       "title": "Hidden field absent from GraphQL selection",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: probe P-4 (E1) is not shown; no test file in the repository."
     },
     {
       "id": "P5-TW-MASS-001",
@@ -332,34 +447,50 @@
     {
       "id": "P5-TW-SSRF-001",
       "product": "twenty",
-      "status": "planned",
+      "status": "gated",
       "title": "Logic/workflow HTTP to owner canary blocked",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: the canary control (tw plan section 6, E1) has not run on a live stack; excluded from tw-api by the @ssrf grep."
     },
     {
       "id": "P5-TW-INJ-001",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "Filter corpus does not 500 or leak SQL",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42974221754",
+        "job": "p5-tw / tw-api",
+        "testFile": "tests/contracts/tw/filter-corpus.spec.ts"
+      }
     },
     {
       "id": "P5-TW-RL-001",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "Wrong-password burst on one throwaway account",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42974221754",
+        "job": "p5-tw / tw-serial",
+        "testFile": "tests/serial/tw/wrong-password-burst.spec.ts"
+      }
     },
     {
       "id": "P5-TW-RL-002",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "One-attempt-per-account spray across throwaway accounts",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42974221754",
+        "job": "p5-tw / tw-serial",
+        "testFile": "tests/serial/tw/password-spray-throwaways.spec.ts"
+      }
     },
     {
       "id": "P5-TW-SEC-001",
@@ -373,19 +504,24 @@
     {
       "id": "P5-TW-FUZZ-001",
       "product": "twenty",
-      "status": "gated",
-      "blocker": "GATED: live route /rest/open-api/core not probed (tw plan RC-13 and section 15); the Schemathesis lock is requirements/schemathesis.txt",
+      "status": "verified",
       "title": "Schemathesis `/rest/open-api/core`",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42974221754",
+        "job": "p5-tw / tw-serial",
+        "testFile": "tests/serial/tw/schemathesis-core.spec.ts"
+      }
     },
     {
       "id": "P5-TW-HDR-001",
       "product": "twenty",
-      "status": "planned",
+      "status": "gated",
       "title": "Frontend CSP and frame-ancestors",
       "lane": "L-TW-A",
-      "severity": null
+      "severity": null,
+      "blocker": "GATED: probe P-4 (E1) is not shown; no test file in the repository."
     },
     {
       "id": "P5-TW-SND-001",
@@ -426,26 +562,28 @@
     {
       "id": "P5-TW-GQL-001",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "Deeply nested query rejected",
       "lane": "L-TW-B",
-      "severity": null
-    },
-    {
-      "id": "P5-TW-GQL-002",
-      "product": "twenty",
-      "status": "planned",
-      "title": "Query cost or complexity limit",
-      "lane": "L-TW-B",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42973672650",
+        "job": "p5-tw-iso / tw-iso",
+        "testFile": "tests/iso/tw/gql-depth.spec.ts"
+      }
     },
     {
       "id": "P5-TW-GQL-003",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "Alias flooding bounded",
       "lane": "L-TW-B",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42973672650",
+        "job": "p5-tw-iso / tw-iso",
+        "testFile": "tests/iso/tw/gql-alias.spec.ts"
+      }
     },
     {
       "id": "P5-TW-GQL-004",
@@ -459,42 +597,67 @@
     {
       "id": "P5-TW-GQL-005",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "Introspection exposure",
       "lane": "L-TW-B",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42973672650",
+        "job": "p5-tw-iso / tw-iso",
+        "testFile": "tests/iso/tw/gql-introspection.spec.ts"
+      }
     },
     {
       "id": "P5-TW-GQL-006",
       "product": "twenty",
-      "status": "planned",
+      "status": "verified",
       "title": "Field suggestions leak schema",
       "lane": "L-TW-B",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42973672650",
+        "job": "p5-tw-iso / tw-iso",
+        "testFile": "tests/iso/tw/gql-suggestions.spec.ts"
+      }
     },
     {
       "id": "P5-SCAN-001",
       "product": "repo",
-      "status": "planned",
+      "status": "verified",
       "title": "Trivy filesystem and product image scan",
       "lane": "L-PIPE",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-scans / trivy",
+        "testFile": "tests/unit/scan/trivy.test.ts"
+      }
     },
     {
       "id": "P5-SCAN-002",
       "product": "repo",
-      "status": "planned",
+      "status": "verified",
       "title": "gitleaks on this repo blocking; forks report-only",
       "lane": "L-PIPE",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-scans / gitleaks",
+        "testFile": "tests/unit/scan/gitleaks.test.ts"
+      }
     },
     {
       "id": "P5-SCAN-003",
       "product": "repo",
-      "status": "planned",
+      "status": "verified",
       "title": "OSV-Scanner and npm audit",
       "lane": "L-PIPE",
-      "severity": null
+      "severity": null,
+      "verification": {
+        "runId": "42996226683",
+        "job": "p5-scans / osv-npm",
+        "testFile": "tests/unit/scan/osv.test.ts"
+      }
     },
     {
       "id": "P5-SCAN-004",
@@ -708,8 +871,73 @@
     {
       "id": "MI-18",
       "status": "held-private"
+    },
+    {
+      "id": "P5-TW-GQL-002",
+      "status": "held-private"
+    },
+    {
+      "id": "P5-DOC-PF-001",
+      "status": "held-private"
     }
   ],
-  "findings": [],
+  "findings": [
+    {
+      "id": "P5-CAL-WH-002",
+      "product": "cal",
+      "status": "product-bug-suspected",
+      "title": "Replay of a captured valid signed request",
+      "severity": "Medium",
+      "bugId": "P5-CAL-WH-002",
+      "evidence": {
+        "runId": "42996226683",
+        "artifact": "job log, no artifact uploaded before this PR (p5-cal / cal-api)",
+        "file": "tests/webhooks/cal/replay.spec.ts",
+        "line": 48
+      }
+    },
+    {
+      "id": "P5-CAL-WH-003",
+      "product": "cal",
+      "status": "product-bug-suspected",
+      "title": "Stale timestamp with recomputed signature",
+      "severity": "Low",
+      "bugId": "P5-CAL-WH-003",
+      "evidence": {
+        "runId": "42996226683",
+        "artifact": "job log, no artifact uploaded before this PR (p5-cal / cal-api)",
+        "file": "tests/webhooks/cal/stale-timestamp.spec.ts",
+        "line": 49
+      }
+    },
+    {
+      "id": "P5-MED-AUTHZ-001",
+      "product": "medusa",
+      "status": "product-bug-suspected",
+      "title": "Customer B cannot take over or mutate customer A's cart through a customer-authenticated route",
+      "severity": "High",
+      "bugId": "P5-MED-AUTHZ-001",
+      "evidence": {
+        "runId": "42980434504",
+        "artifact": "job log, no artifact uploaded before this PR (p5-med / med-api)",
+        "file": "tests/integration/med/cart-other-customer.spec.ts",
+        "line": 68
+      }
+    },
+    {
+      "id": "P5-TW-MASS-001",
+      "product": "twenty",
+      "status": "product-bug-suspected",
+      "title": "Client-supplied id, createdBy, deletedAt ignored",
+      "severity": "Medium",
+      "bugId": "P5-TW-MASS-001",
+      "evidence": {
+        "runId": "42974221754",
+        "artifact": "job log, no artifact uploaded before this PR (p5-tw / tw-api)",
+        "file": "tests/contracts/tw/mass-assignment.spec.ts",
+        "line": 143
+      }
+    }
+  ],
   "accepted_risks": []
 }
