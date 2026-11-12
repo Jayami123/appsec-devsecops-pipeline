@@ -16,7 +16,8 @@ permissions:
 
 jobs:
   decide: # report-only policy (O-6)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       report: ${{ steps.decide.outputs.report }}
@@ -32,7 +33,8 @@ jobs:
         run: bash scripts/scan/decide-report.sh >> "$GITHUB_OUTPUT"
 
   gitleaks: # blocking, this repository
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       verdict: ${{ steps.verdict.outputs.verdict }}
@@ -80,7 +82,8 @@ jobs:
   gitleaks-forks: # report-only: the pinned forks, tool errors only fail
     needs: [decide]
     if: needs.decide.outputs.report == 'true'
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -106,7 +109,8 @@ jobs:
           done
 
   osv-npm: # blocking, the root package-lock.json (OSV primary; npm D5 cross-check)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       verdict: ${{ steps.verdict.outputs.verdict }}
@@ -142,7 +146,8 @@ jobs:
   osv-forks: # report-only: each pinned fork lockfile; tool errors fail
     needs: [decide]
     if: needs.decide.outputs.report == 'true'
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -169,7 +174,8 @@ jobs:
           done
 
   trivy: # blocking, the root filesystem (--include-dev-deps is required)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       verdict: ${{ steps.verdict.outputs.verdict }}
@@ -192,7 +198,8 @@ jobs:
         run: node --experimental-strip-types scripts/scan/trivy-threshold.ts "$RUNNER_TEMP/scan-out/trivy/root.json" root config/scan/baseline/trivy.json >> "$GITHUB_OUTPUT"
 
   trivy-upload: # report SARIF; failure of the upload is fail, findings are not
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read
@@ -221,7 +228,8 @@ jobs:
   trivy-images: # report-only: JSON per pinned image digest, never SARIF
     needs: [decide]
     if: needs.decide.outputs.report == 'true'
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -244,7 +252,8 @@ jobs:
   trivy-forks: # report-only: each pinned fork, JSON, tool errors fail
     needs: [decide]
     if: needs.decide.outputs.report == 'true'
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -277,7 +286,8 @@ jobs:
     uses: ./.github/workflows/codeql-reusable.yml
 
   zizmor: # blocking on error-level results; offline (--no-online-audits, O-9)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       verdict: ${{ steps.verdict.outputs.verdict }}
@@ -306,7 +316,8 @@ jobs:
   syft: # report-only SBOM per pinned image; skipped (policy) unless decide.report is true
     needs: [decide]
     if: needs.decide.outputs.report == 'true'
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       verdict: ${{ steps.sbom.outputs.verdict }}
@@ -339,7 +350,8 @@ jobs:
         syft,
       ]
     if: always()
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
