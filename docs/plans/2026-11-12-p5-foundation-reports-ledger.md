@@ -217,3 +217,34 @@ tip had not moved, so no re-base was needed.
 | workflow lint | `bash scripts/lint-workflows.sh` | exit 0; `checksum verified for actionlint_1.7.12_linux_amd64.tar.gz`; `actionlint 1.7.12 OK` |
 | titles | `npx playwright test --list` | 143 tests in 62 files, identical to the baseline |
 | sanitiser, end to end | `prepare-ci-artifacts.ts` on a synthetic report | held spec rebuilt; sentinel absent; HTML and test results removed; summary shows ID and status |
+
+### D-FND-B24: the upload-artifact pin is confirmed (closes D-FND-B9)
+
+- context: D-FND-B9 kept the owner's pin without re-checking it, because the session could not read the tag.
+- choice: the owner confirmed that `actions/upload-artifact` v7.0.2 resolves to `cf430e030ddbb5b0abf93d22962f4752f3646cd9`. The pin stays as it is.
+- evidence: owner statement in this session. The pin is unchanged in every workflow file that uses it.
+
+### D-FND-B25: root cause of "redaction incomplete" in CI run 43170977111
+
+- context: every product lane's sanitise step failed with "a private-first ID survives outside its held title", including cal and med, which hold no item. The tests passed.
+- what the logs establish: the failing check counts ID occurrences over the whole report, not only over specs. Held detection covers spec titles and test results only. Nothing rewrote any other field, so an ID in a field outside specs survived in every lane.
+- what was tested: the list-mode JSON for the med and cal projects contains no private ID (scan of every string value), so the ID reaches the report only in the executed run. The sanitised file is not written when the check fails, so the field cannot be read from the CI output.
+- choice: a second redaction pass rewrites every string value anywhere in the report that names a private ID, to "<ID> (held-private)", and records its JSON path. The root-level errors that name an ID are removed and recorded. A rewritten field also removes the HTML and test results for its job, because the HTML carries the original text.
+- options considered: (a) remove the fail-closed check (rejected: hard limit); (b) drop the config and metadata objects wholesale (rejected: loses run information that holds no ID); (c) rewrite strings at any depth and keep the check (chosen).
+- keys: a key that names an ID is not rewritten, so the leftover check still stops the run. The failure now prints the key paths (names only).
+- reason: the fix is at the point where the text enters the upload, and the fail-closed check is unchanged.
+- evidence: `src/kit/ci/report-redaction.ts` (passes 1 and 2, `privateKeyPaths`), `scripts/prepare-ci-artifacts.ts`, `tests/unit/kit/ci/report-fields.test.ts` (F1 to F9: argv, git metadata, suite and spec paths, root errors, two IDs in one string, a key that must still fail closed, a clean lane, a held marker not counted), `tests/unit/ci/prepare-artifacts.test.ts` (P1 to P5: a clean lane exits 0 and keeps the HTML; a rewritten argv removes the HTML and prints the path; a key stops the run with exit 1; a missing report exits 0; an unreadable ledger exits 1).
+- not yet proven: the exact field in CI. The next run prints `rewritten field <path>` for each field, or the key paths on failure. Read those notices on the run; they name the location with no value.
+
+### D-FND-B26: the tw-iso expected-defect call still runs (question 2)
+
+- context: the owner reported "13 passed" against "12 passed, 1 expected failure" before this PR.
+- what the logs show: the GQL-002 query-above-cap title prints as a failure marker (✘) in the base run (42973672650) and in the failing run (131023976531), so the expected failure still occurs. The list reporter's totals line counts expected failures inside "passed" in both runs ("13 passed"). This reporter does not print an "expected failure" count, so the owner's wording does not come from these logs.
+- choice: nothing restored, because nothing was removed. The expectedDefect call is still in `tests/iso/tw/gql-cost.spec.ts` before the unchanged assertion, and B14 changed only the evidence string and comments.
+- evidence: `tests/iso/tw/gql-cost.spec.ts:43` (expectedDefect), `:65` (unchanged assertion); the two job logs named above.
+
+### D-FND-B27: lint and typing fixes in the new test files
+
+- context: the first run of the check failed on two non-null assertions and on a spawnSync return type in the new test files.
+- choice: explicit casts and `SpawnSyncReturns<string>`. No assertion changed.
+- evidence: `npm run check` exit 0 (708 tests, 0 failing) after the fix.
