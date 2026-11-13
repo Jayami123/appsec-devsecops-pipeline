@@ -1,9 +1,6 @@
-// P5-CAL-TOK-001: one password-reset token is redeemed. The token is the resetPasswordRequest id in the
-// mailed link (forgot-password route, passwordResetRequest.ts). Control: a single redemption succeeds.
+// P5-CAL-TOK-001: one password-reset token is redeemed. Control: a single redemption succeeds.
 // Negative: CAL_RESET_CONCURRENT_N parallel redemptions of one token must allow exactly one success.
-// Expected defect (PRODUCT BUG, SUSPECTED): apps/web/app/api/auth/reset-password/route.ts reads the
-// request with findFirstOrThrow (line 50) and expires it only after the password write (line 87), so
-// concurrent requests all pass the lookup.
+// Expected defect (PRODUCT BUG, confirmed): detail held by the owner.
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { catcherMessagesFor } from "../../../src/lanes/cal/mail.ts";
@@ -43,7 +40,7 @@ async function requestResetToken(actor: CalActor): Promise<string> {
   return id as string;
 }
 
-/** CSRF token from /api/csrf (csrf/route.ts). Fetched once per batch: the cookie jar is shared. */
+/** CSRF token from /api/csrf fork ref held by the owner). Fetched once per batch: the cookie jar is shared. */
 async function csrfToken(actor: CalActor): Promise<string> {
   const csrf = await actor.web.get(`${base()}/api/csrf`);
   const { csrfToken: token } = (await csrf.json()) as { csrfToken: string };
@@ -84,9 +81,7 @@ test.describe("P5-CAL-TOK-001 reset token", () => {
     );
     const successes = statuses.filter((s) => s >= 200 && s < 300).length;
     test.info().annotations.push({ type: "tok-001-statuses", description: statuses.join(",") });
-    expectedDefect(
-      "P5-CAL-TOK-001: apps/web/app/api/auth/reset-password/route.ts:50-56 looks the request up with findFirstOrThrow and expires it only at line 87, after the password write; concurrent redemptions all passed the lookup",
-    );
+    expectedDefect("P5-CAL-TOK-001: detail held by the owner");
     expect(
       successes,
       `exactly one success of ${statuses.length} parallel redemptions; statuses ${statuses.join(",")}`,

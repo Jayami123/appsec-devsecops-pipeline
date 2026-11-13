@@ -21,7 +21,7 @@ import {
 } from "../../../../src/kit/webhooks/sign.ts";
 import * as v from "../../webhooks/vectors.ts";
 
-describe("signCal (sendPayload.ts:296-299)", () => {
+describe("signCal (fork ref held by the owner)", () => {
   test("matches the independent vector for a body with a real é", () => {
     const out = signCal({ secret: v.SECRET, body: v.CAL_BODY_UTF8 });
     assert.equal(out.headers[CAL_SIGNATURE_HEADER], v.CAL_SIG_UTF8);
@@ -64,7 +64,7 @@ describe("signDocumenso (execute-webhook-call.ts: X-Documenso-Secret)", () => {
   });
 });
 
-describe("signTwenty (call-webhook.job.ts)", () => {
+describe("signTwenty (fork ref held by the owner)", () => {
   test("matches the independent vector and emits all three headers", () => {
     const out = signTwenty({
       secret: v.SECRET,
@@ -92,7 +92,7 @@ describe("signTwenty (call-webhook.job.ts)", () => {
   });
 });
 
-describe("signDaily (recorded-daily-video/route.ts:40-45)", () => {
+describe("signDaily (fork ref held by the owner)", () => {
   const base = { secretBase64: v.DAILY_SECRET_B64, timestamp: v.DAILY_TS };
 
   test("compact body: raw and reserialised modes agree with the vector", () => {
@@ -111,7 +111,7 @@ describe("signDaily (recorded-daily-video/route.ts:40-45)", () => {
     assert.equal(re.body.toString("utf8"), v.DAILY_BODY_SPACED, "bytes sent stay as given");
   });
 
-  test("a null timestamp omits the header and signs the text 'null' (route.ts:41)", () => {
+  test("a null timestamp omits the header and signs the text 'null' (fork ref held by the owner)", () => {
     const out = signDaily({ ...base, timestamp: null, body: v.DAILY_BODY_COMPACT, mode: "raw" });
     assert.equal(out.headers[DAILY_SIGNATURE_HEADER], v.DAILY_SIG_NULL_TS);
     assert.ok(!(DAILY_TIMESTAMP_HEADER in out.headers));

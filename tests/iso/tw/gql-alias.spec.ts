@@ -1,5 +1,5 @@
 // P5-TW-GQL-003 (tw-iso.md 8.7). Alias flood (D-TWISO-B27). The negative aliases one REAL root field: the fork
-// sets checkDuplicateRootResolvers (graphql-config.service.ts:75) and refuses the duplicate (hook:272-276).
+// sets checkDuplicateRootResolvers (fork ref held by the owner) and refuses the duplicate (hook:272-276).
 // The control aliases nested real fields under ONE root field, so it cannot trip the duplicate check.
 import { BUDGETS } from "../../../src/security/budgets.ts";
 import { actorWithCleanup } from "../../../src/lanes/tw-iso/actor-fixture.ts";

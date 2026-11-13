@@ -10,7 +10,7 @@ import {
 /**
  * How each product's process reaches the receiver (plan Task 5, probes P1/P3 on harness v0.2.18):
  *  - cal and documenso run as HOST processes, so loopback works. Documenso additionally refuses a
- *    literal private or loopback host when a webhook is CREATED (webhook-router/schema.ts), so it
+ *    literal private or loopback host when a webhook is CREATED fork ref held by the owner), so it
  *    gets a hostname that resolves to 127.0.0.1 and is listed in
  *    NEXT_PRIVATE_WEBHOOK_SSRF_BYPASS_HOSTS (read once at process start).
  *  - twenty: with HR-2 (`extra_hosts: host.docker.internal:host-gateway`) the name resolves in its containers to the

@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-/** Fork default for GRAPHQL_MAX_FIELDS: config-variables.ts:1855 at 7cbdfec6. The harness sets none (F5). */
+/** Fork default for GRAPHQL_MAX_FIELDS: fork ref held by the owner at 7cbdfec6. The harness sets none (F5). */
 export const FORK_DEFAULT_GRAPHQL_MAX_FIELDS = 2000;
 
 export interface ReadbackValue<T> {
@@ -45,20 +45,20 @@ export function readEffectiveConfig(
     GRAPHQL_MAX_FIELDS: {
       value: FORK_DEFAULT_GRAPHQL_MAX_FIELDS,
       source:
-        "fork default config-variables.ts:1855 (7cbdfec6); not set by docker/twenty.compose.yml or twenty-passthrough.ts (harness rg: no match)",
+        "fork default fork ref held by the owner (7cbdfec6); not set by docker/twenty.compose.yml or twenty-passthrough.ts (harness rg: no match)",
     },
     NODE_ENV: {
       value: "unprobed",
       source:
-        "image default: config-variables.ts:1543 gates introspection; no product route exposes it. Behavioural evidence: GQL-005 annotation",
+        "image default: fork ref held by the owner gates introspection; no product route exposes it. Behavioural evidence: GQL-005 annotation",
     },
     LOGIC_FUNCTION_TYPE: logicFunctionTypeFromProof(proofPath),
   };
 }
 
 /** The NODE_ENV readback from the behaviour of an anonymous introspection request (GQL-005, D-TWISO-B28).
- *  The fork refuses anonymous introspection only in production (graphql-config.service.ts:66-68; the rule is
- *  use-disable-introspection-and-suggestions-for-unauthenticated-users.hook.ts:12-17). */
+ *  The fork refuses anonymous introspection only in production (fork ref held by the owner; the rule is
+ *  fork ref held by the owner). */
 export function nodeEnvFromBehaviour(anonymousIntrospectionRefused: boolean): string {
   return anonymousIntrospectionRefused
     ? "production (behavioural, GQL-005)"

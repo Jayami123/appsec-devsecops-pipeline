@@ -1,7 +1,7 @@
 // File-backed throwaway actors for one run (D-DOC-B33). Sign-up happens ONCE per run in a provisioning test
 // (never in a worker-scoped fixture), and every later worker, including a worker restarted after a failure,
 // reads the stored session instead of signing up again. The sign-up limit is 3 per 3 hours per IP
-// (packages/lib/server-only/rate-limit/rate-limits.ts:5-9), so the budget is enforced here, before any call.
+// (fork ref held by the owner), so the budget is enforced here, before any call.
 // Files live under test-results/<run prefix>/actors (test-results/ is gitignored; not an artefact).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";

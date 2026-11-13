@@ -6,7 +6,7 @@ export type ProductId = "cal" | "documenso" | "medusa" | "twenty";
 export const PRODUCT_IDS: readonly ProductId[] = ["cal", "documenso", "medusa", "twenty"];
 export type DbRole = "qa_ro" | "qa_fixture";
 
-// Same shape as the run prefix (src/kit/run/prefix.ts RUN_PREFIX_PATTERN). P5_RUN_ID is required.
+// Same shape as the run prefix fork ref held by the owner RUN_PREFIX_PATTERN). P5_RUN_ID is required.
 const RUN_ID_PATTERN = /^p5-qa-\d{8}t\d{6}z-[0-9a-f]{8}$/;
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);

@@ -17,7 +17,7 @@ export function runKeyTitle(prefix: string): string {
 /**
  * Mints a publishable key under the run prefix through the admin API and links it to the sales channel.
  * POST /admin/api-keys (body title, type "publishable"; ApiKeyType.PUBLISHABLE = "publishable",
- * @medusajs/utils dist/api-key/api-key-type.js) returns { api_key } (core dist/api/admin/api-keys/route.js:37).
+ * @medusajs/utils fork ref held by the owner) returns { api_key } (core fork ref held by the owner).
  * POST /admin/api-keys/:id/sales-channels takes { add, remove } (core dist/api/admin/api-keys/[id]/sales-channels).
  */
 export async function mintRunPublishableKey(
@@ -50,7 +50,7 @@ export async function mintRunPublishableKey(
   return { id, value, title };
 }
 
-/** Revoke then delete (core dist/api/admin/api-keys/[id]/revoke/route.js; DELETE /admin/api-keys/:id). */
+/** Revoke then delete (core fork ref held by the owner; DELETE /admin/api-keys/:id). */
 export async function revokeRunPublishableKey(
   api: APIRequestContext,
   admin: AdminSession,

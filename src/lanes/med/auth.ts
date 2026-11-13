@@ -98,7 +98,7 @@ export async function loginThrowawayCustomer(
   return { token };
 }
 
-/** DELETE /admin/customers/:id (core dist/api/admin/customers/[id]/route.js). Throwaway customers only. */
+/** DELETE /admin/customers/:id (core fork ref held by the owner). Throwaway customers only. */
 export async function deleteThrowawayCustomer(
   api: APIRequestContext,
   admin: AdminSession,

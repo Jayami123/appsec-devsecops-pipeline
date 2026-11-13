@@ -1,5 +1,5 @@
-// P5-DOC-NEW-DOC-3 upload abuse (doc plan section 4.5). Route: POST /api/files/upload-pdf (files.ts:29, form
-// field `file`); needs a session (files.ts:15). Limit: the upload route is limited (DOC_ROUTE_LIMITS.upload,
+// P5-DOC-NEW-DOC-3 upload abuse (doc plan section 4.5). Route: POST /api/files/upload-pdf (fork ref held by the owner, form
+// field `file`); needs a session (fork ref held by the owner). Limit: the upload route is limited (DOC_ROUTE_LIMITS.upload,
 // budgets.ts:32-38). Serial: it consumes the upload window, so it runs on its own stack (C13).
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
@@ -9,8 +9,7 @@ import { docRouteLimit } from "../../../src/lanes/doc/limits.ts";
 import { minimalPdf } from "../../../src/lanes/doc/pdf.ts";
 
 const UPLOAD_PATH = "/api/files/upload-pdf";
-const INVALID_PDF_DEFECT =
-  "P5-DOC-NEW-DOC-3: apps/remix/server/api/files/files.ts:55-58 maps INVALID_DOCUMENT_FILE to 500; normalize-pdf.ts:11-13";
+const INVALID_PDF_DEFECT = "P5-DOC-NEW-DOC-3: detail held by the owner";
 let uploads = 0;
 
 async function upload(

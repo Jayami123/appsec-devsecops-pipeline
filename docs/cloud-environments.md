@@ -130,7 +130,7 @@ get Docker in different ways. This section is the reference for both.
   30 seconds, and logs in to Docker Hub when both optional variables are set. It never fails the session and never
   installs Docker. Outside a Claude Code cloud session it prints a skip message and exits 0.
 - **Cursor cloud:** `.cursor/Dockerfile` installs Docker Engine (its Docker block, lines 45-63), and
-  `.cursor/environment.json` runs `sudo service docker start && docker info >/dev/null` as `start`. Neither takes effect
+  `fork ref held by the owner` runs `sudo service docker start && docker info >/dev/null` as `start`. Neither takes effect
   until the owner selects these files (section c).
 
 ### b. Owner steps: Claude Code cloud
@@ -184,7 +184,7 @@ settings by hand. A committed file does not activate them.
    `gotenberg/gotenberg:8@sha256:…`, and `redis:8.10.3@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53`
    (Twenty, `docker/twenty.compose.yml:59`, v0.4.0 only). All are Docker Hub images, so the Docker Hub row covers them.
    No quay.io, mcr.microsoft.com or other registry was found. Cal's Postgres images (verified 2026-11-10 from `Jayami123/cal` at `c2b7ac44c66f24ffef1662b276f0653988a609a3`,
-   `packages/prisma/docker-compose.yml`, which the Cal adapter reads, `src/adapters/cal.adapter.ts:159-164`, `:627-629`):
+   `fork ref held by the owner`, which the Cal adapter reads, `fork ref held by the owner`, `:627-629`):
    `postgres:18` for service `postgres` (line 5) and an untagged `postgres` for service `postgres_is_ready` (line 21).
    Both are Docker Hub images, so the Docker Hub row covers them. The untagged image floats to whatever `latest` is at
    pull time; it is in the product fork, not P5 code, so P5 does not change it.
@@ -205,7 +205,7 @@ settings by hand. A committed file does not activate them.
 Nothing to paste as a setup script. The Cursor install step stays `bash scripts/cloud-install.sh`; Docker comes from the
 Dockerfile.
 
-1. In the Cursor cloud-agent environment settings, select this repository's `.cursor/environment.json` and
+1. In the Cursor cloud-agent environment settings, select this repository's `fork ref held by the owner` and
    `.cursor/Dockerfile`. Build from the default branch.
 2. Non-secret variables: nothing to set by hand.
 
@@ -267,12 +267,12 @@ Cursor stays on its existing lean selection until the owner selects this reposit
 
 ### A. NOW
 
-- Keep the existing lean selection. Do not select the committed `.cursor/environment.json` or
+- Keep the existing lean selection. Do not select the committed `fork ref held by the owner` or
   `.cursor/Dockerfile`.
 
 ### B. AFTER F0-1 MERGES
 
-- `.cursor/environment.json` is adapted (not verbatim P2): `install` runs `bash scripts/cloud-install.sh`
+- `fork ref held by the owner` is adapted (not verbatim P2): `install` runs `bash scripts/cloud-install.sh`
   (full mode; not selected until F0-2) and `start` runs `sudo service docker start && docker info >/dev/null`.
   The receiver-hostname and `qa:passwords` calls are removed.
 - `.cursor/Dockerfile` installs Node 22.23.3 to `/usr/local` and Node 24.22.0 side by side under

@@ -144,7 +144,7 @@ describe("roles: allow-list", () => {
         entry.cases.length > 0 && entry.cases.every((c) => /^P2-[A-Z]+-[A-Z]+-\d{3}$/.test(c)),
         entry.column,
       );
-      assert.match(entry.cite, /schema\.prisma:\d+/);
+      assert.match(entry.cite, /held by the owner/);
     }
   });
 

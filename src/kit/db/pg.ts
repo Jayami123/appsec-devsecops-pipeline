@@ -154,7 +154,7 @@ export function createReadOnlyDb(product: OracleLabel, options: ReadOnlyDbOption
 
 const registry = new Map<ProductId, ReadOnlyDb>();
 
-/** One pool per product per worker process, connecting as qa_ro (src/db/roles.ts). */
+/** One pool per product per worker process, connecting as qa_ro fork ref held by the owner). */
 export function readOnlyDb(product: ProductId, env: NodeJS.ProcessEnv = process.env): ReadOnlyDb {
   let db = registry.get(product);
   if (!db) {

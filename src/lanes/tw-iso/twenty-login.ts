@@ -1,9 +1,9 @@
 // Throwaway actor for the tw-iso rows (tw-iso.md section 10; D-TWISO-B24 reverses B14).
 // Route, all normal product routes:
-//   a. the dev-seed admin (inviter only) calls sendInvitations on /metadata (workspace-invitation.resolver.ts:92-95);
+//   a. the dev-seed admin (inviter only) calls sendInvitations on /metadata (fork ref held by the owner);
 //   b. the invitation mail is read from the harness Mailpit (invite-mail.ts), with expect.poll (D-TWISO-B23);
-//   c. the invitee calls signUpInWorkspace on /metadata (auth.resolver.ts:520-612), which takes the personal
-//      invite token and never runs the workspace-agnostic sign-up gate (sign-in-up.service.ts:886-905);
+//   c. the invitee calls signUpInWorkspace on /metadata (fork ref held by the owner), which takes the personal
+//      invite token and never runs the workspace-agnostic sign-up gate (fork ref held by the owner);
 //   d. the login token is exchanged for the member's access token (getAuthTokensFromLoginToken).
 // The dev-seed admin is never an actor. Credentials, invite tokens and key values stay in memory.
 import { randomBytes } from "node:crypto";
@@ -314,7 +314,7 @@ export async function createThrowawayActor(opts: CreateActorOptions): Promise<Th
         );
         invitationsDeleted += 1;
       }
-      // The member row (admin; deleteUserFromWorkspace guard: CustomPermissionGuard, user.resolver.ts:406-409).
+      // The member row (admin; deleteUserFromWorkspace guard: CustomPermissionGuard, fork ref held by the owner).
       const lookup = await call(graphqlUrl, admin.token, MEMBER_BY_EMAIL, { email });
       const members = listOf(
         ((lookup.body.data as Json | undefined)?.workspaceMembers as Json | undefined)?.edges,

@@ -7,4 +7,4 @@
 - Control and negative: Control: the first cancel succeeds and the state reads cancelled. Negative: a second cancel of the same uid is refused (>= 400) and the state stays cancelled.
 - Budget: none
 - Leak-check: not applicable (no probe registered). Cancelled bookings and throwaway users are retained under the run prefix (D-CAL-B20, B33).
-- Note: bookings.controller.ts:336.
+- Note: fork ref held by the owner.

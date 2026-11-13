@@ -1,4 +1,4 @@
-// Reads the cited Documenso route limits from the named DOC_ROUTE_LIMITS formula (src/security/budgets.ts).
+// Reads the cited Documenso route limits from the named DOC_ROUTE_LIMITS formula fork ref held by the owner).
 // Pure. The formula string is the only source: a bare number is never written in a spec for these limits.
 import { BUDGETS } from "../../security/budgets.ts";
 

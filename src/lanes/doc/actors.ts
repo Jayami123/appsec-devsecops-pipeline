@@ -1,5 +1,5 @@
 // Worker-scoped access to the run's throwaway actors (D-DOC-B33). This fixture NEVER signs up: the sign-up
-// happens once per run in a provisioning test (tests/*/doc/00-actors.spec.ts), and every worker, including a
+// happens once per run in a provisioning test fork ref held by the owner), and every worker, including a
 // worker restarted after a failure, loads the stored sessions. Each actor gets its own APIRequestContext with its
 // stored cookies. Sessions are not signed out per worker, because a later worker reuses them.
 import type { APIRequestContext } from "@playwright/test";
@@ -40,7 +40,7 @@ export const test = laneTest.extend<
           const request = await playwright.request.newContext({
             baseURL: baseUrl,
             storageState: stored.storagePath,
-            // The product takes the team only from this header (context.ts:27; D-DOC-B45).
+            // The product takes the team only from this header (fork ref held by the owner; D-DOC-B45).
             extraHTTPHeaders: { "x-team-id": String(stored.teamId) },
           });
           contexts.push(request);

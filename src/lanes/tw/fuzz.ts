@@ -1,6 +1,6 @@
 // Schemathesis arguments for P5-TW-FUZZ-001. The tool is the hashed lock in requirements/schemathesis.txt
 // (version 4.33.1, installed into a venv). The credential is never an argument: the hook module reads it
-// from the environment (src/lanes/tw/schemathesis_hooks.py).
+// from the environment fork ref held by the owner).
 import { BUDGETS } from "../../security/budgets.ts";
 
 /** The core OpenAPI document (the route requires a key). */

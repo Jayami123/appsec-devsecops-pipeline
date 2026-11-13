@@ -1,5 +1,5 @@
 // P5-TW-INJ-001 (tw-api). The control is a valid filter (200). Each FILTER_CORPUS value is sent as a
-// company name filter. The oracle: no 500 and no SQL text in the body (src/lanes/tw/filter-corpus.ts).
+// company name filter. The oracle: no 500 and no SQL text in the body fork ref held by the owner).
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { adminSetupSession } from "../../../src/lanes/tw/login.ts";

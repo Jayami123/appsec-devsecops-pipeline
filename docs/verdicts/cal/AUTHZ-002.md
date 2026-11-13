@@ -7,4 +7,4 @@
 - Control and negative: Control: keyed reschedule, create (201) and cancel succeed. Anonymous cells assert the observed capability outcome: anonymous create 201 (booker flow); anonymous reschedule and cancel by uid succeed, state read first.
 - Budget: none
 - Leak-check: not applicable (no probe registered). Cancelled bookings and throwaway users are retained under the run prefix (D-CAL-B20, B33).
-- Note: Design verdicts (B34, B36, B50): bookings.controller.ts:105-106, :296-297, :336-337 share OptionalApiAuthGuard and BookingUidGuard; the create gate applies only to event types requiring authentication (bookings.service.ts:169-185). Depends on CAP-001.
+- Note: Design verdicts (B34, B36, B50): fork ref held by the owner, :296-297, :336-337 share OptionalApiAuthGuard and BookingUidGuard; the create gate applies only to event types requiring authentication (fork ref held by the owner). Depends on CAP-001.

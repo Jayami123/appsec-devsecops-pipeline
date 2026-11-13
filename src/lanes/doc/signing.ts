@@ -1,10 +1,10 @@
 // Recipient and signing helpers for the doc rows (doc plan 4.5). Shapes cited from the fork at f4105e4:
-// POST /api/v2/envelope/recipient/create-many (envelope-recipients/create-envelope-recipients.types.ts:31-37),
-// POST /api/v2/envelope/field/create-many (envelope-fields/create-envelope-fields.types.ts:79-86, coordinates
-// from ZCoordinatePositionSchema), tRPC envelope.field.sign (sign-envelope-field.types.ts:50-55) and
-// tRPC recipient.completeDocumentWithToken (recipient-router/schema.ts:161-171, documentId from secondaryId
-// "document_<n>", lib/utils/envelope.ts:11). The tRPC wire format is UNVERIFIED until the first live run
-// (packages/trpc/utils/data-transformer.ts:4); a mismatch is a TEST BUG, never a PASS.
+// POST /api/v2/envelope/recipient/create-many fork ref held by the owner),
+// POST /api/v2/envelope/field/create-many fork ref held by the owner, coordinates
+// from ZCoordinatePositionSchema), tRPC envelope.field.sign (fork ref held by the owner) and
+// tRPC recipient.completeDocumentWithToken fork ref held by the owner, documentId from secondaryId
+// "document_<n>", fork ref held by the owner). The tRPC wire format is UNVERIFIED until the first live run
+// (fork ref held by the owner); a mismatch is a TEST BUG, never a PASS.
 import { expect, type APIRequestContext } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { createEnvelope, V2_PATH } from "./envelope-api.ts";

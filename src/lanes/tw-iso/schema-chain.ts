@@ -1,6 +1,6 @@
 // Run-time schema helpers for the GraphQL rows (D-TWISO-B31). Pure apart from the introspection fetch in the spec.
 // A depth chain must use REAL object fields (the analyser skips every __ field: use-validate-graphql-query-
-// complexity.hook.ts:181), and only single-object fields (not lists), or the response grows without bound.
+// fork ref held by the owner), and only single-object fields (not lists), or the response grows without bound.
 // The chain is built from the authenticated /graphql schema at run time, never hard-coded. A REQUIRED argument
 // is filled only with a placeholder literal of a scalar type, or with {} for an input object whose fields are
 // all optional. Any other required argument makes the field unusable.

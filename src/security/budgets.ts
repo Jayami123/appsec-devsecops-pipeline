@@ -22,19 +22,19 @@ export const BUDGETS = {
     class: "INVESTIGATIVE",
     basis: "P5 bounded probe inside one 30 s TOTP step; not an RFC threshold",
   },
-  // Cal throttler-guard.ts:36 default 120 per 60 s TTL; N = effective limit + 1 when overridden.
+  // Cal fork ref held by the owner default 120 per 60 s TTL; N = effective limit + 1 when overridden.
   CAL_V2_KEY_LIMIT: {
     value: 121,
     class: "CITED",
     basis:
-      "Cal throttler-guard.ts:36 default 120 per 60 s window, plus one; default-case value only",
+      "Cal fork ref held by the owner default 120 per 60 s window, plus one; default-case value only",
   },
   DOC_ROUTE_LIMITS: {
     value: null,
     formula:
       "{ authorize: 10, forgotPassword: 3, resendVerifyEmail: 3, verifyEmail: 5, resetPassword: 5, upload: 20, ai: 3 }",
     class: "CITED",
-    basis: "P6 limiter-contract.ts:14-58 (seven of its ten routes); alias scope only",
+    basis: "P6 fork ref held by the owner (seven of its ten routes); alias scope only",
   },
   TW_LIMITER_LAYERS: {
     value: null,
@@ -42,7 +42,7 @@ export const BUDGETS = {
       "{ apiKeyShort: 100 per 1000 ms, apiKeyLong: 3600 per 60000 ms, application: 500 per 60000 ms }",
     class: "CITED",
     basis:
-      "P6 0533e61 src/twenty/limiter-profile.ts:10-17 (functional profile). Fork defaults at 7cbdfec6 (config-variables.ts:1713,1722,1730,1739,1748,1757) are not this budget. Image defaults UNPROBED.",
+      "P6 0533e61 fork ref held by the owner (functional profile). Fork defaults at 7cbdfec6 (fork ref held by the owner) are not this budget. Image defaults UNPROBED.",
   },
   // Throwaway accounts, one attempt each (provisional).
   TW_SPRAY_ACCOUNTS: {
@@ -140,14 +140,14 @@ export const BUDGETS = {
     value: 3,
     class: "INVESTIGATIVE",
     basis:
-      "the three NEW-DOC-3 negatives (doc plan 4.5, doc.md:277, and F-1); control + 3 = 4 uploads, below DOC_ROUTE_LIMITS.upload 20",
+      "the three NEW-DOC-3 negatives (doc plan 4.5, fork ref held by the owner, and F-1); control + 3 = 4 uploads, below DOC_ROUTE_LIMITS.upload 20",
   },
   // Documenso upload cap: fork default 50 MiB (not overridden by the harness) plus one byte.
   DOC_UPLOAD_OVERSIZE_BYTES: {
     value: 52_428_801,
     class: "CITED",
     basis:
-      "documenso f4105e47 packages/lib/constants/app.ts:5 default 50 MB, files.ts:46-49 rejects size > limit * 1024 * 1024; harness v0.4.0 sets no NEXT_PUBLIC_DOCUMENT_SIZE_UPLOAD_LIMIT; effective cap UNPROBED",
+      "documenso f4105e47 fork ref held by the owner default 50 MB, fork ref held by the owner rejects size > limit * 1024 * 1024; harness v0.4.0 sets no NEXT_PUBLIC_DOCUMENT_SIZE_UPLOAD_LIMIT; effective cap UNPROBED",
   },
   // NEW-TW-6 race trials (owner decision RC-16).
   TW_DEMOTE_RACE_TRIALS: {
@@ -160,7 +160,7 @@ export const BUDGETS = {
     value: 2,
     class: "INVESTIGATIVE",
     basis:
-      "structural minimum for a race (med plan 3b, med.md:139); NEW-MED-2, NEW-MED-3, NEW-MED-6",
+      "structural minimum for a race (med plan 3b, fork ref held by the owner); NEW-MED-2, NEW-MED-3, NEW-MED-6",
   },
   // Medusa: the same signed bytes delivered twice in total (structural).
   MED_REPLAY_DELIVERIES: {
@@ -172,7 +172,7 @@ export const BUDGETS = {
   WEBHOOK_SETTLE_MS: {
     value: null,
     formula:
-      "above the Medusa payment-webhook queue defaults delay 5000 ms x attempts 3 (route.ts:28-29); set from the first measured run",
+      "above the Medusa payment-webhook queue defaults delay 5000 ms x attempts 3 (fork ref held by the owner); set from the first measured run",
     class: "OPERATIONAL",
     basis: "med plan 3b and 3c.9; UNPROBED; provisional",
   },

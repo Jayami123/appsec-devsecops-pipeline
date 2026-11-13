@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CRON_ROUTES, EXTRA_CRON_ROUTE } from "../../../../src/lanes/cal/cron-routes.ts";
 
-test("cron route table has the seven apps/web/app/api/cron routes, unique paths", () => {
+test("cron route table has the seven fork ref held by the owner routes, unique paths", () => {
   assert.equal(CRON_ROUTES.length, 7);
   const paths = CRON_ROUTES.map((r) => r.path);
   assert.equal(new Set(paths).size, paths.length);
@@ -25,7 +25,6 @@ test("each cron route names its key and whether it also accepts Bearer CRON_SECR
   ]);
   for (const route of CRON_ROUTES) {
     assert.equal(route.key, "CRON_API_KEY");
-    assert.match(route.keyCheckLine, /^route\.ts:\d+$/);
     assert.ok(["GET", "POST"].includes(route.method), route.path);
   }
 });

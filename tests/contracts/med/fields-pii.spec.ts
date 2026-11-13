@@ -59,7 +59,7 @@ test.describe("P5-MED-FIELD-001", () => {
       const parent = order[top ?? ""];
       return parent !== null && typeof parent === "object" && (nested === "*" || nested in parent);
     });
-    // Design verdict (fact 13, source comment at dist/api/store/orders/[id]/route.js): the order ID is the
+    // Design verdict (fact 13, source comment at fork ref held by the owner): the order ID is the
     // authentication mechanism. PII keys returned here are recorded for the owner, not asserted as a defect.
     testInfo.annotations.push({
       type: "design-verdict",

@@ -1,6 +1,6 @@
 // P5-DOC-NEW-DOC-5 sealed document download (doc plan 4.5). Both recipients sign and complete, then the owner
 // downloads the signed item (GET /api/v2/envelope/item/{envelopeItemId}/download?version=signed). This route
-// authenticates with an API token in the Authorization header only (download.ts:26-42; D-DOC-B52), so each actor
+// authenticates with an API token in the Authorization header only (fork ref held by the owner; D-DOC-B52), so each actor
 // mints its own token for its personal team and revokes it in cleanup. Tokens are sent per request and never logged
 // (call-log.ts masks them in any error).
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";

@@ -1,10 +1,10 @@
 // Reads the workspace invitation mail of one throwaway recipient from the harness Mailpit (D-TWISO-B23).
-// Host and port: twenty.adapter.ts:180 prints "Mailpit: http://127.0.0.1:8025"; docker/twenty.compose.yml:7-11
+// Host and port: fork ref held by the owner prints "Mailpit: http://127.0.0.1:8025"; docker/twenty.compose.yml:7-11
 // publishes 8025 for mailpit v1.22.3. The token is kept in memory only: it is never printed or put in an error.
 // Deferred harness item: a twentyMailApiUrl() export so this constant is not hard-wired (see the PR body).
 export const MAILPIT_BASE_URL = "http://127.0.0.1:8025";
 
-/** The invite token in an invitation link (workspace-invitation.service.ts:350-358: query `inviteToken`). */
+/** The invite token in an invitation link (fork ref held by the owner: query `inviteToken`). */
 export function inviteTokenFromText(text: string): string | undefined {
   const match = /[?&;]inviteToken=([^&\s"'<>]+)/.exec(text);
   if (match?.[1] === undefined) return undefined;

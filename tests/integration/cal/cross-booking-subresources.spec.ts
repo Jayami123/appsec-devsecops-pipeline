@@ -1,5 +1,5 @@
 // NEW-CAL-1: a second user cannot read or mutate the owner's booking sub-resources. Routes (2024-08-13):
-// GET /v2/bookings/:uid/references (bookings.controller.ts:540), POST /v2/bookings/:uid/decline (:494).
+// GET /v2/bookings/:uid/references (fork ref held by the owner), POST /v2/bookings/:uid/decline (:494).
 // The mutation is the decline route, the only host-side sub-resource mutation that needs no extra fixture.
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";

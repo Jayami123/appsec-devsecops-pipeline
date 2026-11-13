@@ -9,10 +9,10 @@ export const SECRET_HEADER_NAMES: ReadonlySet<string> = new Set([
   "cookie",
   "set-cookie",
   "proxy-authorization",
-  "x-cal-signature-256", // sendPayload.ts:316
+  "x-cal-signature-256", // fork ref held by the owner
   "x-documenso-secret", // execute-webhook-call.ts: headers block
-  "x-twenty-webhook-signature", // call-webhook.job.ts: headers[...Signature]
-  "x-webhook-signature", // recorded-daily-video/route.ts:73
+  "x-twenty-webhook-signature", // fork ref held by the owner: headers[...Signature]
+  "x-webhook-signature", // fork ref held by the owner
   "stripe-signature",
 ]);
 

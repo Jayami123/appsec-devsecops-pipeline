@@ -11,4 +11,4 @@
 | Fetched | 2026-11-10 (Asia/Colombo) |
 | Change | no change |
 
-Copied byte-identical from the source ref above (docs/lane-ownership.md:91). Prettier ignores this directory (`.prettierignore`: `src/lanes/*/contracts/`).
+Copied byte-identical from the source ref above fork ref held by the owner). Prettier ignores this directory (`.prettierignore`: `src/lanes/*/contracts/`).

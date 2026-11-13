@@ -7,4 +7,4 @@
 - Control and negative: Control: an internal URL is accepted. Negatives: javascript: and protocol-relative URLs are refused (>= 400); an encoded external variant is refused (>= 400).
 - Budget: none
 - Leak-check: not applicable (no probe registered). Cancelled bookings and throwaway users are retained under the run prefix (D-CAL-B20, B33).
-- Note: successRedirectUrl: create-event-type.input.ts:504.
+- Note: successRedirectUrl: fork ref held by the owner.

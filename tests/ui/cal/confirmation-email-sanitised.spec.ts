@@ -1,5 +1,5 @@
 // P5-CAL-XSS-002: an attendee name carrying markup must not reach the confirmation mail as raw markup.
-// The booking is created through API v2 (apps/api/v2 bookings, 2024-08-13); the attendee address is a
+// The booking is created through API v2 (fork ref held by the owner bookings, 2024-08-13); the attendee address is a
 // non-user address under the run prefix, and the confirmation is read from the Cal mail catcher
 // (harness calMailApiUrl). Control: a plain attendee name appears in the mail. Negative: the markup
 // payload is absent from the HTML body as raw markup.
@@ -50,7 +50,7 @@ async function inPersonEventType(
 }
 
 /**
- * Books one slot through the web booker route (/api/book/event, pages/api/book/event.ts). The web
+ * Books one slot through the web booker route (/api/book/event, fork ref held by the owner The web
  * process has the SMTP settings the harness wrote, so its confirmation reaches the catcher; the API v2
  * process has none (see the build log). Anonymous, as a booker is. Returns the HTTP status.
  */

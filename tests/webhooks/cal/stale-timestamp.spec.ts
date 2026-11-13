@@ -1,6 +1,5 @@
 // WH-003 (D-CAL-B38): a fresh timestamp passes the gate (control); a timestamp WEBHOOK_STALE_AGE_S + 1
-// seconds old with a valid signature for that timestamp is refused. The route has no age check
-// (route.ts:70-75; verify.ts:99-101 records that Cal checks no tolerance), so acceptance here is a
+// seconds old with a valid signature for that timestamp is refused. Detail held by the owner, so acceptance here is a
 // PRODUCT BUG (SUSPECTED) finding, not a pass. The recorded state is not observable (see replay.spec.ts).
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
@@ -45,10 +44,8 @@ test.describe("P5-CAL-WH-003 stale timestamp", () => {
       },
       data: signed.body,
     });
-    // Gate refusal is the property: a stale delivery must not pass (403 at route.ts:73-75 or a 4xx).
-    expectedDefect(
-      "P5-CAL-WH-003: apps/web/app/api/recorded-daily-video/route.ts:70-75 has no timestamp age check (verify.ts:99-101 records no tolerance); live cal run 5 accepted the stale signed delivery with 200",
-    );
+    // Gate refusal is the property: a stale delivery must not pass (403 at fork ref held by the owner or a 4xx).
+    expectedDefect("P5-CAL-WH-003: detail held by the owner");
     expect(res.status(), "stale delivery refused").toBeGreaterThanOrEqual(400);
   });
 });

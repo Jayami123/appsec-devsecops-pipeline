@@ -35,13 +35,13 @@ export interface FuzzCompare {
 /**
  * `--rate-limit <value>/<window>` with the window in Schemathesis duration units. Schemathesis 4.33.1 takes
  * `<limit>/<duration>` (e.g. `100/m`, `schemathesis run --help`). Only a one-minute window is accepted here,
- * because the OAS paths reach apiV2RateLimit at 1 minute (rate-limits.ts:103-107).
+ * because the OAS paths reach apiV2RateLimit at 1 minute (fork ref held by the owner).
  */
 export function rateLimitArg(value: number, windowMinutes: number): string {
   if (!Number.isInteger(value) || value < 1)
     throw new Error("TEST BUG: rate limit value must be a positive integer");
   if (windowMinutes !== 1)
-    throw new Error("TEST BUG: only a one-minute window is supported (rate-limits.ts:103-107)");
+    throw new Error("TEST BUG: only a one-minute window is supported (fork ref held by the owner)");
   return `${value}/m`;
 }
 

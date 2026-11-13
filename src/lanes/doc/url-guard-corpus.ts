@@ -1,5 +1,5 @@
-// Webhook URL guard corpus (doc plan section 4.6; pure data). Create-time refusal: schema.ts:6-11 in the
-// Documenso fork at f4105e47 (packages/trpc/server/webhook-router/schema.ts). Each entry is a literal the
+// Webhook URL guard corpus (doc plan section 4.6; pure data). Create-time refusal: fork ref held by the owner in the
+// Documenso fork at f4105e47 (fork ref held by the owner). Each entry is a literal the
 // guard must refuse. The public control is RFC 2606 reserved and is used at create time only; it is never
 // delivered to (delivery is gated on the owner canary, PN-1).
 

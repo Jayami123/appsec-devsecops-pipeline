@@ -26,7 +26,7 @@ export const FIXTURE_ALLOWLIST: Readonly<Record<ProductId, readonly FixtureColum
       column: "scheduledAt",
       kind: "timestamp",
       cases: ["P2-CAL-TASK-001", "P2-CAL-TASK-002"],
-      cite: "packages/prisma/schema.prisma:1830 (Task.scheduledAt); packages/features/tasker/repository.ts:136-141 (retry pushes scheduledAt out by minRetryIntervalMins)",
+      cite: "fork ref held by the owner (Task.scheduledAt); fork ref held by the owner (retry pushes scheduledAt out by minRetryIntervalMins)",
     },
     {
       table: "WebhookScheduledTriggers",
@@ -35,7 +35,7 @@ export const FIXTURE_ALLOWLIST: Readonly<Record<ProductId, readonly FixtureColum
       column: "startAfter",
       kind: "timestamp",
       cases: ["P2-CAL-SCH-002", "P2-CAL-SCH-003"],
-      cite: "packages/prisma/schema.prisma:1318 (startAfter); packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts:16-22 (jobs with startAfter <= now run)",
+      cite: "fork ref held by the owner (startAfter); fork ref held by the owner (jobs with startAfter <= now run)",
     },
   ],
   documenso: [
@@ -46,7 +46,7 @@ export const FIXTURE_ALLOWLIST: Readonly<Record<ProductId, readonly FixtureColum
       column: "expiresAt",
       kind: "timestamp",
       cases: ["P2-DOC-EXP-001", "P2-DOC-EXP-002", "P2-DOC-EXP-003"],
-      cite: "packages/prisma/schema.prisma:640 (Recipient.expiresAt); packages/lib/jobs/definitions/internal/expire-recipients-sweep.handler.ts:13",
+      cite: "fork ref held by the owner (Recipient.expiresAt); fork ref held by the owner",
     },
     {
       table: "Recipient",
@@ -55,7 +55,7 @@ export const FIXTURE_ALLOWLIST: Readonly<Record<ProductId, readonly FixtureColum
       column: "nextReminderAt",
       kind: "timestamp",
       cases: ["P2-DOC-REM-001", "P2-DOC-REM-002"],
-      cite: "packages/prisma/schema.prisma:645 (Recipient.nextReminderAt); packages/lib/jobs/definitions/internal/send-signing-reminders-sweep.handler.ts:13",
+      cite: "fork ref held by the owner (Recipient.nextReminderAt); fork ref held by the owner",
     },
   ],
   medusa: [],

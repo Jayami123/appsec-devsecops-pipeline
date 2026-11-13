@@ -13,9 +13,9 @@ Status key: **CONFIRMED** (observed or read at the pin, matches the plan), **CON
 | Area | Status | Result |
 |---|---|---|
 | 3a Runtime (Node 22 and Node 24) | CONFIRMED for the runtime; stack UNPROBED | NODE22 `/opt/node22/bin/node` (v22.23.4). NODE24 `/root/.cache/qa-portfolio/toolchains/node/24.22.0/bin/node` (v24.22.0, npm 11.19.1), provisioned by the repo setup contract (section 2, step 4). `up.mjs documenso` exit 1 and `down.mjs documenso` exit 1, both because no Docker daemon exists (ENV, build-brief STOP 8). |
-| 3b Rate-limit state with the bypass unset | Source CONFIRMED; live check UNPROBED | Unset means the harness forwards nothing (`documenso-env.ts:297-298`) and the product bypass branch is not taken (`rate-limit.ts:73`), so the limiter is enforced in source. The live max+1 request needs a running stack (UNPROBED: Docker). |
+| 3b Rate-limit state with the bypass unset | Source CONFIRMED; live check UNPROBED | Unset means the harness forwards nothing (`fork ref held by the owner`) and the product bypass branch is not taken (`fork ref held by the owner`), so the limiter is enforced in source. The live max+1 request needs a running stack (UNPROBED: Docker). |
 | 3c P-8 mock IdP through normal harness routes | BLOCKED: mock IdP not in harness v0.3.1 | No OIDC, OpenID, IdP or OAuth code in the harness `src/` at tag v0.3.1 (grep, section 3). OIDC-001 and OIDC-002 stay gated (D9). |
-| 3d Actor creation (throwaway users, second organisation, team templates) | BLOCKED for a harness route; product routes CONFIRMED to exist, live use UNPROBED | Harness v0.3.1 seeds one example user and needs a manually created API token (`documenso.adapter.ts:578-580`, `:636-644`). Product routes exist at the pin (section 3, row D1-D4). Their behaviour is UNPROBED (no stack). |
+| 3d Actor creation (throwaway users, second organisation, team templates) | BLOCKED for a harness route; product routes CONFIRMED to exist, live use UNPROBED | Harness v0.3.1 seeds one example user and needs a manually created API token (`fork ref held by the owner`, `:636-644`). Product routes exist at the pin (section 3, row D1-D4). Their behaviour is UNPROBED (no stack). |
 | 3e Alias sources (P6 and Documenso) | CONFIRMED | Every cited line exists and says what the plan says (section 3, rows E1-E4). |
 | 3f Webhook URL guard (PN-1) | CONFIRMED in source; live UNPROBED | Create-time and execute-time refusals exist at the pin (section 3, rows F1-F4). The owner canary is absent, so PN-1 stays gated. |
 | 3g Verdict sources MI-1, MI-2, MI-12, MI-13 | CONFIRMED at 99a2fde | Each verdict cites a P2 test or record that exists at 99a2fde (section 3, row G1-G6). |
@@ -41,11 +41,11 @@ Status key: **CONFIRMED** (observed or read at the pin, matches the plan), **CON
 |---|---|---|---|
 | 1 | `git fetch origin`; `git checkout -b plan/2026-11-10-p5-doc origin/main` | 0 | Base `f4fe6c1`. Working tree clean. |
 | 2 | `NODE24=/opt/node24/bin/node PRODUCTS_ROOT=/home/user/products bash scripts/bootstrap.sh documenso` | 1 | Documenso cloned at `f4105e4` (depth 1, pinned). Install step refused: `ERROR /opt/node24/bin/node reports v24.22.1; approved is v24.22.0.` **Recorded as my error:** `/opt/node24` is not selected by the setup contract (`scripts/cloud-install.sh:14`, `:181-182`). See step 4. |
-| 3 | `node node_modules/qa-portfolio-harness/scripts/up.mjs documenso` under `/opt/node24/bin/node` (wrapper with `trap ... down.mjs documenso EXIT`) | 1 | `Error: Cal product root does not exist: /home/user/products/cal.` Harness `loadConfig` validates all four product roots before any product runs (section 3, row H2). The brief's single-product clone is not enough. Down exit 1 (same cause). |
+| 3 | `node fork ref held by the owner documenso` under `/opt/node24/bin/node` (wrapper with `trap ... down.mjs documenso EXIT`) | 1 | `Error: Cal product root does not exist: /home/user/products/cal.` Harness `loadConfig` validates all four product roots before any product runs (section 3, row H2). The brief's single-product clone is not enough. Down exit 1 (same cause). |
 | 4 | `bash scripts/cloud-install.sh --toolchain-only` | 0 | Provisions `node/24.22.0` under `/root/.cache/qa-portfolio/toolchains` after SHA-256 verification against the published SHASUMS256 entry. Reports `NODE22=/opt/node22/bin/node (v22.23.4, npm 10.9.9)` and `NODE24=/root/.cache/qa-portfolio/toolchains/node/24.22.0/bin/node (v24.22.0, npm 11.19.1 >= 11.17.0)`. Stops before `npm ci` and bootstrap, as the flag says. |
 | 5 | `NODE24=<provisioned> PRODUCTS_ROOT=/home/user/products BOOTSTRAP_SKIP_INSTALL=1 bash scripts/bootstrap.sh cal documenso medusa twenty` | 0 | Cal `c2b7ac4`, Documenso `f4105e4`, Medusa `f677db4`, Twenty `7cbdfec`. Install skipped for all four (deviation, recorded; the stack could not start without Docker in any case). Pins match `scripts/bootstrap.sh:15-18`. |
 | 6 | `NODE24=<provisioned> PRODUCTS_ROOT=/home/user/products bash scripts/bootstrap.sh documenso` (install on) | 0 | `Node 24 check ok: ... (v24.22.0), npm 11.19.1`. `npm ci` ran in the Documenso checkout with Node 24.22.0 (the check at `scripts/bootstrap.sh:117-128`). |
-| 7 | `node node_modules/qa-portfolio-harness/scripts/up.mjs documenso` under the provisioned Node 24 (wrapper with the down trap) | 1 | See section 2. |
+| 7 | `node fork ref held by the owner documenso` under the provisioned Node 24 (wrapper with the down trap) | 1 | See section 2. |
 | 8 | `down.mjs documenso` (trap) | 1 | Same Docker cause. |
 | 9 | `npm ci` at the repo root (lockfile) | 0 | Installed the harness at v0.3.1. Audit notes only. |
 
@@ -55,11 +55,11 @@ Wrapper: a shell script in the session scratchpad, outside the repository, not c
 
 | Item | Value |
 |---|---|
-| Up command | `"$NODE24" node_modules/qa-portfolio-harness/scripts/up.mjs documenso` with `NODE24=/root/.cache/qa-portfolio/toolchains/node/24.22.0/bin/node` and `PRODUCTS_ROOT=/home/user/products` |
+| Up command | `"$NODE24" fork ref held by the owner documenso` with `NODE24=/root/.cache/qa-portfolio/toolchains/node/24.22.0/bin/node` and `PRODUCTS_ROOT=/home/user/products` |
 | Up exit code | **1** |
-| Up failure | `docker compose -p qa-harness-documenso -f .../node_modules/qa-portfolio-harness/docker/documenso.compose.yml up -d --wait exited with code 1`, with `failed to connect to the docker API at unix:///var/run/docker.sock ... no such file or directory`. |
+| Up failure | `docker compose -p qa-harness-documenso -f fork ref held by the owner up -d --wait exited with code 1`, with `failed to connect to the docker API at unix:///var/run/docker.sock ... no such file or directory`. |
 | Readiness output | Not reached. The harness failed at the Docker step, before any readiness check. |
-| Down command | `"$NODE24" node_modules/qa-portfolio-harness/scripts/down.mjs documenso` (from the trap) |
+| Down command | `"$NODE24" fork ref held by the owner documenso` (from the trap) |
 | Down exit code | **1** (`docker compose ... down --remove-orphans exited with code 1`, same socket error) |
 | Stacks running afterwards | None. No product was started, no seed ran, no fork `.env` was touched. |
 | Classification | ENV (blocked host: no Docker daemon). Build-brief STOP 8 applies: Docker unavailable. Probes that need a running stack are UNPROBED with this reason. |
@@ -75,10 +75,10 @@ Pins: harness `v0.3.1` (`7d4a3ae`), P2 `99a2fde`, P6 `0533e61`, Documenso `f4105
 | Row | Path : line | Read | Status |
 |---|---|---|---|
 | B1 | harness `src/adapters/documenso-env.ts:297-298` | `...(process.env.DANGEROUS_BYPASS_RATE_LIMITS === "true" ? { DANGEROUS_BYPASS_RATE_LIMITS: "true" } : {})`. Forwarded only for the exact string `"true"`. | CONFIRMED |
-| B2 | Documenso `packages/lib/server-only/rate-limit/rate-limit.ts:73-74` | `if (process.env.DANGEROUS_BYPASS_RATE_LIMITS === 'true') { return { isLimited: false, ... } }`. The bypass is honoured only for `'true'`. | CONFIRMED |
-| B3 | Documenso `packages/lib/server-only/rate-limit/assert-organisation-rates-and-limits.ts:32` | Same exact-`'true'` check. | CONFIRMED |
-| B4 | Documenso `turbo.json:156` | The variable is listed as a pass-through build input. It has no default. | CONFIRMED |
-| B5 | Documenso e2e comments `packages/app-tests/e2e/api/v1/organisation-rate-limits.spec.ts:46`, `:70` | CI runs e2e with the bypass set to `true` and skips rate-limit tests when it is set. The skip is the only other reader. | CONFIRMED |
+| B2 | Documenso `fork ref held by the owner` | `if (process.env.DANGEROUS_BYPASS_RATE_LIMITS === 'true') { return { isLimited: false, ... } }`. The bypass is honoured only for `'true'`. | CONFIRMED |
+| B3 | Documenso `fork ref held by the owner` | Same exact-`'true'` check. | CONFIRMED |
+| B4 | Documenso `fork ref held by the owner` | The variable is listed as a pass-through build input. It has no default. | CONFIRMED |
+| B5 | Documenso e2e comments `fork ref held by the owner`, `:70` | CI runs e2e with the bypass set to `true` and skips rate-limit tests when it is set. The skip is the only other reader. | CONFIRMED |
 
 Consequence: when the variable is unset, neither the harness nor the product bypasses the limiter. The limiter is enforced in source. A live max+1 check needs a running stack (UNPROBED, section 2). The plan never sets the variable (MP:964 at 298ae29, build rule 9.11 test 12 at MP:732).
 
@@ -87,10 +87,10 @@ Consequence: when the variable is unset, neither the harness nor the product byp
 | Row | Path : line | Read | Status |
 |---|---|---|---|
 | H1 | harness `scripts/up.mjs`, `scripts/down.mjs` | Present. `up.mjs` calls `getAdapter(id).up()`. | CONFIRMED |
-| H2 | harness `dist/config.js:74`, `:89`; `dist/adapters/registry.js:7` | `resolveExistingDir` throws `<label> does not exist` (`:74`). `loadConfig` resolves the Cal root eagerly (`:89`) and every adapter call runs `loadConfig` (`registry.js:7`). A documenso-only clone therefore fails. | CONFIRMED (observed, section 2 log) |
+| H2 | harness `fork ref held by the owner`, `:89`; `fork ref held by the owner` | `resolveExistingDir` throws `<label> does not exist` (`:74`). `loadConfig` resolves the Cal root eagerly (`:89`) and every adapter call runs `loadConfig` (`fork ref held by the owner`). A documenso-only clone therefore fails. | CONFIRMED (observed, section 2 log) |
 | H3 | harness `docker/documenso.compose.yml:13`, `:29` | Images `postgres:15` and `inbucket/inbucket`. The compose file is what `docker compose up -d --wait` ran (section 2). | CONFIRMED |
-| H4 | harness `src/adapters/documenso.adapter.ts:578-580` | `seedUsers()` lists one example user from the product seed. | CONFIRMED |
-| H5 | harness `src/adapters/documenso.adapter.ts:636-644` | `authenticate()` needs `DOCUMENSO_API_TOKEN`. The error says: start the app, sign in as a seeded user, open Settings, create a token, paste it. Token minting is manual. | CONFIRMED |
+| H4 | harness `fork ref held by the owner` | `seedUsers()` lists one example user from the product seed. | CONFIRMED |
+| H5 | harness `fork ref held by the owner` | `authenticate()` needs `DOCUMENSO_API_TOKEN`. The error says: start the app, sign in as a seeded user, open Settings, create a token, paste it. Token minting is manual. | CONFIRMED |
 | H6 | harness `src/` (all files), grep for `oidc`, `openid`, `idp`, `oauth`, `mock` | No matches. | CONFIRMED: **BLOCKED: mock IdP not in harness v0.3.1** (probe 3c) |
 | H7 | harness `scripts/` | Only `cloud-install.sh`, `down.mjs`, `lib.mjs`, `smoke.mjs`, `up.mjs`. No actor, token or organisation route. | CONFIRMED |
 
@@ -98,12 +98,12 @@ Consequence: when the variable is unset, neither the harness nor the product byp
 
 | Row | Path : line at Documenso `f4105e4` | What it is | Status |
 |---|---|---|---|
-| D1 | `packages/auth/server/routes/email-password.ts:192` | `POST /signup` (zod `ZSignUpSchema`); `signupRateLimit.check` at `:203`. The limit is not in the P6 contract, so the count of throwaway signups per run must be bounded and recorded. | Exists; live UNPROBED |
-| D2 | `packages/trpc/server/organisation-router/router.ts:37` | `create: createOrganisationRoute` (organisation create, for AUTHZ-002). | Exists; live UNPROBED |
-| D3 | `packages/trpc/server/api-token-router/create-api-token.ts` | Token create route (for NEW-DOC-4). The harness does not drive it (H5). | Exists; live UNPROBED |
-| D4 | `packages/trpc/server/team-router/create-team-*.ts`; `packages/trpc/server/template-router/router.ts` | Team and template creation. | Exists; live UNPROBED |
-| D5 | `packages/prisma/schema.prisma:394-398`, `:420`, `:466` | `enum DocumentVisibility { EVERYONE; MANAGER_AND_ABOVE; ADMIN }`; default `EVERYONE` on the two models (for RBAC-001). | CONFIRMED |
-| D6 | `packages/auth/server/routes/two-factor.ts:23` `/setup`, `:40` `/enable`, `:78` `/disable` | Two-factor routes for MI-15. | Exists; live UNPROBED |
+| D1 | `fork ref held by the owner` | `POST /signup` (zod `ZSignUpSchema`); `signupRateLimit.check` at `:203`. The limit is not in the P6 contract, so the count of throwaway signups per run must be bounded and recorded. | Exists; live UNPROBED |
+| D2 | `fork ref held by the owner` | `create: createOrganisationRoute` (organisation create, for AUTHZ-002). | Exists; live UNPROBED |
+| D3 | `fork ref held by the owner` | Token create route (for NEW-DOC-4). The harness does not drive it (H5). | Exists; live UNPROBED |
+| D4 | `fork ref held by the owner`; `fork ref held by the owner` | Team and template creation. | Exists; live UNPROBED |
+| D5 | `fork ref held by the owner`, `:420`, `:466` | `enum DocumentVisibility { EVERYONE; MANAGER_AND_ABOVE; ADMIN }`; default `EVERYONE` on the two models (for RBAC-001). | CONFIRMED |
+| D6 | `fork ref held by the owner` `/setup`, `:40` `/enable`, `:78` `/disable` | Two-factor routes for MI-15. | Exists; live UNPROBED |
 
 ### 3.4 Alias sources (probe 3e)
 
@@ -114,16 +114,16 @@ Consequence: when the variable is unset, neither the harness nor the product byp
 | E3 | same, `:21-28` (`id: "authorize"` at `:22`) | `POST /api/auth/email-password/authorize`, max 10, family B. Used by the login helper, so the helper logs in once per actor (section 5). | CONFIRMED |
 | E4 | same, `:29-35` (`forgot-password` at `:30`), `:36-42` (`resend-verify-email` at `:37`), `:43-49` (`verify-email` at `:44`), `:50-57` (`reset-password` at `:51`) | Max 3, 3, 5 and 5. | CONFIRMED |
 | E5 | P6 `0533e61` `tests/documenso/races/doc-race-002-double-submit.spec.ts:40-48` | `:40` comment: one SIGNED and nine ALREADY_SIGNED per trial, all HTTP 200. `:41-48` assertions on status counts, signed, already-signed, errors, single seal and verdict. | CONFIRMED |
-| E6 | Documenso `packages/app-tests/e2e/user/password.spec.ts:113`, `:171` | `:113` "password reset invalidates all sessions"; `:171` "password update invalidates other sessions but keeps current". Basis for DROP SESS-001 (fact 3). | CONFIRMED |
+| E6 | Documenso `fork ref held by the owner`, `:171` | `:113` "password reset invalidates all sessions"; `:171` "password update invalidates other sessions but keeps current". Basis for DROP SESS-001 (fact 3). | CONFIRMED |
 
 ### 3.5 Webhook URL guard and secret header (probe 3f; NEW-DOC-6)
 
 | Row | Path : line | Read | Status |
 |---|---|---|---|
-| F1 | Documenso `packages/trpc/server/webhook-router/schema.ts:6-11` | `ZWebhookUrlSchema` refuses a URL where `isPrivateUrl` is true. Message at `:10`: `Webhook URL cannot point to a private or loopback address` (create-time). | CONFIRMED |
-| F2 | Documenso `packages/lib/server-only/webhooks/is-private-url.ts:21-33`, `:27-29` | `localhost`, `::1`, `0.0.0.0`, `127.`, `10.`, `192.168.`, `169.254.`, `fe80:`, `fc`/`fd`, `172.16-31` and IPv4-mapped IPv6 are refused. A non-IP hostname returns `false` (fail open): `:27-29`. | CONFIRMED |
-| F3 | Documenso `packages/lib/server-only/webhooks/assert-webhook-url.ts:36-37`, `:82-83`, `:96-99` | `NEXT_PRIVATE_WEBHOOK_SSRF_BYPASS_HOSTS` skips every check (`:36-37`). Execute-time refusal: `Webhook URL resolves to a private or loopback address` (`:97-99`). The comment at `:82-83` says the check fails open on DNS errors and timeouts. The harness does not set the bypass variable (grep, harness `src/`: no match). | CONFIRMED |
-| F4 | Documenso `packages/lib/server-only/webhooks/execute-webhook-call.ts:31`, `:40` | `await assertNotPrivateUrl(url)` runs before the POST (`:31`). The request carries `X-Documenso-Secret: <secret>` (`:40`). | CONFIRMED |
+| F1 | Documenso `fork ref held by the owner` | `ZWebhookUrlSchema` refuses a URL where `isPrivateUrl` is true. Message at `:10`: `Webhook URL cannot point to a private or loopback address` (create-time). | CONFIRMED |
+| F2 | Documenso `fork ref held by the owner`, `:27-29` | `localhost`, `::1`, `0.0.0.0`, `127.`, `10.`, `192.168.`, `169.254.`, `fe80:`, `fc`/`fd`, `172.16-31` and IPv4-mapped IPv6 are refused. A non-IP hostname returns `false` (fail open): `:27-29`. | CONFIRMED |
+| F3 | Documenso `fork ref held by the owner`, `:82-83`, `:96-99` | `NEXT_PRIVATE_WEBHOOK_SSRF_BYPASS_HOSTS` skips every check (`:36-37`). Execute-time refusal: `Webhook URL resolves to a private or loopback address` (`:97-99`). The comment at `:82-83` says the check fails open on DNS errors and timeouts. The harness does not set the bypass variable (grep, harness `src/`: no match). | CONFIRMED |
+| F4 | Documenso `fork ref held by the owner`, `:40` | `await assertNotPrivateUrl(url)` runs before the POST (`:31`). The request carries `X-Documenso-Secret: <secret>` (`:40`). | CONFIRMED |
 | F5 | P2 `99a2fde` `src/webhooks/verify.ts:66-71`; `src/webhooks/sign.ts:38`, `:41-43` | `verifyDocumenso` (`:66-71`) compares the header with the configured secret in constant time. There is no HMAC and no timestamp. `DOCUMENSO_SECRET_HEADER` is `X-Documenso-Secret` (`sign.ts:38`). The vendored copy is `src/kit/webhooks/verify.ts` on main. | CONFIRMED. **Premise corrected:** NEW-DOC-6 verifies equality, not a signature (section 4). |
 
 Consequence for PN-1 and NEW-DOC-6: the create-time and execute-time guards refuse a receiver on a private or loopback address. A receiver reachable from the product container is therefore private unless the owner supplies a non-private canary. The plan does not set the bypass variable (that would change the product guard, build-brief STOP 11).
@@ -133,7 +133,7 @@ Consequence for PN-1 and NEW-DOC-6: the create-time and execute-time guards refu
 | Row | Source | Read | Status |
 |---|---|---|---|
 | G1 | P2 `README.md:100` | `P5-DOC-DEL-001`: deleting an envelope that completes at the same moment answers 500 and leaves it live. Listed as proven. | CONFIRMED (MI-1) |
-| G2 | P2 `tests/integration/doc/expiry.spec.ts:16` | Comment cites `delete-document.ts:185-191` as the product finding for P5-DOC-DEL-001. Documenso `packages/lib/server-only/document/delete-document.ts:185-191` is `tx.envelope.delete({ where: { id, status: { not: COMPLETED } } })`. | CONFIRMED (MI-1 source; no deterministic trigger in the harness, so verdict only) |
+| G2 | P2 `tests/integration/doc/expiry.spec.ts:16` | Comment cites `fork ref held by the owner` as the product finding for P5-DOC-DEL-001. Documenso `fork ref held by the owner` is `tx.envelope.delete({ where: { id, status: { not: COMPLETED } } })`. | CONFIRMED (MI-1 source; no deterministic trigger in the harness, so verdict only) |
 | G3 | P2 `README.md:101`; `tests/serial/doc/conversion.spec.ts:18`, `:65`, `:88` | `:18` title `P5-DOC-CONV-001: conversion outage answered 400, not 503`. `:65` `P2-DOC-CONV-002`. `:88` oracle "expected to fail" (a dependency outage is a 5xx). | CONFIRMED (MI-2) |
 | G4 | P2 `tests/billing/doc/stripe.spec.ts:45`, `:55`, `:69` | `P2-DOC-STR-001`: unsigned event refused with 400 (`:45`); bad or stale signature non-2xx with no row change (`:55`); correctly signed not-synced event accepted 200 with no row change (`:69`). | CONFIRMED (MI-12) |
 | G5 | P2 `tests/integration/doc/lifecycle.spec.ts:41`, `:69` | `P2-DOC-SM-001`: completion sets `completedAt` (`:41`); refused transitions on a COMPLETED envelope change no rows (`:69`). | CONFIRMED (MI-12) |
@@ -143,14 +143,14 @@ Consequence for PN-1 and NEW-DOC-6: the create-time and execute-time guards refu
 
 | Row | Path : line | Read | Status |
 |---|---|---|---|
-| S1 | Documenso `apps/remix/server/security-headers.ts:26-28`, `:106-112`, `:172-177` | Signing routes `/sign/:token` and `/d/:token` are frameable on purpose: `frame-ancestors *` (`:110`). Other routes get `frame-ancestors 'self'` (`:112`). `Referrer-Policy: strict-origin-when-cross-origin` (`:173`) and `X-Content-Type-Options: nosniff` (`:177`) are set by the middleware. | CONFIRMED (HDR-001 oracle, section 4) |
+| S1 | Documenso `fork ref held by the owner`, `:106-112`, `:172-177` | Signing routes `/sign/:token` and `/d/:token` are frameable on purpose: `frame-ancestors *` (`:110`). Other routes get `frame-ancestors 'self'` (`:112`). `Referrer-Policy: strict-origin-when-cross-origin` (`:173`) and `X-Content-Type-Options: nosniff` (`:177`) are set by the middleware. | CONFIRMED (HDR-001 oracle, section 4) |
 | S2 | P2 `contracts/doc/openapi.json` at `99a2fde` | File present (PN-3 source). | CONFIRMED |
 | S3 | P2 `.github/workflows/p2-doc.yml:59-65`, `:84-89` | Node 22 from `.nvmrc` with `NODE22=$(command -v node)` in `GITHUB_ENV` (`:65`); Node 24 with `node-version: 24` and `NODE24=$(command -v node)` (`:86-89`). Dual-runtime basis for the lane (fact 23). | CONFIRMED |
 | S4 | main `scripts/bootstrap.sh:15-18`, `:20` | Pins `MEDUSA_REF`, `DOCUMENSO_REF`, `TWENTY_REF`, `CAL_REF`; `NODE24_APPROVED="24.22.0"` at `:20`. | CONFIRMED |
 | S5 | main `scripts/cloud-install.sh:6-22`, `:14`, `:176-179`, `:181-182` | Runtime contract: Node 24 is `$root/node/24.22.0/bin/node`; `/opt/node24` is never selected (`:14`). The provisioned binary is checked for `24.22.0` (`:179`). `/opt/node24` is reported and left untouched (`:181-182`). | CONFIRMED |
 | S6 | main `.claude/hooks/session-start.sh:3` | Post-setup only: never installs, downloads, clones or starts a product or Docker. | CONFIRMED |
-| S7 | main `.cursor/environment.json:5-6` | `install`: `bash scripts/cloud-install.sh`; `start`: `sudo service docker start && docker info >/dev/null`. | CONFIRMED |
-| S8 | main `.github/workflows/ci.yml:63-67`, `:101` | `p5-doc` caller: `needs: [changes]`, `if:` on `p5_doc` and the same-repo check, `uses: ./.github/workflows/p5-doc.yml`, `secrets: inherit` (`:67`). `gate` needs `p5-doc` (`:101`). | CONFIRMED |
+| S7 | main `fork ref held by the owner` | `install`: `bash scripts/cloud-install.sh`; `start`: `sudo service docker start && docker info >/dev/null`. | CONFIRMED |
+| S8 | main `.github/workflows/ci.yml:63-67`, `:101` | `p5-doc` caller: `needs: [changes]`, `if:` on `p5_doc` and the same-repo check, `uses: fork ref held by the owner`, `secrets: inherit` (`:67`). `gate` needs `p5-doc` (`:101`). | CONFIRMED |
 | S9 | main `scripts/ci-changes.sh:21` | `re_doc` regex: `src/lanes/doc/`, `tests/unit/lanes/doc/`, `tests/(contracts|webhooks|integration|serial|ui)/doc/`, `.github/workflows/p5-doc.yml`. | CONFIRMED |
 | S10 | main `.github/workflows/p5-doc.yml:1` | `# P5-STUB: remove this line when the first real job lands`. One `stub` job (`:12-14`). | CONFIRMED |
 | S11 | main `docs/findings/ledger.json` | 74 cases (64 planned, 8 alias, 2 dropped), 8 private entries, 0 findings, 0 accepted risks. Matches MP:296-300 (298ae29). | CONFIRMED |

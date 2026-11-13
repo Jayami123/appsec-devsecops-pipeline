@@ -1,9 +1,9 @@
 // P5-DOC-HDR-001 (P2): the signing page headers. Oracle taken from the pinned middleware (doc plan section 4.4,
-// correction C9): /sign/:token is a "frameable" path (security-headers.ts:46, :123-124), so it gets the CSP with
+// correction C9): /sign/:token is a "frameable" path (fork ref held by the owner, :123-124), so it gets the CSP with
 // `frame-ancestors *` (:109-112). Referrer-Policy and X-Content-Type-Options are set only for "embed" paths
 // (:170-178), so their absence on /sign is by design and is recorded, not reported as a defect (D-DOC-B22).
 // Setup: the signer gets a SIGNATURE field, because the send step refuses a signer without one
-// (send-document.ts:197-200; D-DOC-B49).
+// (fork ref held by the owner; D-DOC-B49).
 import type { APIRequestContext } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";
@@ -67,7 +67,7 @@ test.describe("P5-DOC-HDR-001", () => {
     const res = await owner.request.get(`${base}${path}`, { maxRedirects: 0 });
     expect(res.status()).toBe(200);
     expect(res.headers()["content-security-policy"] ?? "", "CSP header present").not.toBe("");
-    // Observation, not a defect: Referrer-Policy and nosniff are embed-only (security-headers.ts:170-178).
+    // Observation, not a defect: Referrer-Policy and nosniff are embed-only (fork ref held by the owner).
     test.info().annotations.push({
       type: "embed-only-headers",
       description: `referrer-policy=${res.headers()["referrer-policy"] ?? "absent"} nosniff=${res.headers()["x-content-type-options"] ?? "absent"}`,
@@ -88,7 +88,7 @@ test.describe("P5-DOC-HDR-001", () => {
     );
     const res = await owner.request.get(`${base}${path}`, { maxRedirects: 0 });
     expect(res.status()).toBe(200);
-    // Design verdict (security-headers.ts:26-28, :109-112): frame-ancestors * on the signing route.
+    // Design verdict (fork ref held by the owner, :109-112): frame-ancestors * on the signing route.
     expect(res.headers()["content-security-policy"] ?? "").toContain("frame-ancestors *");
   });
 });

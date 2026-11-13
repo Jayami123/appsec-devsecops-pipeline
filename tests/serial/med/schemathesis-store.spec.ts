@@ -1,5 +1,5 @@
 // P5-MED-FUZZ-001 (med plan 3c.11, D-MED-B3). Read-only Schemathesis run against the store OpenAPI, own fresh stack.
-// Owner decision B30: a fixed seed, and a committed baseline (src/lanes/med/fuzz-baseline.json) instead of
+// Owner decision B30: a fixed seed, and a committed baseline fork ref held by the owner) instead of
 // expectedDefect (the failures are generated, so they are not a single deterministic defect).
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";

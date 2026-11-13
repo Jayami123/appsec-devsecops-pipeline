@@ -1,6 +1,6 @@
 // Inbucket mail catcher used by the harness Documenso stack (harness docker/documenso.compose.yml:28-32).
 // The API base is copied from qa-portfolio-harness src/config.ts:14 (`documensoMailApiUrl`). The harness
-// index is NOT imported: its module side effects load the harness .env into the test process (config.ts:11),
+// index is NOT imported: its module side effects load the harness .env into the test process (fork ref held by the owner),
 // which AGENTS.md forbids (D-DOC-B17).
 import type { APIRequestContext } from "@playwright/test";
 

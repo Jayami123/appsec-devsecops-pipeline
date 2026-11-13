@@ -1,6 +1,6 @@
 // P5-CAL-AUTHZ-002: keyed mutations succeed (control). The anonymous cells record the observed
 // capability model as design verdicts (owner rule, B36): the booking uid is a bearer capability, and the
-// same OptionalApiAuthGuard chain serves anonymous and keyed callers (bookings.controller.ts:105-106,
+// same OptionalApiAuthGuard chain serves anonymous and keyed callers (fork ref held by the owner,
 // :296-297, :336-337). An authenticated non-participant is the same capability (AUTHZ-001), so these
 // titles depend on CAP-001. Verb mapping (D-CAL-B29): POST = create, PATCH = reschedule, DELETE = cancel.
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
@@ -85,7 +85,7 @@ test.describe("P5-CAL-AUTHZ-002 anonymous mutations", () => {
     run,
   }) => {
     recordDesignVerdict(
-      "anonymous create: bookings.controller.ts:105-106 (OptionalApiAuthGuard); the create gate applies only to event types that require authentication (bookings.service.ts:169-185)",
+      "anonymous create: fork ref held by the owner (OptionalApiAuthGuard); the create gate applies only to event types that require authentication (fork ref held by the owner)",
     );
     const { api, eventTypeId, attendee } = await setup(run, "anonpost");
     const anon = await v2(api, null, "POST", "/v2/bookings", V2_BOOKINGS_VERSION, {
@@ -100,7 +100,7 @@ test.describe("P5-CAL-AUTHZ-002 anonymous mutations", () => {
     run,
   }) => {
     recordDesignVerdict(
-      "anonymous reschedule by uid: bookings.controller.ts:296-297 with booking-uid.guard.ts:8-14 (presence check only)",
+      "anonymous reschedule by uid: fork ref held by the owner with fork ref held by the owner (presence check only)",
     );
     const { api, owner, uid } = await setup(run, "anonpatch");
     const anon = await rescheduleBooking(api, null, uid, nextBookableStartIso(new Date(), 5));
@@ -116,7 +116,7 @@ test.describe("P5-CAL-AUTHZ-002 anonymous mutations", () => {
     run,
   }) => {
     recordDesignVerdict(
-      "anonymous cancel by uid: bookings.controller.ts:336-337 (non-seated bookings are cancelled by uid alone, bookings.controller.ts:347)",
+      "anonymous cancel by uid: fork ref held by the owner (non-seated bookings are cancelled by uid alone, fork ref held by the owner)",
     );
     const { api, owner, uid } = await setup(run, "anondelete");
     const anon = await cancelBooking(api, null, uid);

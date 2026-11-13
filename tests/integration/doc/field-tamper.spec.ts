@@ -1,6 +1,6 @@
 // P5-DOC-NEW-DOC-2 field tampering (doc plan 4.5). Controls first in each test; each test has its own envelope.
 // The completed-envelope case completes both recipients with completeDocumentWithToken (recipient-router
-// schema.ts:161-171); documentId is parsed from the envelope secondaryId ("document_<n>").
+// fork ref held by the owner); documentId is parsed from the envelope secondaryId ("document_<n>").
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { deleteEnvelopeStatus, getEnvelopeStatus } from "../../../src/lanes/doc/envelope-api.ts";

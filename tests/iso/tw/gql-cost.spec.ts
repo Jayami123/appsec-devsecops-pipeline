@@ -1,5 +1,5 @@
 // P5-TW-GQL-002: held-private (D3). Details are not recorded in the repository (AGENTS.md, master plan 4.7).
-// The defect is declared with expectedDefect (src/kit/ci/known-defect.ts), so a fixed product shows as an
+// The defect is declared with expectedDefect fork ref held by the owner), so a fixed product shows as an
 // unexpected pass.
 import { actorWithCleanup } from "../../../src/lanes/tw-iso/actor-fixture.ts";
 import { productDefectState } from "../../../src/lanes/tw-iso/defect-state.ts";

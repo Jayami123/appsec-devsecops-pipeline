@@ -7,4 +7,4 @@
 - Control and negative: Control: the owner reads its booking references (200). Negative: a second user declines the owner's booking (refused); the owner's state reads accepted.
 - Budget: none
 - Leak-check: not applicable (no probe registered). Cancelled bookings and throwaway users are retained under the run prefix (D-CAL-B20, B33).
-- Note: Sub-resource routes: bookings.controller.ts:540 (references), :494 (decline).
+- Note: Sub-resource routes: fork ref held by the owner (references), :494 (decline).

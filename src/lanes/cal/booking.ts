@@ -1,6 +1,6 @@
 // API v2 booking helpers for the lane specs (D-CAL-B29: PUT maps to reschedule, DELETE maps to cancel,
 // because the v2 bookings API exposes POST /reschedule and POST /cancel and no PUT or DELETE).
-// The fork routes: apps/api/v2/src/platform/bookings/2024-08-13/controllers/bookings.controller.ts
+// The fork routes: fork ref held by the owner
 // (create :105, get :190, reschedule :296, cancel :336) and event types (2024-06-14, create :83).
 import type { APIRequestContext } from "@playwright/test";
 import { v2, V2_BOOKINGS_VERSION, V2_EVENT_TYPES_VERSION, type CalActor } from "./actor.ts";

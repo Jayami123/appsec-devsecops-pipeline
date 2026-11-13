@@ -1,8 +1,8 @@
 // P5-CAL-WH-004 (build item): a forged Daily signature is refused at the authenticity gate.
-// Oracle: 403 from apps/web/app/api/recorded-daily-video/route.ts:73-75, which runs before any handler
+// Oracle: 403 from fork ref held by the owner, which runs before any handler
 // work, so no state is read or changed (the probe type is unknown and changes nothing either way).
 // Each negative test runs its own control first: the same probe, correctly signed with the per-job
-// DAILY_WEBHOOK_SECRET (decision D-CAL-B5), must pass the gate (200 at route.ts:221-226).
+// DAILY_WEBHOOK_SECRET (decision D-CAL-B5), must pass the gate (200 at fork ref held by the owner).
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { DAILY_ROUTE, dailyDelivery, forgedSignature } from "../../../src/lanes/cal/webhook.ts";
