@@ -141,6 +141,7 @@ describe("product lanes write a Playwright JSON report, a per-title summary and 
       "p5-cal-ui-report",
       "p5-cal-serial-report",
       "p5-doc-api-report",
+      "p5-doc-oidc-report",
       "p5-doc-serial-report",
       "p5-med-api-report",
       "p5-med-serial-report",
