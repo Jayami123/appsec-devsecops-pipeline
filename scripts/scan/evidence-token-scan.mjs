@@ -39,15 +39,33 @@ export const RULE_LABELS = [
 
 // Value-free shape of a name=value hit: the keyword, whether it sits in a query string, and coarse classes of the
 // value (length bucket and charset). The value itself is never returned or printed.
-/** @param {string} line @returns {string} */
-export function describeAssignment(line) {
-  const match = /(?<before>.?)\b(?<key>password|secret|token)=(?<raw>\S+)/i.exec(line);
-  if (match === null || match.groups === undefined) return "";
+const ASSIGNMENT = /(?<before>.?)\b(?<key>password|secret|token)=(?<raw>\S+)/i;
+
+/** @param {string} line @returns {{ key: string, position: string, value: string } | null} */
+function assignmentOf(line) {
+  const match = ASSIGNMENT.exec(line);
+  if (match === null || match.groups === undefined) return null;
   const { before = "", key = "", raw = "" } = match.groups;
   // The \S+ capture runs on past a closing JSON quote or a trailing delimiter; those are not part of the value.
   const value = raw.replace(/["'&,;)\]}>]+$/, "");
   const position = before === "?" || before === "&" ? "query" : "other";
-  const length = value.length;
+  return { key: key.toLowerCase(), position, value };
+}
+
+/** @param {string} value @returns {"code" | "opaque" | "mixed"} */
+function charsetOf(value) {
+  // A JWT-shaped value (eyJ header, dot-separated segments) is a credential, not code, even though it has dots.
+  if (/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(value)) return "opaque";
+  if (/[()[\]{};<>"'`+ ]/.test(value) || /^[A-Za-z_$][\w$]*\.[A-Za-z_$]/.test(value)) return "code";
+  if (!/^[A-Za-z0-9_\-%.]+$/.test(value)) return "mixed";
+  return "opaque";
+}
+
+/** @param {string} line @returns {string} */
+export function describeAssignment(line) {
+  const hit = assignmentOf(line);
+  if (hit === null) return "";
+  const length = hit.value.length;
   const bucket =
     length < 8
       ? "lt8"
@@ -58,10 +76,13 @@ export function describeAssignment(line) {
           : length < 64
             ? "32-63"
             : "ge64";
-  let charset = "opaque";
-  if (/[().;,{}[\]<>"'`+ ]/.test(value) || /\.[A-Za-z_]/.test(value)) charset = "code";
-  else if (!/^[A-Za-z0-9_\-%.]+$/.test(value)) charset = "mixed";
-  return ` key=${key.toLowerCase()} position=${position} value=${bucket} charset=${charset}`;
+  return ` key=${hit.key} position=${hit.position} value=${bucket} charset=${charsetOf(hit.value)}`;
+}
+
+/** True for a name=value hit whose value is script code (a false match on page source, not a credential). */
+export function isScriptCodeAssignment(line) {
+  const hit = assignmentOf(line);
+  return hit !== null && charsetOf(hit.value) === "code";
 }
 
 /** @param {string} text @returns {{ line: number, rule: string }[]} */
@@ -70,10 +91,10 @@ export function findRuleHits(text) {
   const hits = [];
   text.split("\n").forEach((line, index) => {
     PATTERNS.forEach((pattern, rule) => {
-      if (pattern.test(line)) {
-        const detail = rule === 7 ? describeAssignment(line) : "";
-        hits.push({ line: index + 1, rule: (RULE_LABELS[rule] ?? "unlabelled rule") + detail });
-      }
+      if (!pattern.test(line)) return;
+      if (rule === 7 && isScriptCodeAssignment(line)) return; // narrowed: script code is not a credential
+      const detail = rule === 7 ? describeAssignment(line) : "";
+      hits.push({ line: index + 1, rule: (RULE_LABELS[rule] ?? "unlabelled rule") + detail });
     });
   });
   return hits;
@@ -81,12 +102,7 @@ export function findRuleHits(text) {
 
 /** @param {string} text @returns {number[]} */
 export function findHits(text) {
-  /** @type {number[]} */
-  const lines = [];
-  text.split("\n").forEach((line, index) => {
-    if (PATTERNS.some((pattern) => pattern.test(line))) lines.push(index + 1);
-  });
-  return lines;
+  return [...new Set(findRuleHits(text).map((hit) => hit.line))];
 }
 
 /** @param {string} dir @returns {string[]} */

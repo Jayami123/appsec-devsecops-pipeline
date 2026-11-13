@@ -9,11 +9,15 @@ import { REPO, scratch, writeTree } from "./fixtures/index.ts";
 const SCANNER = join(REPO, "scripts/scan/evidence-token-scan.mjs");
 const SECRET = ["zz", "Q9fakeValueABCDEF123456"].join("");
 
-function run(files: Record<string, string>): { status: number | null; stderr: string } {
+function run(files: Record<string, string>): {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+} {
   const dir = scratch("pn7-rules");
   writeTree(dir, files);
   const result = spawnSync(process.execPath, [SCANNER, dir], { encoding: "utf8" });
-  return { status: result.status, stderr: result.stderr };
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 test("a matched line prints its file, line and rule label and exits 1", () => {
@@ -41,8 +45,16 @@ test("a name=value hit in a query string is labelled position=query with an opaq
   assert.doesNotMatch(result.stderr, new RegExp(query));
 });
 
-test("a name=value hit in script code is labelled position=other with a code value (a false-match shape)", () => {
-  const result = run({ "app.js": "var a=b.token=e.token;\n" });
+test("a name=value assignment whose value is script code is NOT a hit (narrowed false match)", () => {
+  const result = run({ "app.js": 'var a=b.token=e.token;\nvar p=document.getElementById("x");\n' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(`${result.stdout}${result.stderr}`, /token scan: clean/);
+});
+
+test("a JWT-shaped credential in a name=value assignment is still a hit (narrowing keeps the true case)", () => {
+  const jwt = ["eyJhbGciOiJIUzI1NiJ9", "eyJzdWIiOiIxIn0", "c2lnbmF0dXJlMTIzNDU2"].join(".");
+  const result = run({ "page.html": `<a href="/x?token=${jwt}">x</a>\n` });
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /key=token position=other value=lt8 charset=code/);
+  assert.match(result.stderr, /rule name=value assignment \(password, secret or token\) key=token/);
+  assert.doesNotMatch(result.stderr, new RegExp(jwt.slice(0, 20)));
 });
