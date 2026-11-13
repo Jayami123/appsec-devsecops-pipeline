@@ -43,9 +43,7 @@ test("P5-TW-MT-002: a signed file URL from one workspace is not readable in anot
   const served = negative.status === 200 && negativeBytes.equals(PNG);
   // Expected defect only when B's origin serves A's bytes. Evidence is status only (private-first).
   if (served) {
-    expectedDefect(
-      "P5-TW-MT-002: a signed file URL of one workspace is served on another workspace origin (status 200, same bytes). Private-first: details held by the owner.",
-    );
+    expectedDefect("P5-TW-MT-002: detail held by the owner");
   }
   expect([400, 401, 403, 404], `negative: B is refused (HTTP ${negative.status})`).toContain(
     negative.status,

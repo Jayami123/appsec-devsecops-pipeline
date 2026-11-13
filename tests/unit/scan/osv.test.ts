@@ -78,7 +78,7 @@ test("owned path: the absolute CI path is the root lockfile", () => {
   assert.equal(evaluateOsv(file, 1, NONE, "/home/runner/work/x/x").verdict, "fail");
 });
 
-test("owned path: a nested apps/a/package-lock.json is not owned", () => {
+test("owned path: a nested fork ref held by the owner is not owned", () => {
   const file = highReport("apps/a/package-lock.json");
   assert.equal(evaluateOsv(file, 1, NONE, REPO).verdict, "pass");
   const absolute = highReport(join(REPO, "apps/a/package-lock.json"));

@@ -29,7 +29,7 @@ function trimBase(url: string): string {
   return url.replace(/\/$/, "");
 }
 
-/** Self-hosted signup (selfHostedHandler.ts:45 sets emailVerified, so no mail catcher is needed). */
+/** Self-hosted signup (fork ref held by the owner sets emailVerified, so no mail catcher is needed). */
 async function signup(
   web: APIRequestContext,
   email: string,
@@ -57,7 +57,7 @@ async function login(web: APIRequestContext, email: string, password: string): P
   if (!body.user) throw new Error("NO_SESSION_AFTER_LOGIN");
 }
 
-/** tRPC viewer.apiKeys.create (create.handler.ts:37-53). Returns the raw `cal_...` key once. */
+/** tRPC viewer.apiKeys.create (fork ref held by the owner). Returns the raw `cal_...` key once. */
 async function mintKey(web: APIRequestContext, note: string): Promise<string> {
   const res = await web.post("/api/trpc/apiKeys/create", {
     headers: { "content-type": "application/json" },
@@ -181,7 +181,7 @@ export function labelFor(base: string): string {
   return `${base}-${randomBytes(3).toString("hex")}`;
 }
 
-/** NextAuth credentials login with a TOTP code (credentials provider totpCode, next-auth-options.ts:214). */
+/** NextAuth credentials login with a TOTP code (credentials provider totpCode, fork ref held by the owner). */
 export async function loginWithTotp(
   web: APIRequestContext,
   email: string,

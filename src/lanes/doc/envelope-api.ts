@@ -1,5 +1,5 @@
 // Envelope calls through the v2 OpenAPI handler (mounted at /api/v2; the session cookie is accepted by the
-// tRPC context, packages/trpc/server/context.ts:19-20). Shapes from the vendored contract (openapi.json):
+// tRPC context, fork ref held by the owner). Shapes from the vendored contract (openapi.json):
 // POST /envelope/create (multipart: payload JSON + files), POST /envelope/delete (json envelopeId),
 // GET /envelope/{envelopeId}. Pure HTTP; no assertions here (the specs assert).
 import type { APIRequestContext } from "@playwright/test";
@@ -48,7 +48,7 @@ export async function deleteEnvelopeStatus(
   return res.status();
 }
 
-/** Adds one SIGNER (create-many, envelope-recipients/create-envelope-recipients.types.ts:31-35). Returns the status. */
+/** Adds one SIGNER (create-many, fork ref held by the owner). Returns the status. */
 export async function addSigner(
   request: APIRequestContext,
   baseUrl: string,

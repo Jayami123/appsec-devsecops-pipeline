@@ -172,7 +172,7 @@ describe("verifyDaily (server-equivalent)", () => {
     }
   });
 
-  test("raw-mode signature over spaced bytes is rejected, because Cal re-serialises (route.ts:41)", () => {
+  test("raw-mode signature over spaced bytes is rejected, because Cal re-serialises (fork ref held by the owner)", () => {
     const signed = signDaily({
       secretBase64: v.DAILY_SECRET_B64,
       body: v.DAILY_BODY_SPACED,

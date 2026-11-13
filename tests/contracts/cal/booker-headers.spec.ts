@@ -1,6 +1,6 @@
 // P5-CAL-HDR-001: the public booker page of a throwaway user answers 200 and carries the baseline
 // security headers. The user is created through the product signup route (self-hosted signup sets
-// emailVerified at apps/web/app/api/auth/signup/handlers/selfHostedHandler.ts:45, so no mail catcher
+// emailVerified at fork ref held by the owner, so no mail catcher
 // is needed). The user has no delete route in the fork; it is retained under the run prefix on the
 // ephemeral CI stack (decision D-CAL-B20).
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
@@ -42,8 +42,8 @@ test.describe("P5-CAL-HDR-001 booker page", () => {
     const headers = page.headers();
     // Framing (owner rule, same as D-MED-7): a missing frame header on the booker page is a design verdict,
     // not a product bug. The booker is embeddable by design: embed routes exist for it
-    // (apps/web/app/(booking-page-wrapper)/[user]/[type]/embed/page.tsx) and embed.js is served
-    // (apps/web/next.config.ts:330-331, :459). X-Frame-Options is set only for /auth and /signup (:427, :436).
+    // (fork ref held by the owner) and embed.js is served
+    // (fork ref held by the owner, :459). X-Frame-Options is set only for /auth and /signup (:427, :436).
     const frameState = {
       xFrameOptions: headers["x-frame-options"] ?? "absent",
       cspFrameAncestors: (headers["content-security-policy"] ?? "").includes("frame-ancestors")
@@ -52,7 +52,7 @@ test.describe("P5-CAL-HDR-001 booker page", () => {
     };
     test.info().annotations.push({
       type: "design-verdict",
-      description: `booker framing ${JSON.stringify(frameState)}: embeddable by design (next.config.ts:330-331, :459; embed routes); depends on CAP-001 for the booker uid page`,
+      description: `booker framing ${JSON.stringify(frameState)}: embeddable by design (fork ref held by the owner, :459; embed routes); depends on CAP-001 for the booker uid page`,
     });
     expect(headers["x-content-type-options"], "X-Content-Type-Options present").toBeDefined();
   });

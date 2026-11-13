@@ -22,7 +22,7 @@ export class NotThrowawayError extends Error {
   override readonly name = "NotThrowawayError";
 }
 
-/** The sign-up route returns this status for a created account (email-password.ts:192-240). */
+/** The sign-up route returns this status for a created account (fork ref held by the owner). */
 const SIGNUP_CREATED = 201;
 const SIGNIN_CREATED = 201;
 
@@ -43,8 +43,8 @@ export function throwawayActor(
 }
 
 /**
- * Sign up (email-password.ts:192), read the verification link from the harness mail catcher (D-DOC-B8), then
- * verify through POST /verify-email (email-password.ts:313). A 429 is the sign-up limiter (rate-limits.ts:5-9,
+ * Sign up (fork ref held by the owner), read the verification link from the harness mail catcher (D-DOC-B8), then
+ * verify through POST /verify-email (fork ref held by the owner). A 429 is the sign-up limiter (fork ref held by the owner,
  * 3 per 3 hours per IP), an ENV block, and is never retried.
  */
 export async function createThrowawayAccount(
@@ -90,7 +90,7 @@ export async function createThrowawayAccount(
   return { email: actor.email };
 }
 
-/** Sign in (CSRF from GET /csrf, index.ts:40-42; authorize at email-password.ts:66). One login per actor per group. */
+/** Sign in (CSRF from GET /csrf, index.ts:40-42; authorize at fork ref held by the owner). One login per actor per group. */
 export async function loginThrowaway(
   request: APIRequestContext,
   baseUrl: string,
@@ -107,7 +107,7 @@ export async function loginThrowaway(
   return { email: actor.email };
 }
 
-/** Ends the session through the product (sign-out.ts:15). Called from finally before down. */
+/** Ends the session through the product (fork ref held by the owner). Called from finally before down. */
 export async function logoutThrowaway(request: APIRequestContext, baseUrl: string): Promise<void> {
   const out = await request.post(`${baseUrl}/api/auth/signout`);
   if (out.status() >= 500) throw new Error(`signout returned ${out.status()}`);

@@ -18,7 +18,7 @@ export const CANARY_NAME_PREFIX = "P5_CANARY_";
 export const CANARY_NAME_PATTERN = /^[A-Z][A-Z0-9_]{2,63}$/;
 export const PROOF_PATH = join("results", "tw-iso", "p12-proof.json");
 const HARNESS_DIR = resolve("node_modules", "qa-portfolio-harness");
-// smoke.mjs runs up (smoke.mjs:178), then seed (smoke.mjs:189), then the auth checks, in ONE process with the
+// smoke.mjs runs up (fork ref held by the owner), then seed (fork ref held by the owner), then the auth checks, in ONE process with the
 // canary environment. up.mjs does not seed (no seed call in scripts/up.mjs), and a second up would rewrite the
 // override file without the canary line. Decision D-TWISO-B13.
 const UP_SCRIPT = join(HARNESS_DIR, "scripts", "smoke.mjs");
@@ -106,7 +106,7 @@ export async function runProof(env: NodeJS.ProcessEnv = process.env): Promise<nu
   const name = canaryName(runId);
   const value = randomBytes(32).toString("hex");
   const valueHash = sha256(value);
-  // E is the whole environment of up. The harness passes {...process.env} to compose (twenty.adapter.ts:83-87).
+  // E is the whole environment of up. The harness passes {...process.env} to compose (fork ref held by the owner).
   const childEnv: NodeJS.ProcessEnv = {
     ...env,
     LOGIC_FUNCTION_TYPE,

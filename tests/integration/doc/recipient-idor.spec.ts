@@ -1,6 +1,6 @@
 // P5-DOC-NEW-DOC-1 recipient-token IDOR (doc plan 4.5). Two recipients on one envelope, each with a NAME field.
 // Token A is used anonymously (a fresh request context with no owner cookie). Controls run first in each test.
-// Field and token calls: tRPC envelope.field.sign (sign-envelope-field.types.ts:50-55); the field inserted flag from
+// Field and token calls: tRPC envelope.field.sign (fork ref held by the owner); the field inserted flag from
 // GET /api/v2/envelope/field/{fieldId}. The tRPC wire format is UNVERIFIED until the first live run.
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";

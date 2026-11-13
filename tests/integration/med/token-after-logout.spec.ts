@@ -23,7 +23,7 @@ test.describe("P5-MED-NEW-MED-7", () => {
     const before = await request.fetch(`${apiBaseUrl("medusa")}/admin/users/me`, { headers });
     expect(before.status(), "control: valid before logout").toBe(200);
 
-    // DELETE /auth/session is authenticated with the session only (dist/api/auth/middlewares.js:20-23).
+    // DELETE /auth/session is authenticated with the session only (fork ref held by the owner).
     // A bearer token is not revocable through this route; the outcome is recorded, not assumed.
     const logout = await request.fetch(`${apiBaseUrl("medusa")}/auth/session`, {
       method: "DELETE",

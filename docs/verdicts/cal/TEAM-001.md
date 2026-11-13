@@ -4,7 +4,7 @@
 - Verdict: GATED
 - Harness: qa-portfolio-harness v0.5.0 (pin merged at a7024e7)
 - Fork ref: c2b7ac44c66f24ffef1662b276f0653988a609a3
-- Control and negative: No control run. The fork has no team-creation route: no teams tRPC handler under pages/api/trpc, no API v2 team controller, no create-team route. Teams are created only by the Prisma seed and by Playwright fixtures that insert rows directly, which H1 forbids.
+- Control and negative: No control run. The fork has no team-creation route: no teams tRPC handler under fork ref held by the owner, no API v2 team controller, no create-team route. Teams are created only by the Prisma seed and by Playwright fixtures that insert rows directly, which H1 forbids.
 - Budget: none
 - Leak-check: not applicable (no probe registered). Cancelled bookings and throwaway users are retained under the run prefix (D-CAL-B20, B33).
 - Note: Gate blocker: no product route creates a team at c2b7ac44 (D-CAL-B37). Re-checked under v0.5.0 on 2026-11-13 at the same fork ref: blocker unchanged (D-CAL-B64).

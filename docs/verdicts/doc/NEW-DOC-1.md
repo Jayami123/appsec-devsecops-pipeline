@@ -7,7 +7,7 @@
 | Negative 2 | token A signing B's field must be 4xx, and B's inserted flag stays false (before and after) |
 | Budget | none |
 | Cleanup | envelope deleted through the owner in run cleanup |
-| Unverified | the tRPC wire format of envelope.field.sign (packages/trpc/utils/data-transformer.ts:4) and the inserted field (GET /api/v2/envelope/field/{id}) |
-| Fork | Documenso `f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c` (scripts/bootstrap.sh:16) |
-| Harness | `qa-portfolio-harness` v0.4.0 (node_modules/qa-portfolio-harness/package.json:3) |
+| Unverified | the tRPC wire format of envelope.field.sign (fork ref held by the owner) and the inserted field (GET /api/v2/envelope/field/{id}) |
+| Fork | Documenso `f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c` fork ref held by the owner) |
+| Harness | `qa-portfolio-harness` v0.4.0 fork ref held by the owner) |
 | Live status (round 2) | DOCKER BLOCKED at 06:40Z on 2026-11-11 (no dockerd running; the session hook owns dockerd, so it was not started by hand). No local live run. The CI run ID for PR #28 is the authoritative result. |

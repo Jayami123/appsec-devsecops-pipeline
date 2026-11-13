@@ -1,6 +1,6 @@
 // P5-CAL-2FA-001: a throwaway user enables TOTP through the product routes (two-factor/totp/setup then
-// /enable; apps/web/app/api/auth/two-factor/totp/{setup,enable}/route.ts). Control: a correct code logs
-// in (next-auth-options.ts:214). Burst: TOTP_BURST wrong codes inside one step (runBurst, burst.ts).
+// /enable; fork ref held by the owner Control: a correct code logs
+// in (fork ref held by the owner). Burst: TOTP_BURST wrong codes inside one step (runBurst, burst.ts).
 // Outcome categories are recorded as an annotation. No lockout is a deployment finding, never a PASS
 // of "protected" (plan 5.1). A wrong code that yields a session is a PRODUCT BUG (SUSPECTED).
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";

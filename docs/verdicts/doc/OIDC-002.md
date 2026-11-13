@@ -13,7 +13,7 @@
 | Fork | Documenso `f4105e47eba56f5d8d7e70dd516a8fcc0c870d7c` (`scripts/bootstrap.sh:16`) |
 | Harness | `qa-portfolio-harness` v0.5.1 (`package.json`; lock resolves `15aedca`) |
 | Scope limit | The account-state check is the before and after local sign-in status. Whether it can differ after a link depends on how Documenso treats an unverified local account, which the first live run shows. No test asserts a provider-side rejection. |
-| Finding | `P5-DOC-OIDC-SCOPE-001` stays recorded (`packages/auth/server/lib/utils/open-id.ts:34-40`; CI run 43400737495). |
+| Finding | `P5-DOC-OIDC-SCOPE-001` stays recorded (`fork ref held by the owner`; CI run 43400737495). |
 | Live run ID | pending: the CI run on the draft PR head |
 
 ## CI status (round 13)

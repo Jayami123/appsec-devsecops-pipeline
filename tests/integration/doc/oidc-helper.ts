@@ -10,7 +10,7 @@ import { expect, type APIRequestContext, type APIResponse } from "@playwright/te
 import { documensoOidcTestUsers } from "qa-portfolio-harness";
 import { randomBytes } from "node:crypto";
 
-/** Copied from the harness (src/adapters/documenso-oidc.ts:18-30). Not read from the index: the constants are fixed. */
+/** Copied from the harness fork ref held by the owner). Not read from the index: the constants are fixed. */
 export const IDP_ORIGIN = "http://127.0.0.1:8081";
 export const IDP_REALM = "qa";
 export const IDP_WELL_KNOWN_URL = `${IDP_ORIGIN}/realms/${IDP_REALM}/.well-known/openid-configuration`;
@@ -20,7 +20,7 @@ export const IDP_CLIENT_ID = "qa-documenso";
 export const VERIFIED_EMAIL = "verified@qa.test";
 export const UNVERIFIED_EMAIL = "unverified@qa.test";
 
-/** Documenso routes: packages/auth/server/index.ts:45-48, routes/oauth.ts, routes/callback.ts, routes/session.ts. */
+/** Documenso routes: fork ref held by the owner, fork ref held by the owner, fork ref held by the owner, fork ref held by the owner. */
 export const OIDC_AUTHORIZE_PATH = "/api/auth/oauth/authorize/oidc";
 export const OIDC_CALLBACK_PATH = "/api/auth/callback/oidc";
 export const SESSION_PATH = "/api/auth/session";
@@ -128,7 +128,7 @@ export async function signOut(request: APIRequestContext, web: string): Promise<
   if (res.status() >= 500) throw new Error(`signout returned ${res.status()}`);
 }
 
-/** The redirect URI Documenso registers with the provider (packages/auth/server/config.ts:44). */
+/** The redirect URI Documenso registers with the provider (fork ref held by the owner). */
 export function callbackUri(web: string): string {
   return `${web}${OIDC_CALLBACK_PATH}`;
 }
@@ -138,7 +138,7 @@ export function localPassword(): string {
   return `Aa1!${randomBytes(24).toString("base64url")}`;
 }
 
-/** Creates a local Documenso account with the given address through the sign-up route (email-password.ts:192). */
+/** Creates a local Documenso account with the given address through the sign-up route (fork ref held by the owner). */
 export async function createLocalAccount(
   request: APIRequestContext,
   web: string,
@@ -151,7 +151,7 @@ export async function createLocalAccount(
   return res.status();
 }
 
-/** The status of a local password sign-in (email-password.ts:66). Compared before and after a refused OIDC attempt. */
+/** The status of a local password sign-in (fork ref held by the owner). Compared before and after a refused OIDC attempt. */
 export async function localSignInStatus(
   request: APIRequestContext,
   web: string,

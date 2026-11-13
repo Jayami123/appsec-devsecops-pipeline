@@ -54,12 +54,12 @@ No probe actor, token or API key was created. Nothing needed revoking.
 
 | Check | Source | Result |
 |---|---|---|
-| API required keys at the adapter | `node_modules/qa-portfolio-harness/src/adapters/cal.adapter.ts:60` | CONFIRMED. `CAL_API_REQUIRED_ENV` = `DATABASE_URL`, `NEXTAUTH_SECRET`, `CALENDSO_ENCRYPTION_KEY`. |
-| API reads the product root `.env` | `cal.adapter.ts:494-498` | CONFIRMED. `rootEnvFile = path.join(productRoot, ".env")`; the API env builder gets `processEnv: process.env`. |
+| API required keys at the adapter | `fork ref held by the owner` | CONFIRMED. `CAL_API_REQUIRED_ENV` = `DATABASE_URL`, `NEXTAUTH_SECRET`, `CALENDSO_ENCRYPTION_KEY`. |
+| API reads the product root `.env` | `fork ref held by the owner` | CONFIRMED. `rootEnvFile = path.join(productRoot, ".env")`; the API env builder gets `processEnv: process.env`. |
 | API env accepts variables from the environment of `up` | `src/adapters/cal-api-env.ts:27-30`, `:84-89` | CONFIRMED. A missing key may come from "the environment of up, or in the Cal product .env". Message names only, no value. `DATABASE_URL` is set from `CAL_DB_URL` (`:90`). |
-| API no-fallback key list | `cal-api-env.ts:13-19` | CONFIRMED. Includes `NEXTAUTH_SECRET` (`:16`) and `CALENDSO_ENCRYPTION_KEY` (`:17`). |
-| Harness writes a Cal `.env` | `cal.adapter.ts:268` is the only write in that file | CONFIRMED NO WRITER. The write at `:268` is a harness build marker. A grep hit on `.env` in `cal.adapter.ts` was checked and is not a `.env` write. |
-| Web-side env | `cal.adapter.ts:771-776` (spawn with `env: calNodeHeapEnv(process.env)`) | Harness passes only the process env to the web server. Whether Next.js in the Cal fork reads the fork's root `.env` for the web app is NOT settled statically. |
+| API no-fallback key list | `fork ref held by the owner` | CONFIRMED. Includes `NEXTAUTH_SECRET` (`:16`) and `CALENDSO_ENCRYPTION_KEY` (`:17`). |
+| Harness writes a Cal `.env` | `fork ref held by the owner` is the only write in that file | CONFIRMED NO WRITER. The write at `:268` is a harness build marker. A grep hit on `.env` in `fork ref held by the owner` was checked and is not a `.env` write. |
+| Web-side env | `fork ref held by the owner` (spawn with `env: calNodeHeapEnv(process.env)`) | Harness passes only the process env to the web server. Whether Next.js in the Cal fork reads the fork's root `.env` for the web app is NOT settled statically. |
 | Live readiness | not run | UNPROBED (Docker unavailable). |
 
 Result: P-15 is UNPROBED. The API side needs no fork `.env` (CONFIRMED on source). The web side decides the gate. Per the brief: if the web app still needs the fork `.env`, every Cal row is gated "harness must provision Cal .env" (MP@298ae29:807 [current 826 region of section 10.4]). No `.env` was written.
@@ -69,27 +69,27 @@ Result: P-15 is UNPROBED. The API side needs no fork `.env` (CONFIRMED on source
 | Check | Source | Result |
 |---|---|---|
 | Harness seed names `SEED_OAUTH2_*` | grep of `node_modules/qa-portfolio-harness/src` | CONFIRMED NONE. No `SEED_OAUTH2` name in harness source. |
-| Seed call env | `cal.adapter.ts:977-981` (`runCapture(resolveYarn(), ["db-seed"], { cwd, timeoutMs, redactLine })`) | CONFIRMED. The options pass no `env` key. Fact 19 (inherit process env) is consistent with this. |
+| Seed call env | `fork ref held by the owner` (`runCapture(resolveYarn(), ["db-seed"], { cwd, timeoutMs, redactLine })`) | CONFIRMED. The options pass no `env` key. Fact 19 (inherit process env) is consistent with this. |
 | Seed creates an OAuth client | Cal `scripts/seed.ts:1015-1026` (fact 9, not re-read in this run) | UNPROBED live. |
-| Normal-route PKCE client | Cal `packages/trpc/server/routers/viewer/oAuth/_router.tsx:23` (`createClient`, admin) and `:32` (`generateAuthCode`) | UNPROBED. The route that enables PKCE was not enumerated. Fact 9 (seed `enablePkce: false`) stands as recorded. |
+| Normal-route PKCE client | Cal `fork ref held by the owner` (`createClient`, admin) and `:32` (`generateAuthCode`) | UNPROBED. The route that enables PKCE was not enumerated. Fact 9 (seed `enablePkce: false`) stands as recorded. |
 | Normal-route organisation for CSV-001 | not traced | UNPROBED. |
-| `NEXT_PUBLIC_IS_E2E` unset | harness: no reference in `src/` (grep) | CONFIRMED NOT SET BY HARNESS. Cal readers: `packages/lib/constants.ts:168`, `:240`, `:281`; `apps/web/lib/app-providers.tsx:212`. Live value UNPROBED. |
+| `NEXT_PUBLIC_IS_E2E` unset | harness: no reference in `src/` (grep) | CONFIRMED NOT SET BY HARNESS. Cal readers: `fork ref held by the owner`, `:240`, `:281`; `fork ref held by the owner`. Live value UNPROBED. |
 
 ### 3c. P-6 (booking call path for the Unkey helper)
 
 | Check | Source | Result |
 |---|---|---|
-| Helper no-op when `UNKEY_ROOT_KEY` is unset | Cal `packages/lib/rateLimit.ts:36-42` (guard) and `:41` (returns `success: true`) | CONFIRMED. Fact 11 holds. |
+| Helper no-op when `UNKEY_ROOT_KEY` is unset | Cal `fork ref held by the owner` (guard) and `:41` (returns `success: true`) | CONFIRMED. Fact 11 holds. |
 | `UNKEY_ROOT_KEY` in the root env example | Cal `.env.example:370` (name present, empty value) | CONFIRMED. |
 | Harness sets `UNKEY_ROOT_KEY` | grep of `src/adapters/cal*.ts` | CONFIRMED NONE. Live stack value UNPROBED. |
-| Callers of the helper | `apps/web/app/api/auth/forgot-password/route.ts:22`, `signup/route.ts:44`, two-factor routes | CONFIRMED callers are auth routes. |
-| Callers in the booking path | searched `packages/features/bookings`, `packages/trpc/server/routers/viewer/bookings`, `apps/api/v2/src`, `packages/platform` for `rateLimiter` / `checkRateLimitAndThrowError` | No caller found in those paths. The booking call path is NOT traced; reach is UNPROBED. D7 wording ("a no-op without the key; the booking call path is not traced") is therefore correct as written. |
+| Callers of the helper | `fork ref held by the owner`, `fork ref held by the owner`, two-factor routes | CONFIRMED callers are auth routes. |
+| Callers in the booking path | searched `fork ref held by the owner`, `fork ref held by the owner`, `fork ref held by the owner`, `fork ref held by the owner` for `rateLimiter` / `checkRateLimitAndThrowError` | No caller found in those paths. The booking call path is NOT traced; reach is UNPROBED. D7 wording ("a no-op without the key; the booking call path is not traced") is therefore correct as written. |
 
 ### 3d. P-13 (mail catcher)
 
 | Check | Source | Result |
 |---|---|---|
-| Mail catcher in Cal's compose files | `node_modules/qa-portfolio-harness/docker/cal.compose.yml`, `cal.pg-stats.compose.yml`, `cal.redis.compose.yml` | CONFIRMED NONE. The only image in the Cal redis file is `redis:7` (`cal.redis.compose.yml:6`). |
+| Mail catcher in Cal's compose files | `fork ref held by the owner`, `cal.pg-stats.compose.yml`, `cal.redis.compose.yml` | CONFIRMED NONE. The only image in the Cal redis file is `redis:7` (`fork ref held by the owner`). |
 | Mail catchers in the harness | `documenso.compose.yml`, `twenty.compose.yml`, `twenty.replicas.compose.yml` | `mailpit` or `inbucket` appear there, not in any Cal file. |
 
 Result: BLOCKED: `mail catcher for Cal` not in harness v0.3.1. P5-CAL-XSS-002 stays gated (MP@298ae29:860 P-13 "Gated until shown").
@@ -99,7 +99,7 @@ Result: BLOCKED: `mail catcher for Cal` not in harness v0.3.1. P5-CAL-XSS-002 st
 | Check | Source | Result |
 |---|---|---|
 | Vendored signer | `src/kit/webhooks/sign.ts` (merged, F0-2) | CONFIRMED present. |
-| Daily route exists | Cal `apps/web/app/api/recorded-daily-video/route.ts` | CONFIRMED present. Handler not read in this run. |
+| Daily route exists | Cal `fork ref held by the owner` | CONFIRMED present. Handler not read in this run. |
 | Delivery accepted by the route | live | UNPROBED (no live stack). |
 | Business state changed by the first delivery | Cal route handler not read | UNPROBED. WH-002 needs it (MP@298ae29:123). |
 
@@ -108,7 +108,7 @@ Result: BLOCKED: `mail catcher for Cal` not in harness v0.3.1. P5-CAL-XSS-002 st
 | Check | Source | Result |
 |---|---|---|
 | Effective `RATE_LIMIT_DEFAULT_LIMIT_API_KEY` in the stack | harness: no pass-through (grep of `src/adapters/cal*.ts`) and Cal `.env.example`: name not present | BLOCKED: no harness route reads the effective value at v0.3.1 (the brief's rule 5: UNPROBED with blocker). |
-| Default 120 per 60 s | fact 11 (`apps/api/v2/src/lib/throttler-guard.ts:36`) | Recorded fact; not re-read in this run. |
+| Default 120 per 60 s | fact 11 (`fork ref held by the owner`) | Recorded fact; not re-read in this run. |
 
 ### 3g. Alias re-reads at P2 `99a2fde`
 
@@ -130,32 +130,32 @@ The ALIAS row cites `:38-80` (MP@298ae29:192). Line 38 is inside test 1; the spa
 
 ### 3h. Cron routes at Cal `c2b7ac44` (one row per route; MP@298ae29:930 cron rows)
 
-Enumeration: `apps/web/app/api/cron/**/route.ts` (7 files).
+Enumeration: `fork ref held by the owner` (7 files).
 
 | Route file | Check line | Key name compared | Also accepts |
 |---|---|---|---|
-| `bookingReminder/route.ts` | `:19` | `CRON_API_KEY` (strict `!==`) | none |
-| `calendar-subscriptions-cleanup/route.ts` | `:19` | `CRON_API_KEY` | `Bearer ${CRON_SECRET}` |
-| `calendar-subscriptions/route.ts` | `:27` | `CRON_API_KEY` | `Bearer ${CRON_SECRET}` |
-| `changeTimeZone/route.ts` | `:27` | `CRON_API_KEY` (strict) | none |
-| `selected-calendars/route.ts` | `:30` | `CRON_API_KEY` | `Bearer ${CRON_SECRET}` |
-| `syncAppMeta/route.ts` | `:23` | `CRON_API_KEY` (strict) | none |
-| `webhookTriggers/route.ts` | `:11` | `CRON_API_KEY` (strict) | none |
+| `fork ref held by the owner` | `:19` | `CRON_API_KEY` (strict `!==`) | none |
+| `fork ref held by the owner` | `:19` | `CRON_API_KEY` | `Bearer ${CRON_SECRET}` |
+| `fork ref held by the owner` | `:27` | `CRON_API_KEY` | `Bearer ${CRON_SECRET}` |
+| `fork ref held by the owner` | `:27` | `CRON_API_KEY` (strict) | none |
+| `fork ref held by the owner` | `:30` | `CRON_API_KEY` | `Bearer ${CRON_SECRET}` |
+| `fork ref held by the owner` | `:23` | `CRON_API_KEY` (strict) | none |
+| `fork ref held by the owner` | `:11` | `CRON_API_KEY` (strict) | none |
 
-Scope limit: this enumerates only `apps/web/app/api/cron/`. Cron handlers elsewhere (for example `apps/api`) were not searched. Every row is CONFIRMED on source. The empty-env edge (key unset in the environment) is UNPROBED.
+Scope limit: this enumerates only `fork ref held by the owner`. Cron handlers elsewhere (for example `fork ref held by the owner`) were not searched. Every row is CONFIRMED on source. The empty-env edge (key unset in the environment) is UNPROBED.
 
 ### 3i. Headers and redirect
 
 | Check | Source | Result |
 |---|---|---|
-| Baseline headers | `apps/web/next.config.ts:427`, `:436` (`X-Frame-Options`), `:445` (`X-Content-Type-Options`) | CONFIRMED on source. No CSP match in `next.config` or `middleware`. Live response headers UNPROBED. |
-| successRedirectUrl parse | `packages/features/bookings/lib/bookingSuccessRedirect.ts:186` (parameter), `:203` (`new URL(successRedirectUrl)`), `:212-221` (external redirect handling) | CONFIRMED the URL is parsed at `:203`. No scheme or host allowlist found in that file. Whether validation happens earlier (schema layer) is UNPROBED. |
+| Baseline headers | `fork ref held by the owner`, `:436` (`X-Frame-Options`), `:445` (`X-Content-Type-Options`) | CONFIRMED on source. No CSP match in `next.config` or `middleware`. Live response headers UNPROBED. |
+| successRedirectUrl parse | `fork ref held by the owner` (parameter), `:203` (`new URL(successRedirectUrl)`), `:212-221` (external redirect handling) | CONFIRMED the URL is parsed at `:203`. No scheme or host allowlist found in that file. Whether validation happens earlier (schema layer) is UNPROBED. |
 
 ### 3j. PN-2 OAS source (measured for provenance)
 
 | Check | Source | Result |
 |---|---|---|
-| P2 OAS at `99a2fde` | `git show 99a2fde:contracts/cal/openapi-v2.json` | CONFIRMED present; 560358 bytes; sha256 `3c2849d89d8f352d719ef073bf9e0c39ce981aa1a6c9e5066b3a744b68bfc41a`; measured 2026-11-09; the commit has no tag (UNVERIFIED tag: none found, not searched further). |
+| P2 OAS at `99a2fde` | `git show fork ref held by the owner` | CONFIRMED present; 560358 bytes; sha256 `3c2849d89d8f352d719ef073bf9e0c39ce981aa1a6c9e5066b3a744b68bfc41a`; measured 2026-11-09; the commit has no tag (UNVERIFIED tag: none found, not searched further). |
 | Schemathesis pin | not present in `package.json` on this branch | UNVERIFIED: the owner-set 4.33.1 pin is not in the repo; the foundation PR adds it with a fully hashed lock. |
 
 ### 3k. Harness v0.4.0 (VERIFIED on the harness repo)
@@ -164,7 +164,7 @@ Scope limit: this enumerates only `apps/web/app/api/cron/`. Cron handlers elsewh
 |---|---|---|
 | PR #49 merged | `Jayami123/qa-portfolio-harness` `d342a8b` (merge of `feat/2026-11-10-cal-root-env`) | VERIFIED (fetched from `main`). |
 | Tag `v0.4.0` | `git ls-remote --tags`: tag object `6bb2c238e97589de06ec28a277412313ddc7594b`, peeled `31cafc0844d441a8567db89cd18612300c3d4b77` | VERIFIED. The PR #49 merge is an ancestor of the peeled commit. |
-| Cal root `.env` writer | `src/adapters/cal-env.ts` (`ensureCalRootEnv` imported at `src/adapters/cal.adapter.ts:30`; called at `:642-644`) at `31cafc0` | VERIFIED static. Live behaviour UNPROBED (Docker unavailable). |
+| Cal root `.env` writer | `src/adapters/cal-env.ts` (`ensureCalRootEnv` imported at `fork ref held by the owner`; called at `:642-644`) at `31cafc0` | VERIFIED static. Live behaviour UNPROBED (Docker unavailable). |
 | H-1 mail catcher, H-2 effective limit, H-3 `SEED_OAUTH2_*` in v0.4.0 | grep of `docker/cal*`, `src/adapters/cal*`, whole tree at `31cafc0` | No match for `mailpit`/`inbucket`, `RATE_LIMIT_DEFAULT`/`UNKEY`, or `SEED_OAUTH2`. Still open (VERIFIED static). |
 
 ## 4. Fact status (plan section 2 facts touched by this probe)
@@ -173,9 +173,9 @@ Scope limit: this enumerates only `apps/web/app/api/cron/`. Cron handlers elsewh
 |---|---|
 | 9 | Not re-read (`_router.tsx`, `seed.ts`); recorded status stands. |
 | 10 | Not re-read (`UserListTable.tsx`); recorded status stands. |
-| 11 | Helper guard CONFIRMED (`rateLimit.ts:36-42`); throttler not re-read. |
+| 11 | Helper guard CONFIRMED (`fork ref held by the owner`); throttler not re-read. |
 | 17 | CONFIRMED with two closing-line corrections (section 3g). |
-| 19 | Seed options at `cal.adapter.ts:977-981` CONFIRMED with no env key. |
+| 19 | Seed options at `fork ref held by the owner` CONFIRMED with no env key. |
 | 22 | Not re-read in this run (the P2 `prepare_cal_env` is removed in `scripts/bootstrap.sh`; confirmed by the file's header). |
 
 ## 5. Contradictions
@@ -219,7 +219,7 @@ None found. No row of the plan's fact list is CONTRADICTED by source at its pin.
 | Live response headers and successRedirectUrl validation | UNPROBED | Docker unavailable; schema layer not traced. |
 | P2 DLY-003 "writes nothing" oracle | UNPROBED | Test body after `:103` not read. |
 | FC-1 route names | UNPROBED by name | `src/lanes/cal/cron.ts` not read. |
-| Cron handlers outside `apps/web/app/api/cron/` | UNPROBED | Not searched. |
+| Cron handlers outside `fork ref held by the owner` | UNPROBED | Not searched. |
 | `bootstrap.sh cal`, `up.mjs`, `down.mjs` | NOT RUN | STOP 8 (Docker unavailable); bootstrap not needed for static reads. |
 
 ## 8. Checks at the branch head

@@ -24,30 +24,30 @@ Each row names the P2 source at `99a2fde`. Only the changes in plan section 7.2.
 |---|---|---|---|
 | `src/kit/webhooks/sign.ts` | `src/webhooks/sign.ts` | `node:crypto`, `stripe` | P5-CAL-WH-002/003, MI-10 |
 | `src/kit/webhooks/verify.ts` | `src/webhooks/verify.ts` | `sign.ts`, `stripe` | P5-CAL-WH-002/003 |
-| `src/kit/webhooks/receiver.ts` | `src/webhooks/receiver.ts` | `../run/prefix.ts`, `./redact.ts` | P5-CAL-WH-002 |
+| `src/kit/webhooks/receiver.ts` | `src/webhooks/receiver.ts` | `fork ref held by the owner`, `fork ref held by the owner` | P5-CAL-WH-002 |
 | `src/kit/webhooks/redact.ts` | `src/webhooks/redact.ts` | none | receiver, artefacts |
-| `src/kit/webhooks/reach.ts` | `src/webhooks/reach.ts` | `../env.ts` (ProductId type), `./docker-net.ts` | receiver reach |
+| `src/kit/webhooks/reach.ts` | `src/webhooks/reach.ts` | `fork ref held by the owner` (ProductId type), `fork ref held by the owner` | receiver reach |
 | `src/kit/webhooks/docker-net.ts` | `src/webhooks/docker-net.ts` | `node:child_process`, `node:net` | reach |
-| `src/kit/db/pg.ts` | `src/db/pg.ts` | `pg`, `../env.ts` (`dbStatementTimeoutMs`, `roleDbUrl`, `ProductId`), `./select-guard.ts` | all read-only checks |
+| `src/kit/db/pg.ts` | `src/db/pg.ts` | `pg`, `fork ref held by the owner` (`dbStatementTimeoutMs`, `roleDbUrl`, `ProductId`), `fork ref held by the owner` | all read-only checks |
 | `src/kit/db/select-guard.ts` | `src/db/select-guard.ts` | none | pg |
-| `src/kit/db/roles.ts` | `src/db/roles.ts` | `./fixture-allowlist.ts` (type) | P5-TW-SEC-001 |
-| `src/kit/db/fixture-allowlist.ts` | `src/db/fixture-allowlist.ts` | `../env.ts` (`ProductId` type) | roles |
-| `src/kit/db/roles-admin.ts` | `src/db/roles-admin.ts` | `pg`, `../env.ts` (`dbUrl`, `loadEnv`, `ProductId`), `./fixture-allowlist.ts`, `./roles.ts` | role provisioning via `scripts/db-roles.ts` |
+| `src/kit/db/roles.ts` | `src/db/roles.ts` | `fork ref held by the owner` (type) | P5-TW-SEC-001 |
+| `src/kit/db/fixture-allowlist.ts` | `src/db/fixture-allowlist.ts` | `fork ref held by the owner` (`ProductId` type) | roles |
+| `src/kit/db/roles-admin.ts` | `src/db/roles-admin.ts` | `pg`, `fork ref held by the owner` (`dbUrl`, `loadEnv`, `ProductId`), `fork ref held by the owner`, `fork ref held by the owner` | role provisioning via `scripts/db-roles.ts` |
 | `src/kit/run/prefix.ts` | `src/run/prefix.ts` | `node:crypto` | every run |
 | `src/kit/shared/cleanup.ts` | `src/shared/cleanup.ts` | none | every lane's `finally` |
 | `src/kit/ci/known-defect.ts` | `src/ci/known-defect.ts` | `@playwright/test` | `test.fail` helper |
 | `src/kit/ci/known-defect-guard.ts` | `src/ci/known-defect-guard.ts` | `typescript`, `node:fs`, `node:path` | guard (exemption path updated) |
 | `src/kit/ci/playwright-json-summary.ts` | `src/ci/playwright-json-summary.ts` | none | summaries |
-| `src/kit/readiness/checks.ts` | `src/readiness/checks.ts` | `../db/pg.ts`, `../env.ts` (`ProductId`), `node:crypto`, `node:path` | readiness |
+| `src/kit/readiness/checks.ts` | `src/readiness/checks.ts` | `fork ref held by the owner`, `fork ref held by the owner` (`ProductId`), `node:crypto`, `node:path` | readiness |
 | `src/kit/readiness/canary.ts` | `src/readiness/canary.ts` | none | canary precondition |
 | `src/kit/auth/secret.ts` | `src/auth/secret.ts` | `node:util` | artefact scrubbing |
 | `src/kit/auth/reaper.ts` | `src/auth/reaper.ts` | none | leak sweep |
-| `src/kit/invariants/engine.ts` | `src/invariants/engine.ts` | `../run/prefix.ts`, `../db/select-guard.ts`, `../db/pg.ts` (type) | sweeps |
-| `src/kit/invariants/after-test.ts` | `src/invariants/after-test.ts` | `../db/pg.ts` (type), `./engine.ts` | sweep after each test |
+| `src/kit/invariants/engine.ts` | `src/invariants/engine.ts` | `fork ref held by the owner`, `fork ref held by the owner`, `fork ref held by the owner` (type) | sweeps |
+| `src/kit/invariants/after-test.ts` | `src/invariants/after-test.ts` | `fork ref held by the owner` (type), `fork ref held by the owner` | sweep after each test |
 | `src/kit/env.ts` | NEW, trimmed from P2 `src/env.ts` (section 7.2.1) | `node:net`, `zod` | all |
 | `scripts/db-roles.ts` | `scripts/db-roles.ts` | `../src/kit/env.ts` (`PRODUCT_IDS`, `ProductId`; P2 import was `../src/env.ts`, line 3), `../src/kit/db/roles-admin.ts` (`provisionProduct`, `teardownRoles`, `withAdmin`; P2 import was `../src/db/roles-admin.ts`, line 4) | vendored, not wired (no npm script; owner-approved script change required) |
-| `scripts/write-ci-job-summary.ts` | `scripts/write-ci-job-summary.ts` | `../src/kit/ci/playwright-json-summary.ts` (path adapted), `../src/security/findings.ts` (private IDs from the ledger) | job summary: one row per title, private-first items as ID and status only |
-| `scripts/prepare-ci-artifacts.ts` | new in FND (foundation PR) | `../src/kit/ci/report-redaction.ts`, `../src/security/findings.ts` | sanitises the uploaded Playwright JSON; removes the HTML and test-result folders when a private-first item ran |
+| `scripts/write-ci-job-summary.ts` | `scripts/write-ci-job-summary.ts` | `fork ref held by the owner` (path adapted), `fork ref held by the owner` (private IDs from the ledger) | job summary: one row per title, private-first items as ID and status only |
+| `scripts/prepare-ci-artifacts.ts` | new in FND (foundation PR) | `fork ref held by the owner`, `fork ref held by the owner` | sanitises the uploaded Playwright JSON; removes the HTML and test-result folders when a private-first item ran |
 | `tests/unit/webhooks/vectors.ts` | same | none | sign and verify tests |
 
 Not vendored, with reason: P2 lane-specific code under `src/lanes/`, `src/clients/`, `src/contracts/`, `src/slo/`, `src/fixtures/`, `src/db/fixture.ts`, `src/auth/reaper-run.ts`, `src/auth/reaper-revoke.ts` (they revoke P2 keys; P5's revocation rows are separate), `src/auth/lifecycle.ts`, `src/auth/*` product clients.

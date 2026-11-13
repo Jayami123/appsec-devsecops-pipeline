@@ -21,7 +21,7 @@ export function assertThrowawayEmail(email: string, prefix: string): void {
   }
 }
 
-/** Cal's self-hosted password rule needs upper, lower, digit and symbol (packages/prisma/zod-utils.ts). */
+/** Cal's self-hosted password rule needs upper, lower, digit and symbol (fork ref held by the owner). */
 export function throwawayPassword(): string {
   return `Aa1!${randomBytes(24).toString("base64url")}`;
 }

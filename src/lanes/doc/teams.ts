@@ -1,7 +1,7 @@
 // Personal team of a throwaway actor (D-DOC-B45). The product's tRPC context takes the team ONLY from the
-// `x-team-id` request header (packages/trpc/server/context.ts:27); envelope, template and webhook calls that need
-// a team fail with 500 (USER_FETCH_FAILED, packages/ee/server-only/limits/server.ts:38) or 404 without it.
-// Parsers are pure; the wire shape of the tRPC GET is UNVERIFIED until the first CI run (data-transformer.ts:4).
+// `x-team-id` request header (fork ref held by the owner); envelope, template and webhook calls that need
+// a team fail with 500 (USER_FETCH_FAILED, fork ref held by the owner) or 404 without it.
+// Parsers are pure; the wire shape of the tRPC GET is UNVERIFIED until the first CI run (fork ref held by the owner).
 import type { APIRequestContext } from "@playwright/test";
 
 /** The first organisation id in a tRPC organisation.getMany body. Throws on any other shape. */

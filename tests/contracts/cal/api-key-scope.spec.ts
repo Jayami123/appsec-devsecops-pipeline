@@ -1,5 +1,5 @@
 // NEW-CAL-4: an API key reads its own user's booking (control) and is refused on another user's
-// booking, which stays unchanged. Routes: bookings.controller.ts:190 (GET /v2/bookings/:uid).
+// booking, which stays unchanged. Routes: fork ref held by the owner (GET /v2/bookings/:uid).
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { request as pwRequest, type APIRequestContext } from "@playwright/test";
@@ -46,7 +46,7 @@ test.describe("P5-CAL-NEW-CAL-4 api key scope", () => {
     test.info().annotations.push({
       type: "design-verdict",
       description:
-        "GET by uid: bookings.controller.ts:190-191 with booking-uid.guard.ts:8-14 (presence check only); same chain as AUTHZ-001; depends on CAP-001",
+        "GET by uid: fork ref held by the owner with fork ref held by the owner (presence check only); same chain as AUTHZ-001; depends on CAP-001",
     });
     test.info().annotations.push({ type: "depends-on", description: "CAP-001" });
     const prefix = currentRunPrefix();

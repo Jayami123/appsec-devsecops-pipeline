@@ -149,9 +149,7 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
   // Expected defect only when the row is listed in B's workspace: A's key wrote into B (a cross-tenant write). Evidence is
   // status only (private-first).
   if (negative.status === 201 && listedInB) {
-    expectedDefect(
-      "NEW-TW-2: a key of one workspace creates a webhook in another workspace (status 201, row listed in that workspace). Private-first: details held by the owner.",
-    );
+    expectedDefect("NEW-TW-2: detail held by the owner");
   }
   // A 201 with the row in A is the key writing into its own workspace: correct behaviour, not a cross-tenant defect.
   // It is recorded as an observation, and the row is removed in cleanup.

@@ -1,5 +1,5 @@
 // P5-TW-GQL-005 (tw-iso.md 8.9). Introspection (D-TWISO-B28). The fork refuses ANONYMOUS introspection only in
-// production (graphql-config.service.ts:66-68; hook use-disable-introspection-and-suggestions-for-unauthenticated-users.hook.ts:12-17).
+// production (fork ref held by the owner; hook fork ref held by the owner).
 import { actorWithCleanup } from "../../../src/lanes/tw-iso/actor-fixture.ts";
 import { gqlPost } from "../../../src/lanes/tw-iso/gql-client.ts";
 import {

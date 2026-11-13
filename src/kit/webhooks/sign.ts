@@ -6,7 +6,7 @@ import Stripe from "stripe";
  * Signers for the five schemes P2 simulates or checks (plan section 2, facts 1-5). Pure: every
  * input, including timestamps and nonces, is a parameter. Each signer returns the exact bytes to
  * send together with the headers, so a test cannot sign one byte sequence and send another.
- * Source lines are at the pinned product refs (scripts/bootstrap.sh).
+ * Source lines are at the pinned product refs fork ref held by the owner).
  */
 export type BodyInput = string | Uint8Array;
 
@@ -21,9 +21,9 @@ export function toBuffer(body: BodyInput): Buffer {
   return typeof body === "string" ? Buffer.from(body, "utf8") : Buffer.from(body);
 }
 
-// ---- Cal outgoing: packages/features/webhooks/lib/sendPayload.ts:296-299 and :316 ----
+// ---- Cal outgoing: fork ref held by the owner and :316 ----
 export const CAL_SIGNATURE_HEADER = "X-Cal-Signature-256";
-/** sendPayload.ts:299: the literal Cal sends when the webhook has no secret. */
+/** fork ref held by the owner: the literal Cal sends when the webhook has no secret. */
 export const CAL_NO_SECRET_SIGNATURE = "no-secret-provided";
 
 /** HMAC-SHA256 hex over the body's UTF-8 bytes. No timestamp. `null` secret = Cal's literal. */
@@ -35,7 +35,7 @@ export function signCal(input: { secret: string | null; body: BodyInput }): Sign
   return { headers: { [CAL_SIGNATURE_HEADER]: signature }, body };
 }
 
-// ---- Documenso outgoing: packages/lib/server-only/webhooks/execute-webhook-call.ts ----
+// ---- Documenso outgoing: fork ref held by the owner ----
 export const DOCUMENSO_SECRET_HEADER = "X-Documenso-Secret";
 
 /** No HMAC and no timestamp: the configured secret is sent as-is (`secret ?? ''`). */
@@ -46,7 +46,7 @@ export function signDocumenso(input: { secret: string | null; body: BodyInput })
   };
 }
 
-// ---- Twenty outgoing: .../webhook/jobs/call-webhook.job.ts (generateSignature + headers) ----
+// ---- Twenty outgoing: fork ref held by the owner (generateSignature + headers) ----
 export const TWENTY_TIMESTAMP_HEADER = "X-Twenty-Webhook-Timestamp";
 export const TWENTY_SIGNATURE_HEADER = "X-Twenty-Webhook-Signature";
 export const TWENTY_NONCE_HEADER = "X-Twenty-Webhook-Nonce";
@@ -76,14 +76,14 @@ export function signTwenty(input: {
   };
 }
 
-// ---- Cal inbound (Daily): apps/web/app/api/recorded-daily-video/route.ts:40-45, :70-73 ----
+// ---- Cal inbound (Daily): fork ref held by the owner, :70-73 ----
 export const DAILY_TIMESTAMP_HEADER = "x-webhook-timestamp";
 export const DAILY_SIGNATURE_HEADER = "x-webhook-signature";
 
 /**
  * Mirror of Cal's `computeSignature(hmacSecret, reqBody, webhookTimestampHeader)`: HMAC-SHA256
  * keyed with the base64-DECODED secret over `${timestamp}.${JSON.stringify(parsedBody)}`, base64
- * digest. A missing timestamp header becomes the text "null" (template literal, route.ts:41).
+ * digest. A missing timestamp header becomes the text "null" (template literal, fork ref held by the owner).
  */
 export function computeDailySignature(
   secretBase64: string,
@@ -98,7 +98,7 @@ export function computeDailySignature(
 /**
  * `raw`: sign the bytes as sent. Valid at Cal only when those bytes already equal
  * JSON.stringify(JSON.parse(bytes)) (compact, key order kept).
- * `reserialised`: sign what Cal recomputes after parsing (route.ts:40-45), so the signature stays
+ * `reserialised`: sign what Cal recomputes after parsing (fork ref held by the owner), so the signature stays
  * valid for any whitespace or escaping in the sent bytes.
  */
 export type DailySigningMode = "raw" | "reserialised";

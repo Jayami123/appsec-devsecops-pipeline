@@ -6,7 +6,7 @@ import { storeRequest } from "../../../src/lanes/med/store-client.ts";
 import type { RunStore } from "../../../src/lanes/med/setup.ts";
 import type { APIRequestContext } from "@playwright/test";
 
-// The seeded code (medusa-seed.ts:161, ensurePromoCode). It is unlimited: no usage_limit (probe 2g).
+// The seeded code (fork ref held by the owner, ensurePromoCode). It is unlimited: no usage_limit (probe 2g).
 const SEEDED_CODE = "QA10";
 
 /** A cart with one catalog line, so a percentage promotion has something to discount. */

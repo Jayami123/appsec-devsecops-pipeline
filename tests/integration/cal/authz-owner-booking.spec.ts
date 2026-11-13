@@ -1,6 +1,6 @@
 // P5-CAL-AUTHZ-001: an owner's booking is readable and mutable by the owner (control) and refused to a
 // stranger (negative). Verb mapping (D-CAL-B29): GET = booking read, PUT = reschedule, DELETE = cancel.
-// Routes: apps/api/v2/src/platform/bookings/2024-08-13/controllers/bookings.controller.ts:190, :296, :336.
+// Routes: fork ref held by the owner, :296, :336.
 // Each negative builds its own owner and stranger fixtures (a negative never reads a control's state).
 // The attendee is a non-user address, so the stranger is neither host nor attendee (D-CAL-B32).
 // Each negative reads the owner's booking state BEFORE asserting the refusal, so the observed state is
@@ -127,7 +127,7 @@ test.describe("P5-CAL-AUTHZ-001 owner booking", () => {
     run,
   }) => {
     recordDesignVerdict(
-      "uid is a bearer capability: bookings.controller.ts:190-191 and booking-uid.guard.ts:8-14 check presence only",
+      "uid is a bearer capability: fork ref held by the owner and fork ref held by the owner check presence only",
     );
     const prefix = currentRunPrefix();
     const api = await apiContext();
@@ -152,9 +152,7 @@ test.describe("P5-CAL-AUTHZ-001 owner booking", () => {
   test("P5-CAL-AUTHZ-001 other user PUT of the owner booking follows the uid capability (design verdict, depends on CAP-001)", async ({
     run,
   }) => {
-    recordDesignVerdict(
-      "reschedule by uid: bookings.controller.ts:296-297, same guards as GET; the service has no identity check on this path (bookings.service.ts:169-185 is the create gate only)",
-    );
+    recordDesignVerdict("reschedule by uid: same guards as GET; detail held by the owner");
     const prefix = currentRunPrefix();
     const api = await apiContext();
     run.onCleanup(() => api.dispose());
@@ -185,7 +183,7 @@ test.describe("P5-CAL-AUTHZ-001 owner booking", () => {
     run,
   }) => {
     recordDesignVerdict(
-      "cancel by uid: bookings.controller.ts:336-337, same guards as GET; non-seated bookings are cancelled by uid alone (bookings.controller.ts:347)",
+      "cancel by uid: fork ref held by the owner, same guards as GET; non-seated bookings are cancelled by uid alone (fork ref held by the owner)",
     );
     const prefix = currentRunPrefix();
     const api = await apiContext();

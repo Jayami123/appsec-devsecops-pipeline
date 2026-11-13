@@ -1,7 +1,7 @@
 // API tokens for the v2 download route (D-DOC-B52). The download route authenticates with `Authorization: <token>`
-// only (apps/remix/server/api/download/download.ts:26-42), not with the session. A token is created through the
-// product (tRPC apiToken.create, api-token-router/create-api-token.types.ts:3-12) and revoked in cleanup
-// (apiToken.delete: id and teamId, delete-api-token.types.ts:3-6). The token value is held in memory only.
+// only (fork ref held by the owner), not with the session. A token is created through the
+// product (tRPC apiToken.create, fork ref held by the owner) and revoked in cleanup
+// (apiToken.delete: id and teamId, fork ref held by the owner). The token value is held in memory only.
 import type { APIRequestContext } from "@playwright/test";
 
 export interface MintedToken {

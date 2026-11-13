@@ -1,7 +1,7 @@
 // P5-TW-GQL-001 (tw-iso.md 8.5). Nested query depth. Actor: one throwaway member (D-TWISO-B24).
 // The chain is REAL object fields of the authenticated /graphql schema, built at run time (D-TWISO-B31). Its one
 // root filter takes the id of a record the dev seed holds (read with the actor), so the root resolves to data.
-// No nested depth limit is configured (graphql-config.service.ts:69-76), so a 200 with data is a design verdict.
+// No nested depth limit is configured (fork ref held by the owner), so a 200 with data is a design verdict.
 import { BUDGETS } from "../../../src/security/budgets.ts";
 import { actorWithCleanup } from "../../../src/lanes/tw-iso/actor-fixture.ts";
 import { gqlPost } from "../../../src/lanes/tw-iso/gql-client.ts";

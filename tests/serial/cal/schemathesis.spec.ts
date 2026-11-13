@@ -1,4 +1,4 @@
-// P5-CAL-PN-2: the vendored API v2 OpenAPI contract (src/lanes/cal/contracts/openapi-v2.json, 82 paths)
+// P5-CAL-PN-2: the vendored API v2 OpenAPI contract fork ref held by the owner, 82 paths)
 // is driven by Schemathesis 4.33.1 on its own fresh stack (D-CAL-B3). The run is unauthenticated
 // (D-CAL-B40): no credential in argv or on disk. Valid requests are checked from this side with the
 // throwaway key, which never leaves memory. Any 5xx is PRODUCT BUG (SUSPECTED) with the reproducing request.

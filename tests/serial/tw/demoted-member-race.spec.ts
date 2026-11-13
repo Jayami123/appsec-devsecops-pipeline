@@ -137,9 +137,7 @@ test("NEW-TW-6: role change and concurrent update, status check", async ({ run }
   const beforeSequential = await readName();
   const sequential = await update(`${run.prefix}-after-demotion`);
   // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Detail held by the owner.
-  expectedDefect(
-    "NEW-TW-6: update after role change succeeded (status 2xx; detail held by the owner).",
-  );
+  expectedDefect("NEW-TW-6: detail held by the owner");
   expect(
     sequential.status >= 400 && sequential.status < 500,
     "the post-demotion update is refused",

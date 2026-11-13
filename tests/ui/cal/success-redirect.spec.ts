@@ -45,13 +45,13 @@ test.describe("P5-CAL-RED-001 success redirect", () => {
   test("RED-001 external successRedirectUrl is owner-configured, not booker input (design verdict)", async ({
     run,
   }) => {
-    // The target comes from the event type (packages/features/bookings/lib/bookingSuccessRedirect.ts:202-203);
-    // only an authenticated owner can write it (apps/web/modules/event-types/components/tabs/advanced/EventAdvancedTab.tsx:942).
-    // Booker query parameters are forwarded, not used as the target (bookingSuccessRedirect.ts:214-225).
+    // The target comes from the event type (fork ref held by the owner);
+    // only an authenticated owner can write it (fork ref held by the owner).
+    // Booker query parameters are forwarded, not used as the target (fork ref held by the owner).
     test.info().annotations.push({
       type: "design-verdict",
       description:
-        "owner-configured external redirect: the organiser sets the target; the booker cannot (bookingSuccessRedirect.ts:202-203; EventAdvancedTab.tsx:942)",
+        "owner-configured external redirect: the organiser sets the target; the booker cannot (fork ref held by the owner; fork ref held by the owner)",
     });
     const { api, actor } = await setup(run, "red");
     const owner = await createWithRedirect(api, actor, "https://example.org/p5-external");

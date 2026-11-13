@@ -50,7 +50,7 @@ export function constantTimeEqual(a: string, b: string): boolean {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-/** Cal outgoing: sendPayload.ts:296-299. No timestamp, so there is no stale case. */
+/** Cal outgoing: fork ref held by the owner. No timestamp, so there is no stale case. */
 export function verifyCal(input: {
   secret: string | null;
   rawBody: BodyInput;
@@ -98,7 +98,7 @@ export function verifyTwenty(input: {
 
 /**
  * Cal inbound (Daily), as Cal itself verifies it: parse the body, re-serialise, sign. Cal checks
- * no tolerance (route.ts:62-75), so staleness is opt-in through `toleranceSeconds` (P2 policy).
+ * no tolerance (fork ref held by the owner), so staleness is opt-in through `toleranceSeconds` (P2 policy).
  */
 export function verifyDaily(input: {
   secretBase64: string;

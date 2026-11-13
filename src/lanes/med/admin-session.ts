@@ -7,7 +7,7 @@ export interface AdminSession {
 
 /**
  * Admin session from the harness authenticate() (the harness reads the admin credentials; this module never does).
- * The harness returns AuthSession.authorizationHeader (node_modules/qa-portfolio-harness/src/types.ts:7).
+ * The harness returns AuthSession.authorizationHeader fork ref held by the owner).
  */
 export async function openHarnessAdminSession(): Promise<AdminSession> {
   const session = await getAdapter("medusa").authenticate();

@@ -9,9 +9,9 @@ Verdict for every row below: **design verdict; no defect assumed (MP:144).** A r
 | Item | Value |
 |---|---|
 | Medusa fork (starter) | `Jayami123/medusa-dtc-starter` at `f677db438f27294fc50e4c7c6612e71ff38eeff5` (`scripts/bootstrap.sh:15`) |
-| Route handlers | Not in the fork tree (the fork has only `apps/backend/src/api/admin/custom/route.ts` and `apps/backend/src/api/store/custom/route.ts`). The handlers ship in the installed core package `@medusajs/medusa@2.21.2` (lockfile of the pinned fork). Paths below are `node_modules/.pnpm/@medusajs+medusa@2.21.2_3c518c990e8263c44237d3ad70c868d4/node_modules/@medusajs/medusa/dist/api/...` and are shortened to `dist/api/...`. |
-| Auth middleware | `dist/api/store/carts/middlewares.js` (matchers at lines 47-137). Only `POST /store/carts/:id/customer` (line 75) wraps `authenticate("customer", ["session", "bearer"])`. |
-| Recorded `file:line` | Matcher line numbers are from `dist/api/store/carts/middlewares.js` at 2.21.2. Recorded as a deviation from the plan's "fork file:line" wording (D-MED-B18). |
+| Route handlers | Not in the fork tree (the fork has only `fork ref held by the owner` and `fork ref held by the owner`). The handlers ship in the installed core package `@medusajs/medusa@2.21.2` (lockfile of the pinned fork). Paths below are `node_modules/.pnpm/@medusajs+medusa@2.21.2_3c518c990e8263c44237d3ad70c868d4/node_modules/@medusajs/medusa/dist/api/...` and are shortened to `dist/api/...`. |
+| Auth middleware | `fork ref held by the owner` (matchers at lines 47-137). Only `POST /store/carts/:id/customer` (line 75) wraps `authenticate("customer", ["session", "bearer"])`. |
+| Recorded `file:line` | Matcher line numbers are from `fork ref held by the owner` at 2.21.2. Recorded as a deviation from the plan's "fork file:line" wording (D-MED-B18). |
 
 ## Routes reachable with no customer authentication
 
@@ -19,16 +19,16 @@ Each row is ID-addressed: the caller must know the cart or order ID. The "Caller
 
 | Route | Method | Handler (dist) | Caller must know | Response field set | Verdict |
 |---|---|---|---|---|---|
-| `/store/carts/:id` | GET | `dist/api/store/carts/[id]/route.js` (matcher `middlewares.js:47`) | cart ID | default cart field set (listed below) | design verdict; no defect assumed |
-| `/store/carts/:id/line-items` | POST | `dist/api/store/carts/[id]/line-items/route.js` (`middlewares.js:81`) | cart ID | refetched cart, default fields | design verdict; no defect assumed |
-| `/store/carts/:id/line-items/:line_id` | POST, DELETE | `dist/api/store/carts/[id]/line-items/[line_id]/route.js` (`middlewares.js:89`, `:97`) | cart ID and line ID | refetched cart | design verdict; no defect assumed |
-| `/store/carts/:id/promotions` | POST, DELETE | `dist/api/store/carts/[id]/promotions/route.js` (`middlewares.js:104`, `:128`) | cart ID | refetched cart | design verdict; no defect assumed |
-| `/store/carts/:id/taxes` | POST | `dist/api/store/carts/[id]/taxes/route.js` (`middlewares.js:112`) | cart ID | refetched cart | design verdict; no defect assumed |
-| `/store/carts/:id/shipping-methods` | POST | `dist/api/store/carts/[id]/shipping-methods/route.js` (`middlewares.js:120`) | cart ID | refetched cart | design verdict; no defect assumed |
-| `/store/carts/:id/complete` | POST | `dist/api/store/carts/[id]/complete/route.js` (`middlewares.js:136`) | cart ID | order (or cart on failure) | design verdict; no defect assumed. The lock on complete is tested by NEW-MED-2 (live). |
-| `/store/orders/:id` | GET | `dist/api/store/orders/[id]/route.js` | order ID (the ID is the only check; comment at lines 5-10 says so, intentional) | `defaultStoreRetrieveOrderFields` (listed below) | design verdict (fact 13; intentional by the source comment) |
+| `/store/carts/:id` | GET | `fork ref held by the owner` (matcher `fork ref held by the owner`) | cart ID | default cart field set (listed below) | design verdict; no defect assumed |
+| `/store/carts/:id/line-items` | POST | `fork ref held by the owner` (`fork ref held by the owner`) | cart ID | refetched cart, default fields | design verdict; no defect assumed |
+| `/store/carts/:id/line-items/:line_id` | POST, DELETE | `fork ref held by the owner` (`fork ref held by the owner`, `:97`) | cart ID and line ID | refetched cart | design verdict; no defect assumed |
+| `/store/carts/:id/promotions` | POST, DELETE | `fork ref held by the owner` (`fork ref held by the owner`, `:128`) | cart ID | refetched cart | design verdict; no defect assumed |
+| `/store/carts/:id/taxes` | POST | `fork ref held by the owner` (`fork ref held by the owner`) | cart ID | refetched cart | design verdict; no defect assumed |
+| `/store/carts/:id/shipping-methods` | POST | `fork ref held by the owner` (`fork ref held by the owner`) | cart ID | refetched cart | design verdict; no defect assumed |
+| `/store/carts/:id/complete` | POST | `fork ref held by the owner` (`fork ref held by the owner`) | cart ID | order (or cart on failure) | design verdict; no defect assumed. The lock on complete is tested by NEW-MED-2 (live). |
+| `/store/orders/:id` | GET | `fork ref held by the owner` | order ID (the ID is the only check; comment at lines 5-10 says so, intentional) | `defaultStoreRetrieveOrderFields` (listed below) | design verdict (fact 13; intentional by the source comment) |
 
-Routes that do require the customer (for contrast, not in this table): `POST /store/carts/:id/customer` (`middlewares.js:75`), `GET /store/orders` (`dist/api/store/orders/route.js`, filters on `req.auth_context.actor_id` at line 10), and the customer address routes.
+Routes that do require the customer (for contrast, not in this table): `POST /store/carts/:id/customer` (`fork ref held by the owner`), `GET /store/orders` (`fork ref held by the owner`, filters on `req.auth_context.actor_id` at line 10), and the customer address routes.
 
 ## Field allowlist for L-CAL CAP-001
 
@@ -37,7 +37,7 @@ L-CAL CAP-001 (`docs/plans/2026-11-10-p5-cal.md:238`) checks that an anonymous U
 Allowlist (keys the anonymous `GET /store/carts/:id` response may contain, with the route's default field set):
 
 ```text
-Cart, default fields (dist/api/store/carts/query-config.js, defaultStoreCartFields, 135 entries):
+Cart, default fields (fork ref held by the owner, defaultStoreCartFields, 135 entries):
 id currency_code email locale region_id created_at updated_at completed_at
 total subtotal tax_total discount_total discount_subtotal discount_tax_total
 original_total original_tax_total item_total item_subtotal item_tax_total item_discount_total

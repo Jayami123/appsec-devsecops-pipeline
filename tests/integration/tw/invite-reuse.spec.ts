@@ -43,7 +43,7 @@ test("NEW-TW-5: invite acceptance, repeated use", async ({ run }) => {
     message = error instanceof Error ? error.message.slice(0, 120) : "unknown";
   }
   // PRODUCT BUG (CONFIRMED), marked before the unchanged assertion (owner decision 2). Detail held by the owner.
-  expectedDefect("NEW-TW-5: second acceptance succeeded (status 2xx; detail held by the owner).");
+  expectedDefect("NEW-TW-5: detail held by the owner");
   expect(refused, `the second accept is refused (${message || "accepted"})`).toBe(true);
 });
 
@@ -115,9 +115,7 @@ test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A
   });
   // Expected defect only when B's user is a member of A after the accept. Evidence is status only (private-first).
   if (membersAfter.length > 0 && membersBefore.length === 0) {
-    expectedDefect(
-      "NEW-TW-5: a workspace B user becomes a member of workspace A with A's invite (membership listed). Private-first: details held by the owner.",
-    );
+    expectedDefect("NEW-TW-5: detail held by the owner");
   }
   expect(membersAfter.length, "negative: B's user is not a member of A").toBe(0);
 });

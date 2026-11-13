@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { BUDGETS } from "../../security/budgets.ts";
 import { signDaily, type DailySigningMode } from "../../kit/webhooks/sign.ts";
 
-// apps/web/app/api/recorded-daily-video/route.ts at c2b7ac44 (route read in STEP 3, see the verdict records).
+// fork ref held by the owner at c2b7ac44 (route read in STEP 3, see the verdict records).
 export const DAILY_ROUTE = "/api/recorded-daily-video";
 
 /** Unix seconds WEBHOOK_STALE_AGE_S + 1 before `nowSeconds`. */

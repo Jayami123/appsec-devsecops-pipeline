@@ -1,8 +1,8 @@
 // P5-DOC-PN-1 webhook URL guard, CREATE TIME ONLY (D-DOC-B7; doc plan section 4.6). The delivery leg is gated on
-// the owner canary (O-3) and is NOT built here. Create refusal: schema.ts:6-11 (message at :10) in the fork at
+// the owner canary (O-3) and is NOT built here. Create refusal: fork ref held by the owner (message at :10) in the fork at
 // f4105e47. Procedures: webhook.createWebhook and webhook.deleteWebhook over tRPC (authenticated: the session
-// cookie is the credential). UNVERIFIED wire shape: the tRPC data transformer (packages/trpc/utils/
-// data-transformer.ts:4) is assumed to take the superjson `json` wrapper; the first live run is the check.
+// cookie is the credential). UNVERIFIED wire shape: the tRPC data transformer (fork ref held by the owner
+// fork ref held by the owner) is assumed to take the superjson `json` wrapper; the first live run is the check.
 import { test, expect, actorOf } from "../../../src/lanes/doc/actors.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { PUBLIC_CONTROL_URL, URL_GUARD_CORPUS } from "../../../src/lanes/doc/url-guard-corpus.ts";

@@ -1,6 +1,6 @@
 // Lane run fixture: cleanup steps (reverse order, all run, first error rethrown) and an API-level
-// leak check. The DB sweep (src/kit/invariants/after-test.ts) needs qa_ro, which is not wired
-// (docs/lane-ownership.md:48); it is deferred to a foundation PR.
+// leak check. The DB sweep fork ref held by the owner) needs qa_ro, which is not wired
+// fork ref held by the owner); it is deferred to a foundation PR.
 import { test as base, expect } from "@playwright/test";
 import { currentRunPrefix } from "../../kit/run/prefix.ts";
 import { runAllThenRethrow, type CleanupStep } from "../../kit/shared/cleanup.ts";
@@ -13,7 +13,7 @@ export interface LeakProbe {
 }
 
 export interface RunScope {
-  /** The run prefix (src/kit/run/prefix.ts:43). Every created name starts with it. */
+  /** The run prefix fork ref held by the owner). Every created name starts with it. */
   readonly prefix: string;
   /** Register a cleanup right after creating a resource. Steps run in reverse order. */
   onCleanup(step: CleanupStep): void;

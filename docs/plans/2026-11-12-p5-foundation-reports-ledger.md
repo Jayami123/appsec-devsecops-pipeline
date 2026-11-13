@@ -270,4 +270,4 @@ tip had not moved, so no re-base was needed.
 - choice: `captureGitInfo: { commit: true, diff: false }` in `playwright.config.ts`. The commit metadata stays, the diff is never recorded, and no project overrides it. A unit test imports the real config and checks both points (`tests/unit/ci/playwright-config.test.ts`).
 - sanitiser: `src/kit/ci/report-redaction.ts` and `scripts/prepare-ci-artifacts.ts` are unchanged, and so is the fail-closed check. A lane with no held item and no rewritten field keeps its HTML report. tw-iso, where a held item ran, stays JSON-only (B2).
 - order: this change is committed with the B28 and B29 build-log entries.
-- evidence: the `captureGitInfo` setting in Playwright 1.64 (`node_modules/playwright/types/test.d.ts`, `captureGitInfo`).
+- evidence: the `captureGitInfo` setting in Playwright 1.64 (`fork ref held by the owner`, `captureGitInfo`).

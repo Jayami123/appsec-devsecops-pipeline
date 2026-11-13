@@ -128,9 +128,7 @@ test("P5-TW-MASS-001 (createdBy): create-time field, client value", async ({ run
   if (company === undefined) throw new Error("TEST BUG: the negative create returned no company");
   created.push(company.id);
 
-  expectedDefect(
-    "P5-TW-MASS-001: create-time field stored from the client (status 2xx; detail held by the owner).",
-  );
+  expectedDefect("P5-TW-MASS-001: detail held by the owner");
   expect
     .soft(company.createdBy.source, "createdBy is the acting user, not the client value")
     .toBe(controlCompany.createdBy.source);

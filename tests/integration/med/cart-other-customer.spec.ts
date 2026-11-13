@@ -65,15 +65,8 @@ test.describe("P5-MED-AUTHZ-001", () => {
     if (attemptStatus === 200) {
       // The owner-first control above proves the claim route works; a 200 here is the suspected defect.
       // Owner decision (B30): the defect is an expected failure in this branch only. The assertion below is unchanged.
-      expectedDefect(
-        "P5-MED-AUTHZ-001: POST /store/carts/:id/customer returns 200 to a second customer and the cart moves to that customer; " +
-          "dist/api/store/carts/[id]/customer/route.js:12 passes the caller's actor id to transferCartCustomerWorkflowId and " +
-          "dist/cart/workflows/transfer-cart-customer.js:70 skips only when the caller is already the customer, with no owner check; " +
-          "live status 200 on five runs (p5-run-authz2, p5-run-med1, p5-run-med3, p5-run-med4, p5-run-med5)",
-      );
-      expect(after, "PRODUCT BUG (SUSPECTED): customer B moved a cart claimed by customer A").toBe(
-        a.customerId,
-      );
+      expectedDefect("P5-MED-AUTHZ-001: detail held by the owner");
+      expect(after, "the second claim is refused (detail held by the owner)").toBe(a.customerId);
     } else {
       expect(attemptStatus, "second claim refused with a client error").toBeGreaterThanOrEqual(400);
       expect(after, "cart still owned by A after the refused claim").toBe(a.customerId);

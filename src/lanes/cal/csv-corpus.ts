@@ -1,5 +1,5 @@
 // Pure CSV formula-injection corpus (OWASP CSV injection). X closeout imports this module
-// (docs/plans/2026-11-10-p5-x.md:129-140). Data only: no I/O and never the run prefix.
+// fork ref held by the owner). Data only: no I/O and never the run prefix.
 export type CsvCellKind = "plain" | "formula" | "numeric-formula" | "space-formula";
 
 export interface CsvCorpusEntry {

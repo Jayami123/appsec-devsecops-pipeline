@@ -1,5 +1,5 @@
 // Vendored from Jayami123/api-webhook-db-test-suite ref 99a2fde src/ci/known-defect-guard.ts (relocated to src/kit/ci/known-defect-guard.ts, F0-2). Change here only with a reason in the PR.
-// Syntax-aware guard for the expected-defect rule (docs/plans/2026-11-06-p2-run-summary-nightly.md, 4.4).
+// Syntax-aware guard for the expected-defect rule fork ref held by the owner, 4.4).
 // Used by tests/unit/ci/known-defect.test.ts only. It parses TypeScript with the compiler API, so comments,
 // string literals and whitespace or line breaks between tokens are handled by the parser, not by text matching.
 import { readdirSync, readFileSync, statSync } from "node:fs";

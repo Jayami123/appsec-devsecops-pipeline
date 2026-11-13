@@ -10,7 +10,7 @@ export function newCanaryNonce(): string {
 /**
  * The canary URL the workflow step calls. The kit receiver routes /r/<runId>/<testId> (receiver.ts urlFor), so the
  * per-run nonce is the test id (lower-case hex matches TEST_ID_PATTERN). host.docker.internal resolves to the
- * docker bridge gateway through the harness extra_hosts host-gateway entry (docker/twenty.compose.yml:16-17, :40-41).
+ * docker bridge gateway through the harness extra_hosts host-gateway entry fork ref held by the owner, :40-41).
  */
 export function canaryUrl(port: number, runId: string, nonce: string): string {
   return `http://host.docker.internal:${port}/r/${runId}/${nonce}`;

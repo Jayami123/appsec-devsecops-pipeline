@@ -58,7 +58,7 @@ export async function createGuestCart(api: APIRequestContext, store: RunStore): 
 
 /**
  * Reads the cart's customer ID by ID (anonymous: the route the capability document lists). Reads the default
- * field set, which includes customer.id (core dist/api/store/carts/query-config.js, defaultStoreCartFields).
+ * field set, which includes customer.id (core fork ref held by the owner, defaultStoreCartFields).
  * A `fields=customer_id` read returned no customer_id key in the live run (D-MED-B21), so it is not used.
  */
 export async function readCartCustomerId(

@@ -1,5 +1,5 @@
 // NEW-CAL-2: a booking uid used for a cancel a second time is refused and the state does not change.
-// First use: POST /v2/bookings/:uid/cancel (bookings.controller.ts:336). Second use: same request.
+// First use: POST /v2/bookings/:uid/cancel (fork ref held by the owner). Second use: same request.
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { request as pwRequest, type APIRequestContext } from "@playwright/test";

@@ -1,7 +1,7 @@
 // P5-CAL-RL-002: an API v2 key is limited to the effective limit per window. The effective limit is read
 // from the harness environment through calApiKeyRateLimit() (RATE_LIMIT_DEFAULT_LIMIT_API_KEY, forwarded
 // to the API at `up`); it is never taken from the fork default or a literal. The throttler is
-// apps/api/v2/src/lib/throttler-guard.ts (api key tracker, default 120 per 60 s). Control: the first
+// fork ref held by the owner (api key tracker, default 120 per 60 s). Control: the first
 // `limit` requests succeed. Negative: the request after them is 429.
 import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";

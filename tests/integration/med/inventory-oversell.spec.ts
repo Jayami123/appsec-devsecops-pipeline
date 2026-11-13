@@ -1,5 +1,5 @@
 // P5-MED-NEW-MED-6 (med plan 3c.19, proposed). Stock is never oversold by parallel checkouts.
-// Cart adds check availability and do not reserve (dist/cart/steps/confirm-inventory.js); the reservation is
+// Cart adds check availability and do not reserve (fork ref held by the owner); the reservation is
 // taken when the cart completes, so the oracle counts orders placed against the stock level.
 import type { APIRequestContext } from "@playwright/test";
 import { test, expect } from "../../../src/lanes/med/run-fixture.ts";

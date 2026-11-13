@@ -1,14 +1,14 @@
 // OAuth client flow through the product's normal user routes (P-5 probe, D-CAL-B13):
 // viewer.oAuth.submitClientForReview (authed, not admin) creates the client as PENDING;
 // oAuth.generateAuthCode (authed) issues a PKCE code for the owner's PENDING client
-// (OAuthService.ts:96-126 ensureClientIsApprovedOrOwnedPending); /api/auth/oauth/token exchanges it
-// (OAuthService.ts:312 same check). Routes: pages/api/trpc/oAuth/*, apps/web/app/api/auth/oauth/token.
+// (fork ref held by the owner ensureClientIsApprovedOrOwnedPending); /api/auth/oauth/token exchanges it
+// (fork ref held by the owner same check). Routes: fork ref held by the owner, fork ref held by the owner
 import { createHash, randomBytes } from "node:crypto";
 import type { APIRequestContext } from "@playwright/test";
 
 export interface OAuthClient {
   readonly clientId: string;
-  /** null for a PKCE client: the fork issues a public client with no secret when enablePkce is true (submitClientForReview.handler.ts:27-32). */
+  /** null for a PKCE client: the fork issues a public client with no secret when enablePkce is true (fork ref held by the owner). */
   readonly clientSecret: string | null;
   readonly redirectUri: string;
 }

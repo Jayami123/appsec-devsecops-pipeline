@@ -348,7 +348,7 @@ Commands run from the repository root unless stated. "Scratch" means a copy unde
 | node type stripping | `node --experimental-strip-types t.ts` (`const x: number = 2`) | prints 2, exit 0 | 2, exit 0 |
 | scratch tree, F0-5a edits, gitleaks | as the first row, on the scratch tree | 1 hit (`vectors.ts`) | 1 hit (`tests/unit/webhooks/vectors.ts`), exit 1 without `--exit-code 2` |
 | scratch tree, F0-5a edits, CodeQL | `codeql database create` then `analyze` with `javascript-security-and-quality.qls` | 0 results | 0 results (escapeCell and import-closure edits applied) |
-| scratch tree, F0-5a edits, unit | `node --test "tests/unit/**/*.test.ts"` | all pass | 335 pass, 0 fail (main 334; one separate `escapeCell` test added) |
+| scratch tree, F0-5a edits, unit | `node --test "tests/unit/*fork ref held by the owner"` | all pass | 335 pass, 0 fail (main 334; one separate `escapeCell` test added) |
 | scratch tree, F0-5a edits, typecheck | `tsc -p tsconfig.json` | exit 0 | exit 0 |
 | CodeQL bundle checksum | `curl` of `codeql-bundle-linux64.tar.zst.checksum.txt` (URL in section 2a) | `da3e952c…` | `da3e952c7fe978a0b6b93e75d9cbabbdf8535667ca0810bd4b2ae37bc840ffee` (matches the local hash) |
 | ZAP image tag | ghcr manifest HEAD for `zaproxy/zaproxy:2.17.0` | `sha256:9624669d…` | `sha256:9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af` (same as `stable`) |

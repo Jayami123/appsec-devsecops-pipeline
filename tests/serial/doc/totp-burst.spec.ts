@@ -1,6 +1,6 @@
 // P5-DOC-MI-15 TOTP burst (doc plan section 4.7). Two-factor: setup :23, enable :40, disable :78 (two-factor.ts).
-// The second factor is checked at sign-in (authorize, email-password.ts:66, ZSignInSchema totpCode), and the
-// CSRF token must match the cookie (email-password.ts:90-93). Codes come from src/lanes/doc/totp.ts. The burst
+// The second factor is checked at sign-in (authorize, fork ref held by the owner, ZSignInSchema totpCode), and the
+// CSRF token must match the cookie (fork ref held by the owner). Codes come from src/lanes/doc/totp.ts. The burst
 // size is BUDGETS.TOTP_BURST (budgets.ts:20), read by name through runBurst. No 429 inside the burst is a
 // DEPLOYMENT FINDING (the test fails visibly), never a PASS of "protected" (doc plan section 4.7).
 import { test, expect, actorOf, type ActorHandle } from "../../../src/lanes/doc/actors.ts";
@@ -72,9 +72,7 @@ test.describe("P5-DOC-MI-15", () => {
       .annotations.push({ type: "burst-status-counts", description: countsOf(result.statuses) });
     expect(result.attempts).toBe(burstStatuses.length);
     // Red-row: after setup (the burst ran), before the product assertion that is expected to fail.
-    expectedDefect(
-      "P5-DOC-MI-15: packages/auth/server/index.ts:70 defaults AppError without statusCode to 500; InvalidTwoFactorCode at packages/auth/server/routes/email-password.ts:156",
-    );
+    expectedDefect("P5-DOC-MI-15: detail held by the owner");
     for (const status of burstStatuses) {
       expect(status, "each wrong code is refused").toBeGreaterThanOrEqual(400);
       expect(status).toBeLessThan(500);
@@ -105,7 +103,7 @@ test.describe("P5-DOC-MI-15", () => {
         "DEPLOYMENT FINDING: no 429 inside the TOTP burst; the row cannot claim the account is protected",
       ).toBe(true);
     } finally {
-      // Cleanup: disable two-factor with a recovery code (two-factor.ts:78, :109 returns 201).
+      // Cleanup: disable two-factor with a recovery code (fork ref held by the owner, :109 returns 201).
       const disabled = await member.request.post(`${base}${TWO_FACTOR}/disable`, {
         data: { backupCode },
       });
