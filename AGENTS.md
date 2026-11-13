@@ -28,7 +28,7 @@ configuration unit tests. It contains no product test, no product source and no 
   Fork `.env` provisioning is harness-owned. P5 does not write, copy or generate seed secrets.
 - Never edit `node_modules` by hand. Dependency installs use the lockfile (`npm ci`) and the
   pinned product references only.
-- The harness is pinned to `qa-portfolio-harness` `v0.5.0`. Any upgrade is one foundation PR that
+- The harness is pinned to `qa-portfolio-harness` `v0.5.1`. Any upgrade is one foundation PR that
   changes `package.json`, `package-lock.json` and the unit assertion together (plan section 7.5).
 
 ## Failure classification and test rules
