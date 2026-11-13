@@ -137,7 +137,7 @@ describe("private-ID matching and the ledger reader (D3)", () => {
     assert.deepEqual(privateIdsOf({ private: [{ id: "MI-3", status: "held-private" }] }), ["MI-3"]);
     assert.throws(
       () => privateIdsOf({ private: [{ id: "MI-3", status: "held-private", note: "x" }] }),
-      /is not \{id, status: held-private\}/,
+      /is not \{id, status\} with an allowed private status/,
     );
     assert.throws(() => privateIdsOf({}), /missing or not an array/);
   });
