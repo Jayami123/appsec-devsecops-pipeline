@@ -9,7 +9,7 @@ import { chromium } from "@playwright/test";
 /**
  * @param {string} base  loopback origin, e.g. http://127.0.0.1:3000
  * @param {string[]} paths candidate login paths, tried in order
- * @returns {Promise<{ ok: boolean, path?: string, formMethodAttr?: string, passwordInUrl?: boolean, passwordInBody?: boolean, requests?: number, reason?: string }>}
+ * @returns {Promise<{ ok: boolean, path?: string, formMethodAttr?: string, transport?: "url" | "body" | "none", requests?: number, reason?: string }>}
  */
 export async function checkLogin(base, paths) {
   // CI installs the browser with `npx playwright install chromium`. A local run may point PW_CHROMIUM at a
@@ -67,12 +67,14 @@ export async function checkLogin(base, paths) {
           (r) => r.url.includes(dummy) || r.url.includes(encodeURIComponent(dummy)),
         );
         const passwordInBody = seen.some((r) => r.body.includes(dummy));
+        // One transport value, not named after the credential: "url", "body" or "none". It is the only result field
+        // that describes where the password went, and it carries no credential text.
+        const transport = passwordInBody ? "body" : passwordInUrl ? "url" : "none";
         return {
           ok: true,
           path,
           formMethodAttr,
-          passwordInUrl,
-          passwordInBody,
+          transport,
           requests: seen.length,
         };
       } finally {

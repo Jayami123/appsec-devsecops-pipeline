@@ -80,3 +80,14 @@ test("the exact placeholder that the redactor writes passes the gate (B46): the 
   const gate = spawnSync(process.execPath, [SCANNER, dir], { encoding: "utf8" });
   assert.equal(gate.status, 0, gate.stderr);
 });
+
+test("a missing artefact is skipped, not an error (the read handles ENOENT; no existence check)", () => {
+  const dir = scratch("zap-redact-missing");
+  writeTree(dir, { "zap.json": `{"uri":"https://x.test/?password=${SECRET}"}\n` });
+  const result = spawnSync(process.execPath, ["--experimental-strip-types", REDACTOR, dir], {
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /redacted 1 value\(s\) in zap\.json/);
+  assert.doesNotMatch(result.stdout, /zap\.html|zap-summary/);
+});

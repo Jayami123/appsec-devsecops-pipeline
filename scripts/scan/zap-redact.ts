@@ -2,7 +2,7 @@
 // Redacts the VALUE of a sensitive query, form or JSON key to "[REDACTED]" and keeps the key name, the URL and the
 // rest of the text. It never prints a value. It does not touch the evidence gate (evidence-token-scan.mjs), which
 // still runs on the output and still fails on any credential-shaped text it finds anywhere else.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { REDACTED_PLACEHOLDER } from "./redaction-placeholder.mjs";
@@ -61,8 +61,15 @@ export function redactDirectory(dir: string): { file: string; count: number }[] 
   const results: { file: string; count: number }[] = [];
   for (const name of ARTEFACTS) {
     const path = join(dir, name);
-    if (!existsSync(path)) continue;
-    const { text, count } = redactText(readFileSync(path, "utf8"));
+    // Read first and handle a missing file in the catch: no existence check, so no check-then-use race.
+    let original: string;
+    try {
+      original = readFileSync(path, "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw error;
+    }
+    const { text, count } = redactText(original);
     writeFileSync(path, text);
     results.push({ file: name, count });
   }
