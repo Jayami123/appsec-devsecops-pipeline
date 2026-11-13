@@ -96,9 +96,70 @@ const SIGN_UP = `mutation SignUp($email: String!, $password: String!) {
   }
 }`;
 
-const SIGN_UP_IN_NEW_WORKSPACE = `mutation NewWorkspace {
-  signUpInNewWorkspace { workspace { id } }
-}`;
+interface IntroType {
+  readonly kind: string;
+  readonly name: string | null;
+  readonly ofType: IntroType | null;
+}
+
+/** The named type under NonNull and List wrappers, or undefined. */
+function namedType(type: IntroType | null): string | undefined {
+  let cursor = type;
+  while (cursor !== null && cursor.name === null) cursor = cursor.ofType;
+  return cursor?.name ?? undefined;
+}
+
+const TYPE_REF = `kind name ofType { kind name ofType { kind name ofType { kind name } } }`;
+
+/**
+ * The argument shape of signUpInNewWorkspace, read from the product's own schema (introspection on the metadata
+ * endpoint). The first live run (run 43399311588) rejected a call without a name ("Workspace name is required"), and the
+ * argument name is not known in advance. Returns the variables and the operation text to send.
+ */
+async function newWorkspaceCall(input: {
+  readonly baseUrl: string;
+  readonly bearer: string;
+  readonly name: string;
+}): Promise<{ query: string; variables: Record<string, unknown> }> {
+  const mutations = await gql<{
+    __type: {
+      fields: Array<{ name: string; args: Array<{ name: string; type: IntroType }> }>;
+    } | null;
+  }>({
+    baseUrl: input.baseUrl,
+    endpoint: "metadata",
+    operation: "introspectMutations",
+    query: `query M { __type(name: "Mutation") { fields { name args { name type { ${TYPE_REF} } } } } }`,
+    bearer: input.bearer,
+  });
+  const field = mutations.__type?.fields.find((f) => f.name === "signUpInNewWorkspace");
+  if (field === undefined)
+    throw new Error("TEST BUG: signUpInNewWorkspace is not in the product schema");
+  const selection = "{ workspace { id } }";
+  const first = field.args[0];
+  if (first === undefined) {
+    return { query: `mutation N { signUpInNewWorkspace ${selection} }`, variables: {} };
+  }
+  const inputType = namedType(first.type);
+  if (inputType === undefined)
+    throw new Error("TEST BUG: signUpInNewWorkspace argument has no named type");
+  const fieldsOf = await gql<{
+    __type: { inputFields: Array<{ name: string; type: IntroType }> } | null;
+  }>({
+    baseUrl: input.baseUrl,
+    endpoint: "metadata",
+    operation: "introspectInput",
+    query: `query I($n: String!) { __type(name: $n) { inputFields { name type { ${TYPE_REF} } } } }`,
+    variables: { n: inputType },
+    bearer: input.bearer,
+  });
+  const nameField = fieldsOf.__type?.inputFields.find((f) => /name/i.test(f.name));
+  const value = nameField === undefined ? {} : { [nameField.name]: input.name };
+  return {
+    query: `mutation N($input: ${inputType}!) { signUpInNewWorkspace(${first.name}: $input) ${selection} }`,
+    variables: { input: value },
+  };
+}
 
 const SIGN_IN_LIST = `mutation SignIn($email: String!, $password: String!) {
   signIn(email: $email, password: $password) {
@@ -134,11 +195,17 @@ export async function createOwnedWorkspace(input: {
   });
   const agnostic = signedUp.signUp.tokens.accessOrWorkspaceAgnosticToken.token;
 
+  const newWorkspace = await newWorkspaceCall({
+    baseUrl,
+    bearer: agnostic,
+    name: `${input.prefix}-${input.label}-ws`,
+  });
   const created = await gql<{ signUpInNewWorkspace: { workspace: { id: string } } }>({
     baseUrl,
     endpoint: "metadata",
     operation: "signUpInNewWorkspace",
-    query: SIGN_UP_IN_NEW_WORKSPACE,
+    query: newWorkspace.query,
+    variables: newWorkspace.variables,
     bearer: agnostic,
   });
   const workspaceId = created.signUpInNewWorkspace.workspace.id;
