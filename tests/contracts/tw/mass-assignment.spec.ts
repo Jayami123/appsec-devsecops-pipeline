@@ -47,9 +47,7 @@ async function destroy(base: string, bearer: string, id: string): Promise<number
   return response.status;
 }
 
-test("P5-TW-MASS-001 (id): a client-supplied UUID id on create is a design verdict", async ({
-  run,
-}, testInfo) => {
+test("P5-TW-MASS-001 (id): create-time field, client value", async ({ run }, testInfo) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const created: string[] = [];
@@ -76,14 +74,12 @@ test("P5-TW-MASS-001 (id): a client-supplied UUID id on create is a design verdi
   created.push(company.id);
   testInfo.annotations.push({
     type: "design-verdict",
-    description: `client UUID id on create is stored as the record id (${company.id === clientId ? "matches" : "differs"}); design per common-create-one-query-runner.service.ts:101-102`,
+    description: `create-time id: the record id ${company.id === clientId ? "matches" : "differs from"} the client value (design verdict; detail held by the owner)`,
   });
   expect(company.id, "design: the client UUID is the record id").toBe(clientId);
 });
 
-test("P5-TW-MASS-001 (deletedAt): a client-supplied deletedAt on create is recorded as a design verdict", async ({
-  run,
-}, testInfo) => {
+test("P5-TW-MASS-001 (deletedAt): create-time field, client value", async ({ run }, testInfo) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const created: string[] = [];
@@ -113,9 +109,7 @@ test("P5-TW-MASS-001 (deletedAt): a client-supplied deletedAt on create is recor
   });
 });
 
-test("P5-TW-MASS-001 (createdBy): a client-supplied createdBy on create is ignored", async ({
-  run,
-}) => {
+test("P5-TW-MASS-001 (createdBy): create-time field, client value", async ({ run }) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const created: string[] = [];
@@ -141,7 +135,7 @@ test("P5-TW-MASS-001 (createdBy): a client-supplied createdBy on create is ignor
   created.push(company.id);
 
   expectedDefect(
-    "P5-TW-MASS-001: createdBy is stored from the client. Fork: common-create-many-query-runner.service.ts:559-598 (insert path) has no createdBy strip; the isSystem strip is on the update branch only (:790-792). Live (tw-api run): client IMPORT stored, control MANUAL.",
+    "P5-TW-MASS-001: create-time field stored from the client (status 2xx; detail held by the owner).",
   );
   expect
     .soft(company.createdBy.source, "createdBy is the acting user, not the client value")

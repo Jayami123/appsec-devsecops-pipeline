@@ -21,7 +21,7 @@ import {
   recipeRootUrl,
 } from "./multiws-support.ts";
 
-test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
+test("NEW-TW-5: invite acceptance, repeated use", async ({ run }) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const email = throwawayEmail(run.prefix, "reuse");
@@ -46,9 +46,7 @@ test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
   // PRODUCT BUG (CONFIRMED, round 2 tw-api: control and negative), marked before the unchanged assertion (owner decision 2). Fork: the invite
   // path is auth.resolver.ts:523-532 (signUpInWorkspace, metadata). Live: the second accept with the same
   // correct password returned success; a different password was refused (no takeover observed).
-  expectedDefect(
-    "NEW-TW-5: second accept of one invite hash succeeds for the same member. Fork: auth.resolver.ts:523-532 (signUpInWorkspace). Live (tw-api run): same password accepted, different password refused, membership unchanged.",
-  );
+  expectedDefect("NEW-TW-5: second acceptance succeeded (status 2xx; detail held by the owner).");
   expect(refused, `the second accept is refused (${message || "accepted"})`).toBe(true);
 });
 

@@ -18,9 +18,7 @@ import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { roleIdByLabel } from "../../../src/lanes/tw/keys.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 
-test("NEW-TW-6: a demoted member's concurrent update is 2xx-and-persisted or 4xx-and-unchanged, never 5xx", async ({
-  run,
-}, testInfo) => {
+test("NEW-TW-6: role change and concurrent update, status check", async ({ run }, testInfo) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const adminRole = await roleIdByLabel({ baseUrl: base, session: admin, label: "Admin" });
@@ -142,7 +140,7 @@ test("NEW-TW-6: a demoted member's concurrent update is 2xx-and-persisted or 4xx
   // user-role.service.ts:95-135 assigns with createMany only (:126) and never removes the prior role target.
   // Live: a demoted member's update is accepted for at least 5.2 s, persisted, also on a fresh sign-in.
   expectedDefect(
-    "NEW-TW-6: a demoted member keeps the prior role's write access. Fork: user-role.service.ts:126 (createMany only; no delete of the previous role target). Live (demoted-member-race run): post-demotion update accepted and persisted.",
+    "NEW-TW-6: update after role change succeeded (status 2xx; detail held by the owner).",
   );
   expect(
     sequential.status >= 400 && sequential.status < 500,
