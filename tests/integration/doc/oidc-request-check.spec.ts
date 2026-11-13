@@ -1,4 +1,6 @@
 // Held-private check (ID only; owner-approved scoped exception, D-DOC-B84). Title and messages name only the ID.
+// Scope: request binding only. It checks the authorize request (client, redirect URI, PKCE method, state) and says nothing
+// about the ID token that the callback receives.
 // The sanitiser reduces this spec to ID and status in the JSON, the job summary, and removes the HTML report
 // and test results for the job (scripts/prepare-ci-artifacts.ts). Evidence is reported to the owner only.
 import { apiBaseUrl } from "../../../src/kit/env.ts";

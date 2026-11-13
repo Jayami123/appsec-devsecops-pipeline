@@ -134,9 +134,9 @@ test("no gated or planned case is verified, and no verified case has a blocker",
   }
 });
 
-test("private holds 10 entries and no id appears twice", () => {
+test("private holds 11 entries and no id appears twice", () => {
   const ids = ledger.private.map((entry) => String(entry.id));
-  assert.equal(ledger.private.length, 10);
+  assert.equal(ledger.private.length, 11);
   assert.equal(new Set(ids).size, ids.length);
 });
 
