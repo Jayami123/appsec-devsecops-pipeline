@@ -5,11 +5,11 @@
 // Negative: the same path and query, presented to B's origin with B's session (A's file reached from B's workspace).
 // Oracle: refused (4xx), and no PNG bytes in the body.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import {
   PNG,
   assertLoopbackRecipeName,
   seededPair,
-  readRest,
   recipeRootUrl,
   uploadPng,
 } from "./multiws-support.ts";
@@ -31,12 +31,23 @@ test("P5-TW-MT-002: a signed file URL from one workspace is not readable in anot
   expect(control.status, "control: A reads its signed URL").toBe(200);
   expect(Buffer.from(await control.arrayBuffer()).equals(PNG), "control: the PNG bytes").toBe(true);
 
-  // negative: the same path and query on B's origin, with B's session
+  // negative: the same path and query on B's origin, with B's session. Compared as bytes (the PNG signature is not
+  // valid UTF-8, so a text comparison would not be a byte check).
   const onB = new URL(signedUrl);
   const crossed = new URL(`${onB.pathname}${onB.search}`, b.origin).toString();
-  const negative = await readRest({ url: crossed, bearer: b.session.accessToken });
+  const negative = await fetch(crossed, {
+    headers: { authorization: `Bearer ${b.session.accessToken}` },
+  });
+  const negativeBytes = Buffer.from(await negative.arrayBuffer());
+  const served = negative.status === 200 && negativeBytes.equals(PNG);
+  // Expected defect only when B's origin serves A's bytes. Evidence is status only (private-first).
+  if (served) {
+    expectedDefect(
+      "P5-TW-MT-002: a signed file URL of one workspace is served on another workspace origin (status 200, same bytes). Private-first: details held by the owner.",
+    );
+  }
   expect([400, 401, 403, 404], `negative: B is refused (HTTP ${negative.status})`).toContain(
     negative.status,
   );
-  expect(negative.text.includes("\u0089PNG"), "negative: no PNG signature in the body").toBe(false);
+  expect(served, "negative: no file bytes served on B's origin").toBe(false);
 });

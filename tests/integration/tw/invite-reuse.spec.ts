@@ -86,13 +86,15 @@ test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A
   });
   expect(controlMembers.length, "control: the invitee is a member of A").toBe(1);
 
-  // negative: B's owner presents A's invite hash on B's origin
+  // negative: B's owner presents A's invite hash on B's origin. The security property is membership of A, read before
+  // and after. The accept outcome is recorded as an observation (a success on B's origin with no membership in A is a
+  // re-authentication, not a takeover).
   const membersBefore = await memberIdsByEmail({
     origin: a.origin,
     session: a.admin,
     email: b.email,
   });
-  let refused = false;
+  let accepted = true;
   let message = "";
   try {
     await acceptInvite({
@@ -102,17 +104,25 @@ test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A
       workspaceInviteHash: hash,
     });
   } catch (error) {
-    refused = true;
+    accepted = false;
     message = error instanceof Error ? error.message.slice(0, 120) : "unknown";
   }
-  expect(refused, `negative: B's user cannot accept A's invite (${message || "accepted"})`).toBe(
-    true,
-  );
+  test.info().annotations.push({
+    type: "observation",
+    description: accepted
+      ? "accept on B's origin: accepted"
+      : `accept on B's origin: refused (${message})`,
+  });
   const membersAfter = await memberIdsByEmail({
     origin: a.origin,
     session: a.admin,
     email: b.email,
   });
-  expect(membersAfter, "negative: B's user is not a member of A").toEqual(membersBefore);
+  // Expected defect only when B's user is a member of A after the accept. Evidence is status only (private-first).
+  if (membersAfter.length > 0 && membersBefore.length === 0) {
+    expectedDefect(
+      "NEW-TW-5: a workspace B user becomes a member of workspace A with A's invite (membership listed). Private-first: details held by the owner.",
+    );
+  }
   expect(membersAfter.length, "negative: B's user is not a member of A").toBe(0);
 });

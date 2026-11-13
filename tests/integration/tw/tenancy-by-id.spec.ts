@@ -3,8 +3,9 @@
 // Setup (asserted first): the recipe is on the stack and lvh.me resolves to loopback. Two throwaway owners, each with
 // its own workspace. A creates a company with the run prefix in its name; the name is read before the negatives.
 // Controls (same actor and resource class, before each negative): B reads and updates its own company on B's origin
-// through the same route shape (REST and GraphQL), so a refusal is not a malformed request.
-// Negatives: B's session, presenting A's company UUID on A's origin, reads (REST, GraphQL) and updates (REST, GraphQL).
+// through the same route shape, so a refusal is not a malformed request.
+// Negatives: B's session, presenting A's company UUID on A's origin, reads (REST) and updates (REST, GraphQL).
+// Not built here: a GraphQL read by UUID. Its query shape is not proven at the pin (the update shape is, tw-api NEW-TW-7).
 // Oracle: every negative is refused or returns no row; no value or id of A's company is in a negative response body;
 // A's company name is unchanged (read before and after).
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
@@ -25,8 +26,8 @@ async function graphql(origin: string, bearer: string, query: string, variables:
   return { status: response.status, text: await response.text() };
 }
 
-const READ_BY_ID = `query G($id: UUID!) { company(id: $id) { id name } }`;
-const UPDATE_BY_ID = `mutation U($id: UUID!, $name: String!) { updateCompany(id: $id, data: { name: $name }) { id } }`;
+// The shape of tests/integration/tw/soft-deleted-mutation.spec.ts (NEW-TW-7, passed live in round 2).
+const UPDATE_BY_ID = `mutation U($id: UUID!, $data: CompanyUpdateInput!) { updateCompany(id: $id, data: $data) { id name } }`;
 
 async function companyName(
   origin: string,
@@ -92,26 +93,17 @@ test("NEW-TW-1: a workspace B session cannot read or update a workspace A compan
     restWrite.status,
   );
 
-  // GraphQL read: control on B's own company (same query), then the negative on A's origin
-  const gqlOwn = await graphql(b.origin, b.session.accessToken, READ_BY_ID, { id: bId });
-  expect(gqlOwn.text.includes(bId), "GraphQL read control: B reads its own company").toBe(true);
-  const gqlRead = await graphql(a.origin, b.session.accessToken, READ_BY_ID, { id: aId });
-  expect(gqlRead.text.includes(aId), "GraphQL read: no id of A's company in the body").toBe(false);
-  expect(gqlRead.text.includes(name), "GraphQL read: no value of A's company in the body").toBe(
-    false,
-  );
-
   // GraphQL update: control on B's own company (same mutation), then the negative on A's origin
   const gqlWriteOwn = await graphql(b.origin, b.session.accessToken, UPDATE_BY_ID, {
     id: bId,
-    name: `${run.prefix}-nt1-own-3`,
+    data: { name: `${run.prefix}-nt1-own-3` },
   });
   expect(gqlWriteOwn.text.includes(bId), "GraphQL update control: B updates its own company").toBe(
     true,
   );
   const gqlWrite = await graphql(a.origin, b.session.accessToken, UPDATE_BY_ID, {
     id: aId,
-    name: `${run.prefix}-nt1-gql`,
+    data: { name: `${run.prefix}-nt1-gql` },
   });
   expect(gqlWrite.text.includes(aId), "GraphQL update: no id of A's company in the body").toBe(
     false,

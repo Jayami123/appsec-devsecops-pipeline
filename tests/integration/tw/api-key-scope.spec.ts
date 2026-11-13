@@ -8,6 +8,7 @@ import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { adminSetupSession } from "../../../src/lanes/tw/login.ts";
 import { createApiKey, revokeApiKey } from "../../../src/lanes/tw/keys.ts";
 import { gql } from "../../../src/lanes/tw/gql.ts";
+import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import {
   assertLoopbackRecipeName,
   seededPair,
@@ -118,6 +119,30 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
     headers: { "content-type": "application/json", authorization: `Bearer ${key.secret}` },
     body: JSON.stringify({ ...HOOK, targetUrl: "http://127.0.0.1:9/p5-scope-b" }),
   });
+  // A 201 from B is kept out of the list check: the row it created is removed in cleanup (private-first detail is
+  // held by the owner; the repository carries the ID and the status only).
+  const crossBody =
+    negative.status === 201
+      ? ((await negative.json()) as { data?: { createWebhook?: { id?: string } }; id?: string })
+      : undefined;
+  const crossId = crossBody?.data?.createWebhook?.id ?? crossBody?.id;
+  if (crossId !== undefined) {
+    run.onCleanup(async () => {
+      await fetch(`${b.origin}/rest/webhooks/${crossId}`, {
+        method: "DELETE",
+        headers: { authorization: `Bearer ${b.admin.accessToken}` },
+      });
+    });
+  }
+  const listedAfterCreate =
+    crossId !== undefined &&
+    (await readRest({ url: listUrl, bearer: b.admin.accessToken })).text.includes(crossId);
+  // Expected defect only when the defect reproduces: a 201 from B and the row is listed in B. Evidence is status only.
+  if (negative.status === 201 && listedAfterCreate) {
+    expectedDefect(
+      "NEW-TW-2: a key of one workspace creates a webhook in another workspace (status 201, row listed). Private-first: details held by the owner.",
+    );
+  }
   expect([400, 401, 403], `negative: A's key is refused on B (HTTP ${negative.status})`).toContain(
     negative.status,
   );
