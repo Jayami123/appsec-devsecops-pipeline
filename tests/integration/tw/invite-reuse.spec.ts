@@ -10,9 +10,16 @@ import {
   throwawayEmail,
   throwawayPassword,
 } from "../../../src/lanes/tw/login.ts";
-import { acceptInvite } from "../../../src/lanes/tw/invite.ts";
+import { acceptInvite, sendInvite } from "../../../src/lanes/tw/invite.ts";
 import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { awaitInviteLink, joinWorkspace } from "../../../src/lanes/tw/member.ts";
+import {
+  assertLoopbackRecipeName,
+  createOwnedWorkspace,
+  findInviteHash,
+  memberIdsByEmail,
+  recipeRootUrl,
+} from "./multiws-support.ts";
 
 test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
   const base = apiBaseUrl("twenty");
@@ -43,4 +50,70 @@ test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
     "NEW-TW-5: second accept of one invite hash succeeds for the same member. Fork: auth.resolver.ts:523-532 (signUpInWorkspace). Live (tw-api run): same password accepted, different password refused, membership unchanged.",
   );
   expect(refused, `the second accept is refused (${message || "accepted"})`).toBe(true);
+});
+
+// NEW-TW-5 cross-workspace half (tw-multiws, D-TW-B46). An invite issued by workspace A is accepted by a user of
+// workspace B. Setup (asserted first): the recipe is on the stack and lvh.me resolves to loopback. Owner A and owner
+// B are throwaway owners of their own workspaces; the invitee is a throwaway email the owner of A invites to A.
+// Control: the invitee accepts A's invite on A's origin (membership of A is created).
+// Negative: the owner of B (a user of workspace B, with its own email and password) presents A's invite hash on B's
+// origin. Oracle: refused, and B's owner is not a member of A (membership list of A read before and after).
+test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A invite @multiws", async ({
+  run,
+}) => {
+  const root = recipeRootUrl(); // setup: ENV failure stops here, before any product call
+  await assertLoopbackRecipeName(root.hostname);
+  const a = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt5a" });
+  const b = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt5b" });
+  const invitee = throwawayEmail(run.prefix, "nt5invitee");
+  const inviteePassword = throwawayPassword();
+
+  await sendInvite({ baseUrl: a.origin, admin: a.session, email: invitee });
+  await expect.poll(() => findInviteHash(invitee)).not.toBeUndefined(); // the invite mail arrives
+  const hash = await findInviteHash(invitee);
+  if (hash === undefined) throw new Error("TEST BUG: the invite hash disappeared after the poll");
+
+  // control: the invitee accepts A's invite on A's origin
+  await acceptInvite({
+    baseUrl: a.origin,
+    email: invitee,
+    password: inviteePassword,
+    workspaceInviteHash: hash,
+  });
+  const controlMembers = await memberIdsByEmail({
+    origin: a.origin,
+    session: a.session,
+    email: invitee,
+  });
+  expect(controlMembers.length, "control: the invitee is a member of A").toBe(1);
+
+  // negative: B's owner presents A's invite hash on B's origin
+  const membersBefore = await memberIdsByEmail({
+    origin: a.origin,
+    session: a.session,
+    email: b.email,
+  });
+  let refused = false;
+  let message = "";
+  try {
+    await acceptInvite({
+      baseUrl: b.origin,
+      email: b.email,
+      password: b.password,
+      workspaceInviteHash: hash,
+    });
+  } catch (error) {
+    refused = true;
+    message = error instanceof Error ? error.message.slice(0, 120) : "unknown";
+  }
+  expect(refused, `negative: B's user cannot accept A's invite (${message || "accepted"})`).toBe(
+    true,
+  );
+  const membersAfter = await memberIdsByEmail({
+    origin: a.origin,
+    session: a.session,
+    email: b.email,
+  });
+  expect(membersAfter, "negative: B's user is not a member of A").toEqual(membersBefore);
+  expect(membersAfter.length, "negative: B's user is not a member of A").toBe(0);
 });

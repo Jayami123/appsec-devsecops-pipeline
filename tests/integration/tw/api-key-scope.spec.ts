@@ -1,12 +1,19 @@
 // NEW-TW-2 case (b) (tw-api). A key K_A is created in the workspace (api-key.resolver.ts:79), creates a
 // webhook (control, POST /rest/webhooks 201), is revoked and read back, and its next create is refused
-// with the webhook list unchanged. Case (a), a key used on a second workspace, is tw-multiws and is not
-// built in this PR (see the PR body).
+// with the webhook list unchanged.
+// NEW-TW-2 case (a) (tw-multiws, D-TW-B46): a key of workspace A used on workspace B is refused, and B's webhook list
+// is unchanged. Its own control (the key creates a webhook on A) runs first.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { adminSetupSession } from "../../../src/lanes/tw/login.ts";
 import { createApiKey, revokeApiKey } from "../../../src/lanes/tw/keys.ts";
 import { gql } from "../../../src/lanes/tw/gql.ts";
+import {
+  assertLoopbackRecipeName,
+  createOwnedWorkspace,
+  readRest,
+  recipeRootUrl,
+} from "./multiws-support.ts";
 
 const HOOK = { targetUrl: "http://127.0.0.1:9/p5-scope", operations: ["company.created"] };
 
@@ -64,4 +71,56 @@ test("NEW-TW-2: a revoked API key cannot create a webhook", async ({ run }) => {
   });
   expect([401, 403, 400], "the revoked key create is refused").toContain(negative.status);
   expect(await webhookIds(base, admin.accessToken), "no webhook row is created").toEqual(before);
+});
+
+test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in another @multiws", async ({
+  run,
+}) => {
+  const root = recipeRootUrl(); // setup: ENV failure stops here, before any product call
+  await assertLoopbackRecipeName(root.hostname);
+  const a = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt2a" });
+  const b = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt2b" });
+  const key = await createApiKey({
+    baseUrl: a.origin,
+    session: a.session,
+    name: `${run.prefix}-scope-a`,
+  });
+  run.onCleanup(() =>
+    revokeApiKey({ baseUrl: a.origin, session: a.session, keyId: key.id }).catch(() => undefined),
+  );
+
+  // control: A's key creates a webhook in A
+  const control = await fetch(`${a.origin}/rest/webhooks`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key.secret}` },
+    body: JSON.stringify({ ...HOOK, targetUrl: "http://127.0.0.1:9/p5-scope-a" }),
+  });
+  expect(control.status, "control: A's key creates a webhook in A").toBe(201);
+  const controlId = (await control.json()) as {
+    data?: { createWebhook?: { id: string } };
+    id?: string;
+  };
+  const createdId = controlId.data?.createWebhook?.id ?? controlId.id;
+  run.onCleanup(async () => {
+    if (createdId !== undefined) {
+      await fetch(`${a.origin}/rest/webhooks/${createdId}`, {
+        method: "DELETE",
+        headers: { authorization: `Bearer ${a.session.accessToken}` },
+      });
+    }
+  });
+
+  // negative: A's key on B's origin, B's list before and after
+  const listUrl = `${b.origin}/rest/webhooks?limit=200`;
+  const before = await readRest({ url: listUrl, bearer: b.session.accessToken });
+  const negative = await fetch(`${b.origin}/rest/webhooks`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key.secret}` },
+    body: JSON.stringify({ ...HOOK, targetUrl: "http://127.0.0.1:9/p5-scope-b" }),
+  });
+  expect([400, 401, 403], `negative: A's key is refused on B (HTTP ${negative.status})`).toContain(
+    negative.status,
+  );
+  const after = await readRest({ url: listUrl, bearer: b.session.accessToken });
+  expect(after.text, "negative: B's webhook list is unchanged").toEqual(before.text);
 });
