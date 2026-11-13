@@ -2,7 +2,7 @@
 
 The bearer is read from the P5_TW_FUZZ_BEARER environment variable, never from argv, so it cannot appear
 in a process list or in a logged command line. The OpenAPI document is loaded by the spec from a local
-file (the core document needs the key to load, live: 403 without it).
+file (the core document needs the key to load).
 """
 
 import os

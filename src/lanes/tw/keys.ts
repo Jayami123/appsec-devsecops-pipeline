@@ -1,5 +1,4 @@
-// API keys through the product routes (packages/twenty-server api-key.resolver.ts:39-132 and
-// auth.resolver.ts:1088-1103 generateApiKeyToken; metadata endpoint). The secret is held in memory
+// API keys through the product routes (metadata endpoint). The secret is held in memory
 // only and is never logged or written to an artefact.
 import { gql } from "./gql.ts";
 import type { TwSession } from "./login.ts";

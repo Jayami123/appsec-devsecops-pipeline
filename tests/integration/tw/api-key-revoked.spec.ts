@@ -1,5 +1,5 @@
 // MI-16 (tw-api). Routes: createApiKey, generateApiKeyToken, revokeApiKey and the apiKey read, all on
-// the metadata endpoint (api-key.resolver.ts:53-132; auth.resolver.ts:1088). The oracle is a REST read
+// the metadata endpoint. The oracle is a REST read
 // with the key: 200 before revocation and 401 or 403 after, with the revocation read back first.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
@@ -37,7 +37,7 @@ test("MI-16: a revoked API key is refused", async ({ run }) => {
     bearer: admin.accessToken,
     operation: "apiKey",
     query: `query K($input: GetApiKeyInput!) { apiKey(input: $input) { revokedAt } }`,
-    variables: { input: { id: key.id } }, // api-key.resolver.ts:53-54 (args: input)
+    variables: { input: { id: key.id } },
   });
   expect(evidence.apiKey?.revokedAt, "revocation is evidenced by a read").not.toBeNull();
 

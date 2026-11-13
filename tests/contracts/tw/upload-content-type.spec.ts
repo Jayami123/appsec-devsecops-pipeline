@@ -1,8 +1,6 @@
-// NEW-TW-4 (tw-api). Upload is a two-step product route (file.controller / file-upload.resolver.ts:34-66, metadata
-// endpoint): createFileUpload -> PUT to the returned uploadUrl -> completeFileUpload -> GET the signed URL.
-// Served headers are set by setFileResponseHeaders (utils/set-file-response-headers.utils.ts:14-18): the stored MIME
-// type, X-Content-Type-Options: nosniff, and Content-Disposition inline only for an allow-list of types
-// (utils/get-content-disposition.utils.ts:1-22; SVG and HTML are not on it).
+// NEW-TW-4 (tw-api). Upload is a two-step product route (metadata endpoint): createFileUpload -> PUT to the returned
+// uploadUrl -> completeFileUpload -> GET the signed URL. Served headers: the stored MIME type, X-Content-Type-Options:
+// nosniff, and Content-Disposition inline only for an allow-list of types.
 // Control: a real PNG is served as image/png, inline. Negative (a): HTML bytes with a .png name are refused at
 // completion (content does not match the extension). Negative (b): an SVG with a script element is served as
 // image/svg+xml with attachment disposition. Oracle: nothing is served as a script-executing type inline.
@@ -14,7 +12,7 @@ const PNG = Buffer.from(
   "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360f8cfc0f01f0005000201a5f8e1b00000000049454e44ae426082",
   "hex",
 );
-const FOLDER = "EmailAttachment"; // accepts a direct upload without a field id (live probe)
+const FOLDER = "EmailAttachment"; // accepts a direct upload without a field id
 
 /** The signed URL may be relative to the server; this keeps the call on the lane base URL. */
 function absoluteUrl(base: string, url: string | undefined): string {

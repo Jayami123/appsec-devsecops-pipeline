@@ -1,14 +1,8 @@
 // P5-TW-MASS-001 (tw-api), split into three titles (owner decision 1). Each title has the same control: a
 // normal company create (companies POST, data.createCompany), which must be 201 with a server-assigned id.
-// Fork citations (packages/twenty-server/src/engine/api/common):
-// - id: common-query-runners/common-create-one-query-runner.service.ts:101-102 validates a client-supplied id
-//   as a UUID, so a client id on create is supported by design: a design verdict (passes).
-// - deletedAt: the only insert-time null reset is on the upsert-update branch
-//   (common-query-runners/common-create-many-query-runner/common-create-many-query-runner.service.ts:532);
-//   no insert-time rule exists in the fork: a design verdict (passes), recorded with the stored value.
-// - createdBy: the isSystem strip is on the update branch only (same file, :790-792); processRecordsToInsert
-//   (:559-598) has no strip. Live: a client createdBy.source is stored. PRODUCT BUG (SUSPECTED), marked with
-//   expectedDefect right before the unchanged assertion (owner decision 2).
+// Per-field verdicts: id and deletedAt are design verdicts (they pass and are recorded with the stored value). createdBy
+// is a PRODUCT BUG (SUSPECTED), marked with expectedDefect right before the unchanged assertion (owner decision 2).
+// Detail is held by the owner (private-first).
 import { randomUUID } from "node:crypto";
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
@@ -105,7 +99,7 @@ test("P5-TW-MASS-001 (deletedAt): create-time field, client value", async ({ run
   created.push(negative.company.id);
   testInfo.annotations.push({
     type: "design-verdict",
-    description: `client deletedAt on create is stored: ${String(negative.company.deletedAt)}; no insert-time rule in the fork (null reset only on the update branch, common-create-many-query-runner.service.ts:532)`,
+    description: `create-time deletedAt: stored value ${String(negative.company.deletedAt)} (design verdict; detail held by the owner)`,
   });
 });
 

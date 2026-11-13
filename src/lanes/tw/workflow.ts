@@ -1,7 +1,7 @@
-// Workflow helpers for the SSRF-001 rows. Routes (live at 7cbdfec6-derived v2.44.0; /graphql, workspace schema):
+// Workflow helpers for the SSRF-001 rows. Routes (/graphql, workspace schema):
 // createCoreWorkflow, coreWorkflowsWithCurrentVersions (draft version id), updateCoreWorkflowVersionTrigger,
 // createCoreWorkflowVersionStep, updateCoreWorkflowVersionStep, activateCoreWorkflowVersion,
-// runCoreWorkflowVersion (fork: engine/core-modules/workflow/dtos; front: object-core/workflows/graphql).
+// runCoreWorkflowVersion.
 // Run status is read from the workflowRuns object (REST). A step's error text is product output: it is returned
 // to the caller for classification and is never attached to an artefact.
 import { gql } from "./gql.ts";

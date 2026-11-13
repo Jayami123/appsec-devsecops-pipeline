@@ -26,9 +26,8 @@ export function throwawayPassword(): string {
 }
 
 /**
- * Sign-in through the two product mutations (packages/twenty-server auth.resolver.ts:220-223
- * getLoginTokenFromCredentials, then :758-761 getAuthTokensFromLoginToken). Captcha is disabled by
- * default (captcha-driver.factory.ts:28-30), and the harness sets no CAPTCHA_DRIVER.
+ * Sign-in through the two product mutations (getLoginTokenFromCredentials, then getAuthTokensFromLoginToken).
+ * Captcha is disabled by default, and the harness sets no captcha driver.
  */
 export async function loginThrowaway(input: {
   baseUrl: string;

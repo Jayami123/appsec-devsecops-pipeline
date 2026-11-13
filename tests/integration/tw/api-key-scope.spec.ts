@@ -1,4 +1,4 @@
-// NEW-TW-2 case (b) (tw-api). A key K_A is created in the workspace (api-key.resolver.ts:79), creates a
+// NEW-TW-2 case (b) (tw-api). A key K_A is created in the workspace, creates a
 // webhook (control, POST /rest/webhooks 201), is revoked and read back, and its next create is refused
 // with the webhook list unchanged.
 // NEW-TW-2 case (a) (tw-multiws, D-TW-B46): a key of workspace A used on workspace B is refused, and B's webhook list
@@ -154,12 +154,12 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
     );
   }
   // A 201 with the row in A is the key writing into its own workspace: correct behaviour, not a cross-tenant defect.
-  // It is recorded as an observation (the origin is not bound to the key's workspace), and the row is removed in cleanup.
+  // It is recorded as an observation, and the row is removed in cleanup.
   const rowInKeyWorkspace = negative.status === 201 && listedInA && !listedInB;
   test.info().annotations.push({
     type: "observation",
     description: rowInKeyWorkspace
-      ? "origin not bound to the key's workspace: 201 with the row in the key's workspace (not a cross-tenant write)"
+      ? "201 with the row in the key's own workspace (recorded as an observation; not a cross-tenant write)"
       : `negative status ${negative.status}`,
   });
   expect(

@@ -1,6 +1,6 @@
 // NEW-TW-6 (tw-serial; D-TW-B10). A throwaway member M is invited as Admin (control: M's update of a
 // company is 2xx and persisted). Each trial restores Admin, then sends the demotion of M
-// (updateWorkspaceMemberRole, role.resolver.ts:107) and M's update of the same company together. The
+// (the role-change mutation) and M's update of the same company together. The
 // per-trial oracle: 2xx and persisted, or 4xx and unchanged, never 5xx. Deterministic sub-check: after the
 // demotion response, M's next update is sent alone and must be refused and not persisted.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
@@ -136,9 +136,7 @@ test("NEW-TW-6: role change and concurrent update, status check", async ({ run }
   await setRole(restricted);
   const beforeSequential = await readName();
   const sequential = await update(`${run.prefix}-after-demotion`);
-  // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Fork:
-  // user-role.service.ts:95-135 assigns with createMany only (:126) and never removes the prior role target.
-  // Live: a demoted member's update is accepted for at least 5.2 s, persisted, also on a fresh sign-in.
+  // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Detail held by the owner.
   expectedDefect(
     "NEW-TW-6: update after role change succeeded (status 2xx; detail held by the owner).",
   );

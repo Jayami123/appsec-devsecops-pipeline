@@ -105,10 +105,8 @@ export interface MultiworkspacePair {
 }
 
 /**
- * The YC admin of the dev seed: TIM_ACME holds the admin role of YC (fork
- * packages/twenty-server/src/engine/workspace-manager/dev-seeder/core/services/dev-seeder-permissions.service.ts:145-146),
- * and tim@apple.dev is the seed login of TIM (seed-users.util.ts:30). The shared dev-seed password is the harness
- * export TWENTY_DEV_SEED_PASSWORD. Setup only.
+ * The YC admin of the dev seed is a seed user whose login is in the harness dev-seed data (detail held by the owner).
+ * The shared dev-seed password is the harness export TWENTY_DEV_SEED_PASSWORD. Setup only.
  */
 const YC_SEED_ADMIN_EMAIL = "tim@apple.dev";
 
@@ -179,9 +177,8 @@ async function invitedMember(input: {
 
 /**
  * The two rows' workspaces: the seeded YC and Apple workspaces on the recipe host (D-TW-B50). A throwaway member is
- * invited into each. Workspace creation is not used: the stack caps instance workspaces at five without an enterprise
- * key (fork packages/twenty-server/src/engine/core-modules/auth/services/sign-in-up.service.ts:579-585, run 43403186450),
- * and the seeded pair is within the recipe. The seed subdomains are the harness exports.
+ * invited into each. Workspace creation is not used: the stack limits the number of workspaces without an enterprise
+ * key (detail held by the owner), and the seeded pair is within the recipe. The seed subdomains are the harness exports.
  */
 export async function seededPair(input: {
   readonly root: URL;

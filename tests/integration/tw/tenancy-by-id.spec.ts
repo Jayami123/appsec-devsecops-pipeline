@@ -5,7 +5,7 @@
 // Controls (same actor and resource class, before each negative): B reads and updates its own company on B's origin
 // through the same route shape, so a refusal is not a malformed request.
 // Negatives: B's session, presenting A's company UUID on A's origin, reads (REST) and updates (REST, GraphQL).
-// Not built here: a GraphQL read by UUID. Its query shape is not proven at the pin (the update shape is, tw-api NEW-TW-7).
+// Not built here: a GraphQL read by UUID (the query shape is not yet established; the update shape is, NEW-TW-7).
 // Oracle: every negative is refused or returns no row; no value or id of A's company is in a negative response body;
 // A's company name is unchanged (read before and after).
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
@@ -26,7 +26,7 @@ async function graphql(origin: string, bearer: string, query: string, variables:
   return { status: response.status, text: await response.text() };
 }
 
-// The shape of tests/integration/tw/soft-deleted-mutation.spec.ts (NEW-TW-7, passed live in round 2).
+// The shape of tests/integration/tw/soft-deleted-mutation.spec.ts (NEW-TW-7).
 const UPDATE_BY_ID = `mutation U($id: UUID!, $data: CompanyUpdateInput!) { updateCompany(id: $id, data: $data) { id name } }`;
 
 async function companyName(
