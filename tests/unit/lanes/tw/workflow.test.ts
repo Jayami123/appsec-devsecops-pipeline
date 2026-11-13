@@ -40,12 +40,41 @@ test("p5-tw.yml references no secrets expression", () => {
   assert.doesNotMatch(workflow, /^\s*secrets\s*:/m);
 });
 
-test("tw-api inverts @multiws and @ssrf (tw-multiws and the SSRF jobs are not built in this build)", () => {
+test("tw-api inverts @multiws and @ssrf (the SSRF rows are gated, D-TW-B37)", () => {
   const body = jobBodies(workflow).get("tw-api") ?? "";
   assert.match(body, /--project=tw --grep-invert "@multiws\|@ssrf"/);
-  // tw-multiws (IS_MULTIWORKSPACE_ENABLED=true, --grep @multiws) appears only if it is built.
-  if (jobBodies(workflow).has("tw-multiws")) {
-    assert.match(jobBodies(workflow).get("tw-multiws") ?? "", /IS_MULTIWORKSPACE_ENABLED: "true"/);
+});
+
+test("tw-multiws runs the @multiws rows on the README recipe, pinned to ubuntu-24.04", () => {
+  const body = jobBodies(workflow).get("tw-multiws") ?? "";
+  assert.ok(body.length > 0, "tw-multiws job exists");
+  assert.match(body, /^ {4}runs-on: ubuntu-24\.04$/m);
+  assert.match(body, /^ {6}IS_MULTIWORKSPACE_ENABLED: "true"$/m);
+  assert.match(body, /^ {6}IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS: "false"$/m);
+  assert.match(body, /^ {6}TWENTY_BASE_URL: "http:\/\/lvh\.me:3002"$/m);
+  assert.match(body, /npx playwright test --project=tw --grep "@multiws" --trace off/);
+  assert.doesNotMatch(body, /^\s+TWENTY_SERVER_REPLICAS:/m);
+  assert.doesNotMatch(body, /secrets\./);
+});
+
+test("tw-multiws copies the tw-api reporter, sanitise and artifact steps with its own label", () => {
+  const api = jobBodies(workflow).get("tw-api") ?? "";
+  const multi = jobBodies(workflow).get("tw-multiws") ?? "";
+  assert.match(multi, /node scripts\/prepare-ci-artifacts\.ts tw-multiws /);
+  assert.match(
+    multi,
+    /node scripts\/write-ci-job-summary\.ts tw-multiws results\/playwright-tw-multiws\.json/,
+  );
+  assert.match(multi, /name: p5-tw-multiws-report/);
+  for (const step of [
+    "Check out the repository",
+    "Set up Node.js from .nvmrc",
+    "Install",
+    "Bootstrap twenty",
+    "Stop twenty",
+  ]) {
+    assert.ok(api.includes(`- name: ${step}`), `tw-api has ${step}`);
+    assert.ok(multi.includes(`- name: ${step}`), `tw-multiws has ${step}`);
   }
 });
 

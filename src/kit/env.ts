@@ -13,10 +13,19 @@ const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const blankToUndefined = (value: unknown): unknown =>
   typeof value === "string" && value.trim() === "" ? undefined : value;
 
+/**
+ * Base-URL hosts that stay on loopback. lvh.me and its subdomains resolve to 127.0.0.1; they carry the multi-workspace
+ * origins (<subdomain>.lvh.me). Owner-approved exception, recorded as D-TW-B47. Any other name, including a name that
+ * only starts with lvh.me (lvh.me.evil.com), is rejected.
+ */
+export function isLoopbackBaseHost(hostname: string): boolean {
+  return LOOPBACK_HOSTS.has(hostname) || hostname === "lvh.me" || hostname.endsWith(".lvh.me");
+}
+
 const loopbackUrl = z
   .url({ protocol: /^https?$/ })
-  .refine((raw) => LOOPBACK_HOSTS.has(new URL(raw).hostname), {
-    message: "must point at 127.0.0.1, localhost or [::1]",
+  .refine((raw) => isLoopbackBaseHost(new URL(raw).hostname), {
+    message: "must point at 127.0.0.1, localhost, [::1] or lvh.me",
   });
 /** A malformed URL is a failed validation, not a TypeError (and its text is never echoed). */
 function isLoopbackPgUrl(raw: string): boolean {
