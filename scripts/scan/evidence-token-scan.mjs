@@ -37,14 +37,43 @@ export const RULE_LABELS = [
   "credential key with a single-quoted value",
 ];
 
+// Value-free shape of a name=value hit: the keyword, whether it sits in a query string, and coarse classes of the
+// value (length bucket and charset). The value itself is never returned or printed.
+/** @param {string} line @returns {string} */
+export function describeAssignment(line) {
+  const match = /(?<before>.?)\b(?<key>password|secret|token)=(?<raw>\S+)/i.exec(line);
+  if (match === null || match.groups === undefined) return "";
+  const { before = "", key = "", raw = "" } = match.groups;
+  // The \S+ capture runs on past a closing JSON quote or a trailing delimiter; those are not part of the value.
+  const value = raw.replace(/["'&,;)\]}>]+$/, "");
+  const position = before === "?" || before === "&" ? "query" : "other";
+  const length = value.length;
+  const bucket =
+    length < 8
+      ? "lt8"
+      : length < 16
+        ? "8-15"
+        : length < 32
+          ? "16-31"
+          : length < 64
+            ? "32-63"
+            : "ge64";
+  let charset = "opaque";
+  if (/[().;,{}[\]<>"'`+ ]/.test(value) || /\.[A-Za-z_]/.test(value)) charset = "code";
+  else if (!/^[A-Za-z0-9_\-%.]+$/.test(value)) charset = "mixed";
+  return ` key=${key.toLowerCase()} position=${position} value=${bucket} charset=${charset}`;
+}
+
 /** @param {string} text @returns {{ line: number, rule: string }[]} */
 export function findRuleHits(text) {
   /** @type {{ line: number, rule: string }[]} */
   const hits = [];
   text.split("\n").forEach((line, index) => {
     PATTERNS.forEach((pattern, rule) => {
-      if (pattern.test(line))
-        hits.push({ line: index + 1, rule: RULE_LABELS[rule] ?? "unlabelled rule" });
+      if (pattern.test(line)) {
+        const detail = rule === 7 ? describeAssignment(line) : "";
+        hits.push({ line: index + 1, rule: (RULE_LABELS[rule] ?? "unlabelled rule") + detail });
+      }
     });
   });
   return hits;

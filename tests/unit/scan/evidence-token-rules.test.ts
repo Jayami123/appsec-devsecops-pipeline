@@ -32,3 +32,17 @@ test("the same line with no rule shape prints clean and exits 0", () => {
   const result = run({ "page.html": "<p>Bearers of news</p>\n" });
   assert.equal(result.status, 0);
 });
+
+test("a name=value hit in a query string is labelled position=query with an opaque value, never the value", () => {
+  const query = ["AbC123xYz9QwErTyUiOp", "0987654321abcdef"].join("");
+  const result = run({ "a.json": `"uri": "https://x.test/a?token=${query}"\n` });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /key=token position=query value=32-63 charset=opaque/);
+  assert.doesNotMatch(result.stderr, new RegExp(query));
+});
+
+test("a name=value hit in script code is labelled position=other with a code value (a false-match shape)", () => {
+  const result = run({ "app.js": "var a=b.token=e.token;\n" });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /key=token position=other value=lt8 charset=code/);
+});
