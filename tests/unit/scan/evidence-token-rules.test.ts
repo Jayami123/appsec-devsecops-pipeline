@@ -64,3 +64,26 @@ test("a query-string password value with code-like characters is still a hit (th
   assert.equal(result.status, 1);
   assert.match(result.stderr, /key=password position=query/);
 });
+
+test("the value trim is linear: 200k trailing delimiters finish in well under a second (CodeQL js/polynomial-redos)", () => {
+  const hostile = `token=${"'".repeat(200000)}x\n`;
+  const started = Date.now();
+  const result = run({ "page.html": hostile });
+  assert.ok(Date.now() - started < 5000, "the scan must not be quadratic");
+  assert.equal(result.status, 0, "the value is code-shaped in page source, so it is not a hit");
+});
+
+test("the trim keeps interior characters and removes only trailing delimiters (true and false case)", () => {
+  // Query position: the trailing quote is removed, and the 8-character opaque value is kept.
+  const query = run({ "a.json": 'uri: "https://x.test/?token=ABCDEFGH"\n' });
+  assert.match(
+    `${query.stdout}${query.stderr}`,
+    /key=token position=query value=8-15 charset=opaque/,
+  );
+  // Query position: an interior parenthesis is kept, so the value is code-shaped and labelled as such.
+  const interior = run({ "a.json": 'uri: "https://x.test/?token=ab(cd)ef;"\n' });
+  assert.match(
+    `${interior.stdout}${interior.stderr}`,
+    /key=token position=query value=8-15 charset=code/,
+  );
+});

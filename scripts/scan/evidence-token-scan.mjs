@@ -37,6 +37,8 @@ export const RULE_LABELS = [
   "credential key with a single-quoted value",
 ];
 
+const TRAILING_DELIMITERS = "\"'&,;)]}>";
+
 // Value-free shape of a name=value hit: the keyword, whether it sits in a query string, and coarse classes of the
 // value (length bucket and charset). The value itself is never returned or printed.
 const ASSIGNMENT = /(?<before>.?)\b(?<key>password|secret|token)=(?<raw>\S+)/i;
@@ -47,7 +49,10 @@ function assignmentOf(line) {
   if (match === null || match.groups === undefined) return null;
   const { before = "", key = "", raw = "" } = match.groups;
   // The \S+ capture runs on past a closing JSON quote or a trailing delimiter; those are not part of the value.
-  const value = raw.replace(/["'&,;)\]}>]+$/, "");
+  // A linear trim. A trailing-quantifier regex here is quadratic on long input (CodeQL js/polynomial-redos).
+  let end = raw.length;
+  while (end > 0 && TRAILING_DELIMITERS.includes(raw[end - 1])) end -= 1;
+  const value = raw.slice(0, end);
   const position = before === "?" || before === "&" ? "query" : "other";
   return { key: key.toLowerCase(), position, value };
 }

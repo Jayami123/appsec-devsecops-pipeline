@@ -207,3 +207,27 @@ test("skipped on a stub key fails", () => {
     verdict.reasons.includes("syft: stub reports 'skipped'; a stub reports not-implemented only"),
   );
 });
+
+test("run 43462841673 (head f8946c1): codeql=fail blocks by name, zap=not-implemented does not (the wiring is correct)", () => {
+  // Every lane passed. The one blocker in that run was the CodeQL verdict, from a finding in the code, not the gate.
+  const needs = baseNeeds();
+  needs.changes = { result: "success", outputs: { ...needs.changes?.outputs, p5_codeql: "true" } };
+  const scanStatus = SCANNERS.map((name) => {
+    if (name === "codeql") return "codeql=fail";
+    if (name === "zap") return "zap=not-implemented";
+    return `${name}=pass`;
+  }).join(",");
+  needs["p5-scans"] = {
+    result: "success",
+    outputs: { codeql_verdict: "fail", scanner_status: scanStatus },
+  };
+  // Registry as in that run: every scanner implemented except zap (a stub until its first real run is accepted).
+  const registry: Record<string, string> = { ...baseRegistry() };
+  for (const name of ["codeql", "gitleaks", "osv-npm", "trivy", "syft", "zizmor"])
+    registry[name] = "implemented";
+  registry["zap"] = "stub";
+  const verdict = evaluateGate({ needs, registry });
+  assert.equal(verdict.ok, false);
+  assert.deepEqual(verdict.reasons, ["codeql: implemented scanner reports fail"]);
+  assert.ok(verdict.rows.includes("NOT IMPLEMENTED: zap"), "zap is a stub and is not a blocker");
+});
