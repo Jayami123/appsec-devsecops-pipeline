@@ -15,3 +15,7 @@
 | Scope limit | The account-state check is the before and after local sign-in status. Whether it can differ after a link depends on how Documenso treats an unverified local account, which the first live run shows. No test asserts a provider-side rejection. |
 | Finding | `P5-DOC-OIDC-SCOPE-001` stays recorded (`packages/auth/server/lib/utils/open-id.ts:34-40`; CI run 43400737495). |
 | Live run ID | pending: the CI run on the draft PR head |
+
+## CI status (round 13)
+
+- Runs 43408976457 (head `a1003ad`) and 43409454536 (head `bbd50fe`): the two OIDC-002 titles failed before any request reached the provider, with `DOCUMENSO_OIDC_NOT_ENABLED` (TEST BUG in job configuration, D-DOC-B90). The fix is `0d90ff7`. No verdict is recorded from these runs (D-DOC-B91).
