@@ -97,17 +97,22 @@ test("every doc job prints masked Documenso web log evidence only on failure", (
 });
 
 // The OIDC rows (D-DOC-B72): their own job, the mock provider on that job only, and the stock jobs keep the stock stack.
-test("doc-oidc sets DOCUMENSO_OIDC to exactly 1 on the start step and nowhere else", () => {
+test("doc-oidc sets DOCUMENSO_OIDC to exactly 1 on the start step and the run step, and nowhere else", () => {
   // Comment lines may name the flag; the assertion counts only lines that set it.
   const flagLines = lane
     .split("\n")
     .filter((line) => !line.trim().startsWith("#") && line.includes("DOCUMENSO_OIDC"));
-  assert.equal(flagLines.length, 1, "one DOCUMENSO_OIDC setting in the workflow");
+  assert.equal(flagLines.length, 2, "two DOCUMENSO_OIDC settings in the workflow (start and run)");
   const body = jobBlock("doc-oidc");
   const start = body.indexOf("      - name: Start documenso with the mock OIDC provider");
   assert.ok(start >= 0, "doc-oidc start step");
   const step = body.slice(start, body.indexOf("\n      - name:", start + 1));
   assert.match(step, /^ {10}DOCUMENSO_OIDC: "1"$/m, "flag on the start step");
+  // The run step reads the seeded users through the harness reader, which requires the same flag.
+  const runStart = body.indexOf("      - name: Run the OIDC rows");
+  assert.ok(runStart >= 0, "doc-oidc run step");
+  const runStep = body.slice(runStart, body.indexOf("\n      - name:", runStart + 1));
+  assert.match(runStep, /^ {10}DOCUMENSO_OIDC: "1"$/m, "flag on the run step");
   assert.match(step, /run: node node_modules\/qa-portfolio-harness\/scripts\/up\.mjs documenso/);
   assert.doesNotMatch(jobBlock("doc-api"), /DOCUMENSO_OIDC/, "stock job has no flag");
   assert.doesNotMatch(jobBlock("doc-serial"), /DOCUMENSO_OIDC/, "serial job has no flag");

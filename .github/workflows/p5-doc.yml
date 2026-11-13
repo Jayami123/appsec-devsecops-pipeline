@@ -218,6 +218,9 @@ jobs:
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs documenso
       - name: Run the OIDC rows (titles OIDC-00x only)
         env:
+          # The test process reads the seeded users through documensoOidcTestUsers(), which requires the same flag
+          # the start step set (harness README: exactly 1). Without it the rows fail before the provider is reached.
+          DOCUMENSO_OIDC: "1"
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-doc-oidc.raw.json
           PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report
           PLAYWRIGHT_HTML_OPEN: never
