@@ -1,9 +1,10 @@
 // Vendored from Jayami123/k6-load-concurrency-suite commit 0533e61 scripts/evidence-token-scan.mjs. Change here only with a reason in the PR.
 // Scans evidence files for tokens before they go into a release.
-// Prints file and line only. The matched text is never printed.
+// Prints file, line and the rule label only (the label names the rule; the matched text is never printed).
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { REDACTED_PLACEHOLDER } from "./redaction-placeholder.mjs";
 
 // The three patterns of the Task 8 step 8 grep, then the additions.
 /** @type {RegExp[]} */
@@ -21,14 +22,105 @@ export const PATTERNS = [
   /'(?:password|secret|token|api_key|apiKey)'\s*:\s*'(?:[^'\\]|\\.)+'/i,
 ];
 
+// One label per PATTERNS entry, in the same order. A label describes the rule shape, never a value.
+/** @type {string[]} */
+export const RULE_LABELS = [
+  "api_ identifier shape",
+  "Bearer header text",
+  "sessionId name",
+  "GitHub token shape (gh prefix)",
+  "GitHub fine-grained token shape",
+  "JWT shape",
+  "Authorization header name",
+  "name=value assignment (password, secret or token)",
+  "cookie or authorization JSON key",
+  "credential JSON key with a value",
+  "credential key with a single-quoted value",
+];
+
+const TRAILING_DELIMITERS = "\"'&,;)]}>";
+
+// Value-free shape of a name=value hit: the keyword, whether it sits in a query string, and coarse classes of the
+// value (length bucket and charset). The value itself is never returned or printed.
+const ASSIGNMENT = /(?<before>.?)\b(?<key>password|secret|token)=(?<raw>\S+)/i;
+
+/** @param {string} line @returns {{ key: string, position: string, value: string } | null} */
+function assignmentOf(line) {
+  const match = ASSIGNMENT.exec(line);
+  if (match === null || match.groups === undefined) return null;
+  const { before = "", key = "", raw = "" } = match.groups;
+  // The \S+ capture runs on past a closing JSON quote or a trailing delimiter; those are not part of the value.
+  // A linear trim. A trailing-quantifier regex here is quadratic on long input (CodeQL js/polynomial-redos).
+  let end = raw.length;
+  while (end > 0 && TRAILING_DELIMITERS.includes(raw[end - 1])) end -= 1;
+  const value = raw.slice(0, end);
+  const position = before === "?" || before === "&" ? "query" : "other";
+  return { key: key.toLowerCase(), position, value };
+}
+
+/** @param {string} value @returns {"code" | "opaque" | "mixed"} */
+function charsetOf(value) {
+  // A JWT-shaped value (eyJ header, dot-separated segments) is a credential, not code, even though it has dots.
+  if (/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(value)) return "opaque";
+  if (/[()[\]{};<>"'`+ ]/.test(value) || /^[A-Za-z_$][\w$]*\.[A-Za-z_$]/.test(value)) return "code";
+  if (!/^[A-Za-z0-9_\-%.]+$/.test(value)) return "mixed";
+  return "opaque";
+}
+
+/** @param {string} line @returns {string} */
+export function describeAssignment(line) {
+  const hit = assignmentOf(line);
+  if (hit === null) return "";
+  const length = hit.value.length;
+  const bucket =
+    length < 8
+      ? "lt8"
+      : length < 16
+        ? "8-15"
+        : length < 32
+          ? "16-31"
+          : length < 64
+            ? "32-63"
+            : "ge64";
+  return ` key=${hit.key} position=${hit.position} value=${bucket} charset=${charsetOf(hit.value)}`;
+}
+
+/**
+ * True for a name=value hit that is script code in page source (not in a query string): a false match, not a
+ * credential. A query-string value is never treated as code, because a real password can contain such characters.
+ */
+export function isScriptCodeAssignment(line) {
+  const hit = assignmentOf(line);
+  return hit !== null && hit.position === "other" && charsetOf(hit.value) === "code";
+}
+
+// True only when every password, secret or token assignment in the line has a value exactly equal to the redaction
+// placeholder. "[REDACTED]x", "REDACTED", "[redacted]" and encoded forms are not the placeholder and still fail.
+/** @param {string} line @returns {boolean} */
+export function isPlaceholderOnlyAssignment(line) {
+  const hits = [...line.matchAll(/\b(?:password|secret|token)=([^&#\s"'<>\\]*)/gi)];
+  return hits.length > 0 && hits.every((hit) => hit[1] === REDACTED_PLACEHOLDER);
+}
+
+/** @param {string} text @returns {{ line: number, rule: string }[]} */
+export function findRuleHits(text) {
+  /** @type {{ line: number, rule: string }[]} */
+  const hits = [];
+  text.split("\n").forEach((line, index) => {
+    PATTERNS.forEach((pattern, rule) => {
+      if (!pattern.test(line)) return;
+      if (rule === 7 && isScriptCodeAssignment(line)) return; // narrowed: script code is not a credential
+      if (rule === 7 && isPlaceholderOnlyAssignment(line)) return; // the exact redaction placeholder (B46)
+      const detail = rule === 7 ? describeAssignment(line) : "";
+      hits.push({ line: index + 1, rule: (RULE_LABELS[rule] ?? "unlabelled rule") + detail });
+    });
+  });
+  return hits;
+}
+
 /** @param {string} text @returns {number[]} */
 export function findHits(text) {
-  /** @type {number[]} */
-  const lines = [];
-  text.split("\n").forEach((line, index) => {
-    if (PATTERNS.some((pattern) => pattern.test(line))) lines.push(index + 1);
-  });
-  return lines;
+  return [...new Set(findRuleHits(text).map((hit) => hit.line))];
 }
 
 /** @param {string} dir @returns {string[]} */
@@ -39,10 +131,14 @@ function listFiles(dir) {
   });
 }
 
-/** @param {string} root @returns {{ file: string, lines: number[] }[]} */
+/** @param {string} root @returns {{ file: string, lines: number[], rules: { line: number, rule: string }[] }[]} */
 export function scanTree(root) {
   return listFiles(root)
-    .map((file) => ({ file: relative(root, file), lines: findHits(readFileSync(file, "utf8")) }))
+    .map((file) => {
+      const text = readFileSync(file, "utf8");
+      const rules = findRuleHits(text);
+      return { file: relative(root, file), lines: findHits(text), rules };
+    })
     .filter((hit) => hit.lines.length > 0);
 }
 
@@ -53,8 +149,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(2);
   }
   const hits = scanTree(root);
-  for (const { file, lines } of hits)
-    console.error(`TOKEN PATTERN: ${file} line ${lines.join(", ")}`);
+  for (const { file, rules } of hits)
+    for (const { line, rule } of rules)
+      console.error(`TOKEN PATTERN: ${file} line ${line} rule ${rule}`);
   if (hits.length > 0) {
     console.error("stop: nothing was uploaded");
     process.exit(1);

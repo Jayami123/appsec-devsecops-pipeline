@@ -42,6 +42,15 @@
       "member": "syft",
       "source": "https://github.com/anchore/syft (tag v1.57.1, peeled commit a0c0d3890a9d79421c403e8fcadec50a2e55bf21, annotated tag object 33b3234e4d1b2bbf5752bb1cc93ab2b0db36e2d9); checksums file syft_1.57.1_checksums.txt",
       "licence": "Apache-2.0"
+    },
+    "zap": {
+      "version": "2.17.0",
+      "format": "container-image",
+      "image": "ghcr.io/zaproxy/zaproxy:2.17.0",
+      "digest": "sha256:9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af",
+      "sha256": "9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af",
+      "source": "https://github.com/zaproxy/zaproxy (ZAP 2.17.0 image; the digest above is the OCI index digest; linux/amd64 manifest sha256:c2d63bbb2d907a5c5257914fb20e26e969c92b25f265def7f89f08203f912882, linux/arm64 manifest sha256:0b8847b2c722b16f0964431aabcbb499560a1f17e8698d52326d82db29efac1d); verified 2026-11-13 with docker buildx imagetools inspect",
+      "licence": "Apache-2.0 (ZAP core; the image ships /zap/license/ApacheLicense-2.0.txt and the bundled third-party licences under /zap/license)"
     }
   }
 }

@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "tool": "zap",
+  "entries": [
+    {
+      "fingerprint": "cal|10019",
+      "ruleId": "10019",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Response without a Content-Type on a local stack route; informational, no product defect claim.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10024",
+      "ruleId": "10024",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Scanner classifies a query parameter name on a local stack URL as sensitive; informational. The source of that URL is under review because PN-7 flagged the evidence (D-ZAP-B26).",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10031",
+      "ruleId": "10031",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Scanner heuristic: a user-controllable HTML attribute on a local page; informational, not a confirmed XSS, for owner review.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10037",
+      "ruleId": "10037",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Framework banner (X-Powered-By) disclosed on a local development stack; deployment hygiene, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10038",
+      "ruleId": "10038",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Content-Security-Policy absent on a local development stack; deployment header gap, annotated only (rules WARN, D-ZAP-B19).",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10044",
+      "ruleId": "10044",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Redirect response with a large body on a local stack; scanner heuristic for possible information leak, annotated for owner review.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10049",
+      "ruleId": "10049",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Caching-directive heuristic on a local stack response; informational.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10063",
+      "ruleId": "10063",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Permissions-Policy header absent on a local development stack; deployment header gap, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10109",
+      "ruleId": "10109",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Scanner fingerprint of a modern single-page application; informational.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|10111",
+      "ruleId": "10111",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Scanner marks an authentication request on a local stack; informational. No credential is recorded here.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "cal|90004",
+      "ruleId": "90004",
+      "path": "cal",
+      "justification": "cal (run p5-scans-run-43438922396): Cross-Origin-Embedder-Policy absent or invalid on a local development stack; deployment header gap, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10021",
+      "ruleId": "10021",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): X-Content-Type-Options absent on a local development stack; deployment header gap, annotated only (rules WARN, D-ZAP-B19).",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10024",
+      "ruleId": "10024",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): Scanner classifies a query parameter name on a local stack URL as sensitive; informational. The source of that URL is under review because PN-7 flagged the evidence (D-ZAP-B26).",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10049",
+      "ruleId": "10049",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): Caching-directive heuristic on a local stack response; informational.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10055",
+      "ruleId": "10055",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): A CSP directive without a default fallback on a local stack; deployment header gap, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10063",
+      "ruleId": "10063",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): Permissions-Policy header absent on a local development stack; deployment header gap, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10109",
+      "ruleId": "10109",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): Scanner fingerprint of a modern single-page application; informational.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10111",
+      "ruleId": "10111",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): Scanner marks an authentication request on a local stack; informational. No credential is recorded here.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|10112",
+      "ruleId": "10112",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): Scanner marks a session-management response on a local stack; informational. No session value is recorded here.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "documenso|90004",
+      "ruleId": "90004",
+      "path": "documenso",
+      "justification": "documenso (run p5-scans-run-43438922396): Cross-Origin-Embedder-Policy absent or invalid on a local development stack; deployment header gap, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "medusa|10037",
+      "ruleId": "10037",
+      "path": "medusa",
+      "justification": "medusa (run p5-scans-run-43438922396): Framework banner (X-Powered-By) disclosed on a local development stack; deployment hygiene, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "medusa|10049",
+      "ruleId": "10049",
+      "path": "medusa",
+      "justification": "medusa (run p5-scans-run-43438922396): Caching-directive heuristic on a local stack response; informational.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "medusa|10055",
+      "ruleId": "10055",
+      "path": "medusa",
+      "justification": "medusa (run p5-scans-run-43438922396): A CSP directive without a default fallback on a local stack; deployment header gap, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "medusa|10063",
+      "ruleId": "10063",
+      "path": "medusa",
+      "justification": "medusa (run p5-scans-run-43438922396): Permissions-Policy header absent on a local development stack; deployment header gap, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "twenty|10037",
+      "ruleId": "10037",
+      "path": "twenty",
+      "justification": "twenty (run p5-scans-run-43438922396): Framework banner (X-Powered-By) disclosed on a local development stack; deployment hygiene, annotated only.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "twenty|10049",
+      "ruleId": "10049",
+      "path": "twenty",
+      "justification": "twenty (run p5-scans-run-43438922396): Caching-directive heuristic on a local stack response; informational.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    },
+    {
+      "fingerprint": "twenty|10098",
+      "ruleId": "10098",
+      "path": "twenty",
+      "justification": "twenty (run p5-scans-run-43438922396): Cross-domain policy heuristic on a local stack; annotated. The owner reviews the cross-origin configuration before any defect claim.",
+      "owner": "the owner",
+      "reviewRef": "p5-scans-run-43438922396",
+      "addedOn": "2026-11-13",
+      "expires": "2027-02-11"
+    }
+  ]
+}

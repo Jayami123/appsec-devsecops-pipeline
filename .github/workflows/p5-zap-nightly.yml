@@ -1,0 +1,546 @@
+name: p5-zap-nightly
+
+# P5-SCAN-004 (plan 5.8, 6.7, D11). The ZAP passive baseline runs once per product stack, started and stopped only
+# through the qa-portfolio-harness scripts. It is report-only for pull requests: no pull_request and no push trigger.
+# workflow_call exists only so that p5-scans.yml can run it on a manual dispatch (its zap-nightly job, off by default).
+# ci.yml never calls this file, and a pull request never reaches a job here (master plan 9.10).
+#
+# O-10: there is no schedule trigger until the owner enables it (D-ZAP-B27). Enabling means adding a schedule with
+# cron "0 1 * * *" and removing the workflow_dispatch gate on the jobs. Active scanning (D11) is not wired here:
+# mode=active fails closed in the plan job.
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "passive (the nightly baseline). active fails closed in the plan job."
+        type: string
+        required: false
+        default: passive
+      product:
+        description: "all, or one product job: cal, doc, med, tw."
+        type: string
+        required: false
+        default: all
+    # Named secrets only, passed by p5-scans.yml on a manual dispatch. Never inherited.
+    secrets:
+      STRIPE_API_KEY:
+        required: false
+      MEDUSA_ADMIN_EMAIL:
+        required: false
+      MEDUSA_ADMIN_PASSWORD:
+        required: false
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "passive (the nightly baseline). active is not wired in this PR and fails closed."
+        type: choice
+        options: [passive, active]
+        default: passive
+      product:
+        description: "all, or one product job: cal, doc, med, tw."
+        type: choice
+        options: [all, cal, doc, med, tw]
+        default: all
+
+permissions:
+  contents: read
+
+# Image pinned by tag and digest (ghcr.io/zaproxy/zaproxy 2.17.0; index digest checked 2026-11-13). Never a floating tag.
+env:
+  ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0@sha256:9624669db72f54d86c4b46a7064518bd9bf79d8c61a4c31befa9923489f328af
+
+jobs:
+  plan:
+    if: github.event_name == 'workflow_dispatch'
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Accept the passive mode only
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          if [ "$MODE" != "passive" ]; then
+            echo "::error::mode=$MODE is not wired in this PR. The active ZAP scan is D11 only (a throwaway stack, manual dispatch) and fails closed here. No passive run was started in its place."
+            exit 1
+          fi
+          echo "mode=passive"
+
+  zap-control:
+    # The positive control: a local page with known header gaps, scanned with the same image and rules. It is not a
+    # product stack. If the scanner stops reporting these alerts, the nightly run fails (the scanner is broken, not clean).
+    needs: [plan]
+    if: github.event_name == 'workflow_dispatch' && inputs.product == 'all'
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15 # the control is not a product lane; a short fixed bound
+    env:
+      TARGET: http://127.0.0.1:8765 # the local page; never an external host
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Serve the local positive-control page (loopback, no security headers)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/control-www" "$RUNNER_TEMP/zap" "$RUNNER_TEMP/zap-evidence"
+          printf '%s\n' '<!doctype html><html><head><title>zap positive control</title></head><body><h1>local fixture</h1><p>no security headers on purpose</p></body></html>' > "$RUNNER_TEMP/control-www/index.html"
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory "$RUNNER_TEMP/control-www" > "$RUNNER_TEMP/control-http.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/control-http.pid"
+          for _ in $(seq 1 30); do
+            if curl -sf -o /dev/null "$TARGET"; then break; fi
+            sleep 1
+          done
+          curl -sf -o /dev/null "$TARGET"
+      - name: Positive-control scan (the same image and committed rules)
+        run: |
+          set -euo pipefail
+          chmod 0777 "$RUNNER_TEMP/zap"
+          cp config/scan/zap-rules.tsv "$RUNNER_TEMP/zap/zap-rules.tsv"
+          docker pull "$ZAP_IMAGE"
+          docker run --rm --network host -v "$RUNNER_TEMP/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t "$TARGET" -c zap-rules.tsv -J zap.json -r zap.html -m 1 -I
+      - name: Require the four known header-gap alerts (the scanner reports them)
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts control "$RUNNER_TEMP/zap/zap.json" 127.0.0.1 8765 10038,10020,10036,10021
+      - name: Stop the local page
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/control-http.pid" ]; then kill "$(cat "$RUNNER_TEMP/control-http.pid")" 2>/dev/null || true; fi
+
+  zap-cal:
+    needs: [plan]
+    if: github.event_name == 'workflow_dispatch' && (inputs.product == 'all' || inputs.product == 'cal')
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30 # ZAP_NIGHTLY_TIMEOUT_MIN (master plan 671), provisional and unmeasured
+    env:
+      TARGET: http://127.0.0.1:3000 # Cal UI (CAL_BASE_URL, src/kit/env.ts); the API on :5555 is not scanned in this PR
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Set the products root, run id and per-job Cal keys
+        run: |
+          echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"
+          echo "P5_RUN_ID=p5-qa-$(date -u +%Y%m%dt%H%M%Sz)-$(openssl rand -hex 4)" >> "$GITHUB_ENV"
+          for name in CRON_API_KEY CRON_SECRET; do
+            value="$(openssl rand -hex 24)"; echo "::add-mask::$value"; echo "$name=$value" >> "$GITHUB_ENV"
+          done
+          value="$(openssl rand -base64 32)"; echo "::add-mask::$value"; echo "DAILY_WEBHOOK_SECRET=$value" >> "$GITHUB_ENV"
+      - name: Record the Docker server version
+        run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: npm ci
+      - name: Require the Stripe test key (never printed)
+        timeout-minutes: 2
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STRIPE_API_KEY:-}" ]; then
+            echo "::error::STRIPE_API_KEY is not set. Add the test-mode key as a repository secret; the cal ZAP lane stops here by design."
+            exit 1
+          fi
+          # Test mode only: a live key must never reach the lane. The value is matched, never printed.
+          case "$STRIPE_API_KEY" in
+            sk_test_*) ;;
+            *)
+              echo "::error::STRIPE_API_KEY must be a Stripe test-mode secret key (it starts with sk_test_). The cal ZAP lane was not started."
+              exit 1
+              ;;
+          esac
+          echo "STRIPE_API_KEY is a test-mode key (value not printed)."
+      - name: Bootstrap cal
+        run: bash scripts/bootstrap.sh cal
+      - name: Start cal
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+        run: node node_modules/qa-portfolio-harness/scripts/up.mjs cal
+      - name: Passive baseline scan (unauthenticated, loopback)
+        id: scan
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/zap" "$RUNNER_TEMP/zap-evidence"
+          # The ZAP container runs as uid 1000; a runner-owned 0755 directory made the report step fail with exit 0
+          # and no zap.json (probe 2026-11-13). This directory holds only this job's scan output.
+          chmod 0777 "$RUNNER_TEMP/zap"
+          cp config/scan/zap-rules.tsv "$RUNNER_TEMP/zap/zap-rules.tsv"
+          curl -sS -o /dev/null --max-time 30 "$TARGET"
+          docker pull "$ZAP_IMAGE"
+          code=0
+          docker run --rm --network host -v "$RUNNER_TEMP/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t "$TARGET" -c zap-rules.tsv -J zap.json -r zap.html -m 3 -I || code=$?
+          echo "zap_exit=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ]; then
+            echo "::error::zap-baseline.py exited $code. No verdict is written from a scan that did not run."
+            exit "$code"
+          fi
+          cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Install Chromium for the login transport check (F-ZAP-1)
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+      - name: Login transport check (F-ZAP-1; prints the form method and booleans only)
+        timeout-minutes: 5
+        run: node scripts/scan/login-transport-check.mjs http://127.0.0.1:3000 /auth/login,/login
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
+      - name: Threshold (a new alert type fails; unusable input fails)
+        id: judge
+        env:
+          ZAP_EXIT: ${{ steps.scan.outputs.zap_exit }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts judge "$RUNNER_TEMP/zap-evidence/zap.json" cal 127.0.0.1 3000 "$ZAP_EXIT" "$RUNNER_TEMP/zap-evidence/zap-summary.md" >> "$GITHUB_OUTPUT"
+      - name: Evidence gate (PN-7 token scan, then the private-first check)
+        id: evidence
+        run: |
+          set -euo pipefail
+          node scripts/scan/evidence-token-scan.mjs "$RUNNER_TEMP/zap-evidence"
+          node --experimental-strip-types scripts/scan/zap-threshold.ts check-private "$RUNNER_TEMP/zap-evidence" docs/findings/ledger.json
+          touch "$RUNNER_TEMP/zap-evidence-clean"
+      - name: Upload the ZAP evidence (JSON, HTML and summary only)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: p5-zap-cal-report
+          path: ${{ runner.temp }}/zap-evidence/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Publish the summary (only after the evidence gate)
+        if: always()
+        run: |
+          summary="$RUNNER_TEMP/zap-evidence/zap-summary.md"
+          if [ -f "$RUNNER_TEMP/zap-evidence-clean" ] && [ -f "$summary" ]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ZAP summary withheld: the evidence gate did not pass or the threshold did not run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Stop cal
+        id: down
+        if: always()
+        run: node node_modules/qa-portfolio-harness/scripts/down.mjs cal
+      - name: Nightly verdict (any failed gate fails the job)
+        if: always()
+        env:
+          SCAN: ${{ steps.scan.outcome }}
+          JUDGE_OUTCOME: ${{ steps.judge.outcome }}
+          JUDGE_VERDICT: ${{ steps.judge.outputs.verdict }}
+          EVIDENCE: ${{ steps.evidence.outcome }}
+          TEARDOWN: ${{ steps.down.outcome }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts decide "$SCAN" "$JUDGE_OUTCOME" "$JUDGE_VERDICT" "$EVIDENCE" "$TEARDOWN"
+
+  zap-doc:
+    needs: [plan]
+    if: github.event_name == 'workflow_dispatch' && (inputs.product == 'all' || inputs.product == 'doc')
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30 # ZAP_NIGHTLY_TIMEOUT_MIN (master plan 671). p5-doc uses 60 for its Playwright run; not raised here
+    env:
+      TARGET: http://127.0.0.1:3001 # Documenso (DOCUMENSO_BASE_URL, src/kit/env.ts)
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Set the products root and the run id for the whole job
+        run: |
+          echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"
+          echo "P5_RUN_ID=p5-qa-$(date -u +%Y%m%dt%H%M%Sz)-$(openssl rand -hex 4)" >> "$GITHUB_ENV"
+      - name: Record the Docker server version
+        run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: npm ci
+      - name: Set up Node.js 24.22.0 for Documenso
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Pin the Node 24 path and record its npm
+        run: |
+          echo "NODE24=$(command -v node)" >> "$GITHUB_ENV"
+          echo "node24 $(node --version) npm $(npm --version)" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Set up Node.js from .nvmrc again for the harness scripts
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Bootstrap documenso
+        # The product install must not download browsers (the same variable as p5-doc.yml).
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: bash scripts/bootstrap.sh documenso
+      - name: Start documenso
+        run: node node_modules/qa-portfolio-harness/scripts/up.mjs documenso
+      - name: Passive baseline scan (unauthenticated, loopback)
+        id: scan
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/zap" "$RUNNER_TEMP/zap-evidence"
+          chmod 0777 "$RUNNER_TEMP/zap"
+          cp config/scan/zap-rules.tsv "$RUNNER_TEMP/zap/zap-rules.tsv"
+          curl -sS -o /dev/null --max-time 30 "$TARGET"
+          docker pull "$ZAP_IMAGE"
+          code=0
+          docker run --rm --network host -v "$RUNNER_TEMP/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t "$TARGET" -c zap-rules.tsv -J zap.json -r zap.html -m 3 -I || code=$?
+          echo "zap_exit=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ]; then
+            echo "::error::zap-baseline.py exited $code. No verdict is written from a scan that did not run."
+            exit "$code"
+          fi
+          cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Install Chromium for the login transport check (F-ZAP-1)
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+      - name: Login transport check (F-ZAP-1; prints the form method and booleans only)
+        timeout-minutes: 5
+        run: node scripts/scan/login-transport-check.mjs http://127.0.0.1:3001 /signin,/login
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
+      - name: Threshold (a new alert type fails; unusable input fails)
+        id: judge
+        env:
+          ZAP_EXIT: ${{ steps.scan.outputs.zap_exit }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts judge "$RUNNER_TEMP/zap-evidence/zap.json" documenso 127.0.0.1 3001 "$ZAP_EXIT" "$RUNNER_TEMP/zap-evidence/zap-summary.md" >> "$GITHUB_OUTPUT"
+      - name: Evidence gate (PN-7 token scan, then the private-first check)
+        id: evidence
+        run: |
+          set -euo pipefail
+          node scripts/scan/evidence-token-scan.mjs "$RUNNER_TEMP/zap-evidence"
+          node --experimental-strip-types scripts/scan/zap-threshold.ts check-private "$RUNNER_TEMP/zap-evidence" docs/findings/ledger.json
+          touch "$RUNNER_TEMP/zap-evidence-clean"
+      - name: Upload the ZAP evidence (JSON, HTML and summary only)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: p5-zap-doc-report
+          path: ${{ runner.temp }}/zap-evidence/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Publish the summary (only after the evidence gate)
+        if: always()
+        run: |
+          summary="$RUNNER_TEMP/zap-evidence/zap-summary.md"
+          if [ -f "$RUNNER_TEMP/zap-evidence-clean" ] && [ -f "$summary" ]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ZAP summary withheld: the evidence gate did not pass or the threshold did not run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Stop documenso
+        id: down
+        if: always()
+        run: node node_modules/qa-portfolio-harness/scripts/down.mjs documenso
+      - name: Nightly verdict (any failed gate fails the job)
+        if: always()
+        env:
+          SCAN: ${{ steps.scan.outcome }}
+          JUDGE_OUTCOME: ${{ steps.judge.outcome }}
+          JUDGE_VERDICT: ${{ steps.judge.outputs.verdict }}
+          EVIDENCE: ${{ steps.evidence.outcome }}
+          TEARDOWN: ${{ steps.down.outcome }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts decide "$SCAN" "$JUDGE_OUTCOME" "$JUDGE_VERDICT" "$EVIDENCE" "$TEARDOWN"
+
+  zap-med:
+    needs: [plan]
+    if: github.event_name == 'workflow_dispatch' && (inputs.product == 'all' || inputs.product == 'med')
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30 # ZAP_NIGHTLY_TIMEOUT_MIN (master plan 671), provisional and unmeasured
+    env:
+      TARGET: http://127.0.0.1:9000 # Medusa (MEDUSA_BASE_URL, src/kit/env.ts)
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Set the products root and the run id for the whole job
+        run: |
+          echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"
+          echo "P5_RUN_ID=p5-qa-$(date -u +%Y%m%dt%H%M%Sz)-$(openssl rand -hex 4)" >> "$GITHUB_ENV"
+      - name: Record the Docker server version
+        run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: npm ci
+      # pnpm pinned to the bootstrap version (medusa-dtc-starter packageManager; bootstrap.sh MEDUSA_PNPM), as p5-med.yml.
+      - name: Put pnpm on PATH for the harness (pinned to the bootstrap version)
+        timeout-minutes: 5
+        run: npm install -g pnpm@10.11.1 && pnpm --version
+      - name: Require the Medusa admin secrets (never printed)
+        timeout-minutes: 2
+        env:
+          MEDUSA_ADMIN_EMAIL: ${{ secrets.MEDUSA_ADMIN_EMAIL }}
+          MEDUSA_ADMIN_PASSWORD: ${{ secrets.MEDUSA_ADMIN_PASSWORD }}
+        run: |
+          if [ -z "$MEDUSA_ADMIN_EMAIL" ] || [ -z "$MEDUSA_ADMIN_PASSWORD" ]; then
+            echo "BLOCKED: repository secrets MEDUSA_ADMIN_EMAIL and MEDUSA_ADMIN_PASSWORD are not set" >&2
+            exit 1
+          fi
+          echo "Medusa admin secrets are set (values not printed)."
+      - name: Bootstrap medusa
+        run: bash scripts/bootstrap.sh medusa
+      - name: Start medusa
+        env:
+          MEDUSA_ADMIN_EMAIL: ${{ secrets.MEDUSA_ADMIN_EMAIL }}
+          MEDUSA_ADMIN_PASSWORD: ${{ secrets.MEDUSA_ADMIN_PASSWORD }}
+        run: node node_modules/qa-portfolio-harness/scripts/up.mjs medusa
+      - name: Passive baseline scan (unauthenticated, loopback)
+        id: scan
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/zap" "$RUNNER_TEMP/zap-evidence"
+          chmod 0777 "$RUNNER_TEMP/zap"
+          cp config/scan/zap-rules.tsv "$RUNNER_TEMP/zap/zap-rules.tsv"
+          curl -sS -o /dev/null --max-time 30 "$TARGET"
+          docker pull "$ZAP_IMAGE"
+          code=0
+          docker run --rm --network host -v "$RUNNER_TEMP/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t "$TARGET" -c zap-rules.tsv -J zap.json -r zap.html -m 3 -I || code=$?
+          echo "zap_exit=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ]; then
+            echo "::error::zap-baseline.py exited $code. No verdict is written from a scan that did not run."
+            exit "$code"
+          fi
+          cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
+      - name: Threshold (a new alert type fails; unusable input fails)
+        id: judge
+        env:
+          ZAP_EXIT: ${{ steps.scan.outputs.zap_exit }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts judge "$RUNNER_TEMP/zap-evidence/zap.json" medusa 127.0.0.1 9000 "$ZAP_EXIT" "$RUNNER_TEMP/zap-evidence/zap-summary.md" >> "$GITHUB_OUTPUT"
+      - name: Evidence gate (PN-7 token scan, then the private-first check)
+        id: evidence
+        run: |
+          set -euo pipefail
+          node scripts/scan/evidence-token-scan.mjs "$RUNNER_TEMP/zap-evidence"
+          node --experimental-strip-types scripts/scan/zap-threshold.ts check-private "$RUNNER_TEMP/zap-evidence" docs/findings/ledger.json
+          touch "$RUNNER_TEMP/zap-evidence-clean"
+      - name: Upload the ZAP evidence (JSON, HTML and summary only)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: p5-zap-med-report
+          path: ${{ runner.temp }}/zap-evidence/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Publish the summary (only after the evidence gate)
+        if: always()
+        run: |
+          summary="$RUNNER_TEMP/zap-evidence/zap-summary.md"
+          if [ -f "$RUNNER_TEMP/zap-evidence-clean" ] && [ -f "$summary" ]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ZAP summary withheld: the evidence gate did not pass or the threshold did not run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Stop medusa
+        id: down
+        if: always()
+        run: node node_modules/qa-portfolio-harness/scripts/down.mjs medusa
+      - name: Nightly verdict (any failed gate fails the job)
+        if: always()
+        env:
+          SCAN: ${{ steps.scan.outcome }}
+          JUDGE_OUTCOME: ${{ steps.judge.outcome }}
+          JUDGE_VERDICT: ${{ steps.judge.outputs.verdict }}
+          EVIDENCE: ${{ steps.evidence.outcome }}
+          TEARDOWN: ${{ steps.down.outcome }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts decide "$SCAN" "$JUDGE_OUTCOME" "$JUDGE_VERDICT" "$EVIDENCE" "$TEARDOWN"
+
+  zap-tw:
+    needs: [plan]
+    if: github.event_name == 'workflow_dispatch' && (inputs.product == 'all' || inputs.product == 'tw')
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30 # ZAP_NIGHTLY_TIMEOUT_MIN (master plan 671), provisional and unmeasured
+    env:
+      TARGET: http://127.0.0.1:3002 # Twenty (TWENTY_BASE_URL, src/kit/env.ts)
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Set the products root and the run id for the whole job
+        run: |
+          echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"
+          echo "P5_RUN_ID=p5-qa-$(date -u +%Y%m%dt%H%M%Sz)-$(openssl rand -hex 4)" >> "$GITHUB_ENV"
+      - name: Record the Docker server version
+        run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: npm ci
+      - name: Bootstrap twenty
+        run: bash scripts/bootstrap.sh twenty
+      - name: Start twenty
+        run: node node_modules/qa-portfolio-harness/scripts/up.mjs twenty
+      - name: Passive baseline scan (unauthenticated, loopback)
+        id: scan
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/zap" "$RUNNER_TEMP/zap-evidence"
+          chmod 0777 "$RUNNER_TEMP/zap"
+          cp config/scan/zap-rules.tsv "$RUNNER_TEMP/zap/zap-rules.tsv"
+          curl -sS -o /dev/null --max-time 30 "$TARGET"
+          docker pull "$ZAP_IMAGE"
+          code=0
+          docker run --rm --network host -v "$RUNNER_TEMP/zap:/zap/wrk:rw" "$ZAP_IMAGE" \
+            zap-baseline.py -t "$TARGET" -c zap-rules.tsv -J zap.json -r zap.html -m 3 -I || code=$?
+          echo "zap_exit=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ]; then
+            echo "::error::zap-baseline.py exited $code. No verdict is written from a scan that did not run."
+            exit "$code"
+          fi
+          cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
+      - name: Threshold (a new alert type fails; unusable input fails)
+        id: judge
+        env:
+          ZAP_EXIT: ${{ steps.scan.outputs.zap_exit }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts judge "$RUNNER_TEMP/zap-evidence/zap.json" twenty 127.0.0.1 3002 "$ZAP_EXIT" "$RUNNER_TEMP/zap-evidence/zap-summary.md" >> "$GITHUB_OUTPUT"
+      - name: Evidence gate (PN-7 token scan, then the private-first check)
+        id: evidence
+        run: |
+          set -euo pipefail
+          node scripts/scan/evidence-token-scan.mjs "$RUNNER_TEMP/zap-evidence"
+          node --experimental-strip-types scripts/scan/zap-threshold.ts check-private "$RUNNER_TEMP/zap-evidence" docs/findings/ledger.json
+          touch "$RUNNER_TEMP/zap-evidence-clean"
+      - name: Upload the ZAP evidence (JSON, HTML and summary only)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: p5-zap-tw-report
+          path: ${{ runner.temp }}/zap-evidence/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Publish the summary (only after the evidence gate)
+        if: always()
+        run: |
+          summary="$RUNNER_TEMP/zap-evidence/zap-summary.md"
+          if [ -f "$RUNNER_TEMP/zap-evidence-clean" ] && [ -f "$summary" ]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ZAP summary withheld: the evidence gate did not pass or the threshold did not run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Stop twenty
+        id: down
+        if: always()
+        run: node node_modules/qa-portfolio-harness/scripts/down.mjs twenty
+      - name: Nightly verdict (any failed gate fails the job)
+        if: always()
+        env:
+          SCAN: ${{ steps.scan.outcome }}
+          JUDGE_OUTCOME: ${{ steps.judge.outcome }}
+          JUDGE_VERDICT: ${{ steps.judge.outputs.verdict }}
+          EVIDENCE: ${{ steps.evidence.outcome }}
+          TEARDOWN: ${{ steps.down.outcome }}
+        run: node --experimental-strip-types scripts/scan/zap-threshold.ts decide "$SCAN" "$JUDGE_OUTCOME" "$JUDGE_VERDICT" "$EVIDENCE" "$TEARDOWN"

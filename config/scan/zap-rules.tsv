@@ -1,0 +1,8 @@
+# P5-SCAN-004 ZAP passive baseline rules (zap-baseline.py -c). Each line: plugin id, level, one-line justification, tab-separated.
+# Levels: WARN is the scanner default, written out so each choice is visible. No IGNORE and no FAIL line is committed.
+# An IGNORE line needs its own justification here and must never name a High or Critical alert (docs/plans/2026-11-10-p5-l-pipe.md 6.7).
+# The local stacks are plain HTTP development deployments; the header rows below are deployment findings annotated in the nightly summary, not product defect claims (D12).
+10020	WARN	Anti-clickjacking header absent on a local development stack: deployment finding, annotated only.
+10021	WARN	X-Content-Type-Options header absent on a local development stack: deployment finding, annotated only.
+10036	WARN	Server banner discloses a version on a local development stack: deployment hygiene, annotated only.
+10038	WARN	Content-Security-Policy header absent on a local development stack: deployment finding, annotated only.

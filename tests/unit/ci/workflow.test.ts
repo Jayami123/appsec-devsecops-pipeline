@@ -252,9 +252,9 @@ test("p5-x.yml has no secrets key", () => {
   assert.doesNotMatch(workflow("p5-x.yml"), /^\s*secrets\s*:/m);
 });
 
-test("p5-zap-nightly.yml triggers are exactly schedule and workflow_dispatch", () => {
-  const NIGHTLY_TRIGGERS = ["schedule", "workflow_dispatch"];
-  const good = "on:\n  schedule:\n    - cron: '0 1 * * *'\n  workflow_dispatch:\njobs:\n";
+test("p5-zap-nightly.yml triggers are exactly workflow_call and workflow_dispatch (no schedule until O-10)", () => {
+  const NIGHTLY_TRIGGERS = ["workflow_call", "workflow_dispatch"];
+  const good = "on:\n  workflow_call:\n  workflow_dispatch:\njobs:\n";
   const bad =
     "on:\n  schedule:\n    - cron: '0 1 * * *'\n  workflow_dispatch:\n  pull_request:\njobs:\n";
   assert.deepEqual([...triggers(good)].sort(), NIGHTLY_TRIGGERS);
