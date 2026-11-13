@@ -74,3 +74,21 @@ test("stripeWebhookSecret throws ENV_MISSING by name and returns a set value", (
     synthetic,
   );
 });
+
+// D-TW-B47 (owner-approved): lvh.me and its subdomains are loopback base hosts; any other host stays rejected.
+test("TWENTY_BASE_URL accepts lvh.me (owner exception, D-TW-B47)", () => {
+  const env = loadEnv({ P5_RUN_ID: VALID_RUN_ID, TWENTY_BASE_URL: "http://lvh.me:3002" });
+  assert.equal(env.TWENTY_BASE_URL, "http://lvh.me:3002");
+});
+
+test("TWENTY_BASE_URL accepts a subdomain of lvh.me (owner exception, D-TW-B47)", () => {
+  const env = loadEnv({ P5_RUN_ID: VALID_RUN_ID, TWENTY_BASE_URL: "http://apple.lvh.me:3002" });
+  assert.equal(env.TWENTY_BASE_URL, "http://apple.lvh.me:3002");
+});
+
+test("TWENTY_BASE_URL rejects a non-loopback host that starts with lvh.me, naming the variable only", () => {
+  assert.throws(
+    () => loadEnv({ P5_RUN_ID: VALID_RUN_ID, TWENTY_BASE_URL: "http://lvh.me.evil.com:3002" }),
+    /^Error: ENV_INVALID: TWENTY_BASE_URL$/,
+  );
+});

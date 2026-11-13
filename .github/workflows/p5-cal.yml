@@ -236,10 +236,13 @@ jobs:
       - name: Start cal
         env:
           STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+          # The effective API v2 key limit (RL-002 reads it; the fork default is 120). Set before up (harness).
+          RATE_LIMIT_DEFAULT_LIMIT_API_KEY: "120"
         run: node node_modules/qa-portfolio-harness/scripts/up.mjs cal
       - name: Run the cal-serial project
         env:
           STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+          RATE_LIMIT_DEFAULT_LIMIT_API_KEY: "120"
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-cal-serial.raw.json
           PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report
           PLAYWRIGHT_HTML_OPEN: never
