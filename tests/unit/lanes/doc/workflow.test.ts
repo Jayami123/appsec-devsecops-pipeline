@@ -130,3 +130,15 @@ test("the stock doc-api job excludes the OIDC titles, and doc-oidc runs only the
 test("doc-oidc needs no other job and runs on its own stack", () => {
   assert.doesNotMatch(jobBlock("doc-oidc"), /^ {4}needs:/m);
 });
+
+// The harness state folder (web log, env) is never an upload path (owner instruction, round 10).
+test("no p5-doc upload path names the harness state folder", () => {
+  const uploads = [
+    ...lane.matchAll(/uses: actions\/upload-artifact@[^\n]*\n(?:[^\n]*\n){1,12}?/g),
+  ].map((m) => m[0]);
+  assert.ok(uploads.length >= 3, "one upload per doc job");
+  for (const block of uploads) {
+    assert.doesNotMatch(block, /\.harness/, block);
+    assert.doesNotMatch(block, /documenso-web\.log/, block);
+  }
+});
