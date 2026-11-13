@@ -67,6 +67,13 @@ function syftVerdict(needs: Needs, jobs: KeyJobs, reportJobs: ReadonlySet<string
   return judge(needs, jobs, reportJobs);
 }
 
+// ZAP is report-only and runs only in p5-zap-nightly.yml, which fails its own run (plan 5.9 rule 4, O-15). A PR
+// aggregation never runs it, so an implemented zap key reports skipped; it must never fall through to judge(),
+// which fails closed when nothing is judged and would fail every PR gate.
+function zapVerdict(): Verdict {
+  return "skipped";
+}
+
 export function aggregate(
   needs: Needs,
   registry: Registry,
@@ -80,9 +87,11 @@ export function aggregate(
     const verdict: Verdict =
       state === "stub"
         ? "not-implemented"
-        : key === "syft"
-          ? syftVerdict(needs, jobs, reportJobs)
-          : judge(needs, jobs, reportJobs);
+        : key === "zap"
+          ? zapVerdict()
+          : key === "syft"
+            ? syftVerdict(needs, jobs, reportJobs)
+            : judge(needs, jobs, reportJobs);
     if (key === "codeql") codeqlVerdict = verdict;
     pairs.push(`${key}=${verdict}`);
   }

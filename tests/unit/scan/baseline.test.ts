@@ -8,6 +8,7 @@ import { REPO } from "./fixtures/index.ts";
 const BASELINE_FILES: readonly [string, string][] = [
   ["config/scan/baseline/osv.json", "osv"],
   ["config/scan/baseline/npm-audit.json", "npm-audit"],
+  ["config/scan/baseline/zap.json", "zap"],
 ];
 const KEYS = [
   "fingerprint",

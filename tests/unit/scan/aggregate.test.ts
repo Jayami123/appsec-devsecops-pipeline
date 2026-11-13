@@ -93,3 +93,30 @@ test("syft fails when decide report is true and syft did not succeed", () => {
   };
   assert.equal(pairOf(aggregate(needs, registry, reportJobs).scannerStatus, "syft"), "syft=fail");
 });
+
+test("zap stays not-implemented while its registry key is stub", () => {
+  const registry: Registry = { codeql: "stub", zap: "stub" };
+  assert.equal(
+    pairOf(aggregate({}, registry, reportJobs).scannerStatus, "zap"),
+    "zap=not-implemented",
+  );
+});
+
+test("an implemented zap key is always skipped on a PR aggregation (O-15), with or without needs", () => {
+  const registry: Registry = { codeql: "stub", zap: "implemented" };
+  const withDecide: Needs = { decide: { result: "success", outputs: { report: "true" } } };
+  const withoutAnything: Needs = {};
+  for (const needs of [withDecide, withoutAnything]) {
+    assert.equal(
+      pairOf(aggregate(needs, registry, reportJobs).scannerStatus, "zap"),
+      "zap=skipped",
+    );
+  }
+  // zap has no job in p5-scans, so it is never judged: judge() would fail closed here.
+  assert.deepEqual(KEY_JOBS["zap"], { blocking: [], report: [] });
+});
+
+test("the real registry zap value maps to the matching aggregator verdict", () => {
+  const expected = realRegistry["zap"] === "implemented" ? "zap=skipped" : "zap=not-implemented";
+  assert.equal(pairOf(aggregate({}, realRegistry, reportJobs).scannerStatus, "zap"), expected);
+});
