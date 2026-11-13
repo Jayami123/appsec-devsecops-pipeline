@@ -38,8 +38,22 @@ function triggers(): string[] {
   return keys;
 }
 
-test("the triggers are exactly schedule and workflow_dispatch (no pull_request, push or workflow_call)", () => {
-  assert.deepEqual([...triggers()].sort(), ["schedule", "workflow_dispatch"]);
+test("the triggers are schedule, workflow_call (used only by p5-scans on a dispatch) and workflow_dispatch; no pull_request or push", () => {
+  assert.deepEqual([...triggers()].sort(), ["schedule", "workflow_call", "workflow_dispatch"]);
+});
+
+test("ci.yml never calls the zap workflow, and the p5-scans hook is dispatch-only and off by default", () => {
+  const ci = readFileSync(join(REPO, ".github/workflows/ci.yml"), "utf8");
+  assert.doesNotMatch(ci, /p5-zap-nightly/);
+  const scans = readFileSync(join(REPO, ".github/workflows/p5-scans.yml"), "utf8");
+  assert.match(
+    scans,
+    /zap_nightly:\n {8}description: [^\n]*\n {8}type: boolean\n {8}default: false/,
+  );
+  assert.match(
+    scans,
+    /zap-nightly:[\s\S]*?if: github\.event_name == 'workflow_dispatch' && inputs\.zap_nightly\n[\s\S]*?uses: \.\/\.github\/workflows\/p5-zap-nightly\.yml/,
+  );
 });
 
 test("the top-level permissions are contents: read, and no job grants more", () => {

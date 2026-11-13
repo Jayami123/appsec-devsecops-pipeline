@@ -10,6 +10,11 @@ on:
         description: "name=verdict pairs, one per registry key, in registry order"
         value: ${{ jobs.summary.outputs.scanner_status }}
   workflow_dispatch:
+    inputs:
+      zap_nightly:
+        description: "Run the report-only ZAP passive nightly (P5-SCAN-004) on this ref. Off by default; never on a pull request."
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -332,6 +337,19 @@ jobs:
         env:
           SYFT_BIN: ${{ runner.temp }}/tools/syft
         run: bash scripts/scan/sbom.sh "$RUNNER_TEMP/scan-out/syft" >> "$GITHUB_OUTPUT"
+
+  zap-nightly: # report-only passive ZAP nightly (P5-SCAN-004). Dispatch only, and only when zap_nightly is true.
+    if: github.event_name == 'workflow_dispatch' && inputs.zap_nightly
+    permissions:
+      contents: read
+    uses: ./.github/workflows/p5-zap-nightly.yml
+    with:
+      mode: passive
+      product: all
+    secrets:
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+      MEDUSA_ADMIN_EMAIL: ${{ secrets.MEDUSA_ADMIN_EMAIL }}
+      MEDUSA_ADMIN_PASSWORD: ${{ secrets.MEDUSA_ADMIN_PASSWORD }}
 
   summary: # the aggregator (section 5.9)
     needs:

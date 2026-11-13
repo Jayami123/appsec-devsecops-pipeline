@@ -1,14 +1,35 @@
 name: p5-zap-nightly
 
 # P5-SCAN-004 (plan 5.8, 6.7, D11). The ZAP passive baseline runs once per product stack, started and stopped only
-# through the qa-portfolio-harness scripts. It is report-only for pull requests: no pull_request, no push, and no
-# workflow_call, so ci.yml never starts a product stack from this file (master plan 9.10).
+# through the qa-portfolio-harness scripts. It is report-only for pull requests: no pull_request and no push trigger.
+# workflow_call exists only so that p5-scans.yml can run it on a manual dispatch (its zap-nightly job, off by default).
+# ci.yml never calls this file, and a pull request never reaches a job here (master plan 9.10).
 #
 # O-10: the schedule is declared, but every job is gated on workflow_dispatch, so the cron starts nothing until the
 # owner enables it. Active scanning (D11) is not wired here: mode=active fails closed in the plan job.
 on:
   schedule:
     - cron: "0 1 * * *"
+  workflow_call:
+    inputs:
+      mode:
+        description: "passive (the nightly baseline). active fails closed in the plan job."
+        type: string
+        required: false
+        default: passive
+      product:
+        description: "all, or one product job: cal, doc, med, tw."
+        type: string
+        required: false
+        default: all
+    # Named secrets only, passed by p5-scans.yml on a manual dispatch. Never inherited.
+    secrets:
+      STRIPE_API_KEY:
+        required: false
+      MEDUSA_ADMIN_EMAIL:
+        required: false
+      MEDUSA_ADMIN_PASSWORD:
+        required: false
   workflow_dispatch:
     inputs:
       mode:
