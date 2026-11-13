@@ -18,3 +18,8 @@
 | Live status (this PR) | Local simulation of the `doc-oidc` steps: 5 titles across OIDC-001 and OIDC-002, all expected failures at the same assertion; no harness or helper error. CI run: recorded on the draft PR. |
 | Live run ID | Local only (no CI run ID yet). CI run ID: filled on the draft PR. |
 | Ledger proposal | Stays `gated`. Blocker text to name `P5-DOC-OIDC-SCOPE-001` and the CI run, in the foundation ledger PR. Not verified: no PASS exists. |
+
+## Status update (round 10)
+
+- CI run 43400737495 (head c2aedd5): `doc-oidc` success with the expected failure at `P5-DOC-OIDC-SCOPE-001`. The row is still gated: the harness pin bump to v0.5.1 is blocked because the tag does not resolve from this session (D-DOC-B79).
+- Recorded finding: `P5-DOC-OIDC-SCOPE-001`, code `packages/auth/server/lib/utils/open-id.ts:34-40`, run 43400737495.
