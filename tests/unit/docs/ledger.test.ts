@@ -5,7 +5,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { assertNoPrivateExtras, isPrivateEntry, privateIdIn } from "../../../src/security/findings.ts";
+import {
+  assertNoPrivateExtras,
+  isPrivateEntry,
+  PRIVATE_STATUSES,
+  privateIdIn,
+} from "../../../src/security/findings.ts";
 import { validateAcceptedRisks, type AcceptedRisk } from "../../../src/security/accepted-risk.ts";
 
 const read = (relative: string): string =>
@@ -20,7 +25,12 @@ interface Ledger {
     verification?: { runId: string; job: string; testFile: string };
   }[];
   private: Record<string, unknown>[];
-  findings: { id: string; evidence: { file: string; line: number; runId: string } }[];
+  findings: {
+    id: string;
+    status: string;
+    severity: string;
+    evidence: { file: string; line: number; runId: string };
+  }[];
   accepted_risks: unknown[];
 }
 
@@ -48,7 +58,7 @@ test("the ledger validates against the schema", () => {
 test("every private entry has exactly id and status", () => {
   for (const entry of ledger.private) {
     assert.deepEqual(Object.keys(entry).sort(), ["id", "status"]);
-    assert.equal(entry.status, "held-private");
+    assert.ok(PRIVATE_STATUSES.includes(String(entry.status)), `${String(entry.id)} status`);
     // The shared runtime checks from src/security/findings.ts must also accept every entry.
     assert.equal(isPrivateEntry(entry), true);
     assert.doesNotThrow(() => {
@@ -68,34 +78,28 @@ test("a private entry with an extra key is rejected with PRIVATE_FIELD_REJECTED"
   assert.equal(validate(withExtra), false);
 });
 
-test("cases holds 73 entries: 8 planned, 31 verified, 24 gated, 8 alias, 2 dropped", () => {
+test("cases holds 72 entries: 8 planned, 36 verified, 17 gated, 1 confirmed-product-bug, 8 alias, 2 dropped", () => {
   const count = (status: string): number => ledger.cases.filter((c) => c.status === status).length;
-  assert.equal(ledger.cases.length, 73);
+  assert.equal(ledger.cases.length, 72);
   assert.equal(count("planned"), 8);
-  assert.equal(count("verified"), 31);
-  assert.equal(count("gated"), 24);
+  assert.equal(count("verified"), 36);
+  assert.equal(count("gated"), 17);
+  assert.equal(count("confirmed-product-bug"), 1);
   assert.equal(count("alias"), 8);
   assert.equal(count("dropped"), 2);
 });
 
-test("exactly the 24 gated cases are gated, each with its blocker", () => {
+test("exactly the 17 gated cases are gated, each with its blocker", () => {
   const GATED_IDS = [
     "P5-CAL-CSV-001",
     "P5-CAL-CSV-002",
-    "P5-CAL-RL-002",
     "P5-CAL-TEAM-001",
-    "P5-CAL-TOK-001",
-    "P5-CAL-XSS-002",
-    "P5-DOC-OIDC-001",
-    "P5-DOC-OIDC-002",
     "P5-DOC-RBAC-001",
     "P5-MED-RBAC-001",
     "P5-MED-WH-001",
     "P5-MED-WH-002",
     "P5-TW-GQL-004",
     "P5-TW-HDR-001",
-    "P5-TW-MT-001",
-    "P5-TW-MT-002",
     "P5-TW-RLS-002",
     "P5-TW-RLS-003",
     "P5-TW-SEC-001",
@@ -115,7 +119,7 @@ test("exactly the 24 gated cases are gated, each with its blocker", () => {
 
 test("every verified case names a CI run, a job and a test file that exists in the repository", () => {
   const verified = ledger.cases.filter((c) => c.status === "verified");
-  assert.equal(verified.length, 31);
+  assert.equal(verified.length, 36);
   for (const c of verified) {
     assert.ok(c.verification, `${c.id} needs a verification record`);
     assert.match(c.verification.runId, /^[0-9]+$/, `${c.id} run id`);
@@ -134,9 +138,9 @@ test("no gated or planned case is verified, and no verified case has a blocker",
   }
 });
 
-test("private holds 11 entries and no id appears twice", () => {
+test("private holds 13 entries and no id appears twice", () => {
   const ids = ledger.private.map((entry) => String(entry.id));
-  assert.equal(ledger.private.length, 11);
+  assert.equal(ledger.private.length, 13);
   assert.equal(new Set(ids).size, ids.length);
 });
 
@@ -162,10 +166,10 @@ test("accepted_risks is empty (no risk is fabricated)", () => {
   assert.deepEqual(ledger.accepted_risks, []);
 });
 
-test("findings holds the four public expectedDefect rows, each with a file that exists", () => {
+test("findings holds the five public expectedDefect rows, each with a file that exists", () => {
   assert.deepEqual(
     ledger.findings.map((f) => f.id),
-    ["P5-CAL-WH-002", "P5-CAL-WH-003", "P5-MED-AUTHZ-001", "P5-TW-MASS-001"],
+    ["P5-CAL-WH-002", "P5-CAL-WH-003", "P5-MED-AUTHZ-001", "P5-TW-MASS-001", "P5-CAL-TOK-001"],
   );
   for (const f of ledger.findings) {
     assert.ok(f.evidence.runId.length > 0, `${f.id} run id`);
@@ -175,4 +179,31 @@ test("findings holds the four public expectedDefect rows, each with a file that 
 
 test("accepted_risks passes the accepted-risk date validator", () => {
   assert.deepEqual(validateAcceptedRisks(ledger.accepted_risks as AcceptedRisk[]), []);
+});
+
+test("the confirmed-product-bug case has a matching finding and no verification record", () => {
+  const confirmed = ledger.cases.filter((c) => c.status === "confirmed-product-bug");
+  assert.deepEqual(
+    confirmed.map((c) => c.id),
+    ["P5-CAL-TOK-001"],
+  );
+  for (const c of confirmed) {
+    assert.equal(c.verification, undefined, `${c.id} carries evidence in findings, not verification`);
+    const finding = ledger.findings.find((f) => f.id === c.id);
+    assert.ok(finding, `${c.id} needs a findings entry`);
+    assert.equal(finding.status, "confirmed-product-bug", c.id);
+    assert.ok(["Critical", "High", "Medium", "Low", "Info"].includes(finding.severity), c.id);
+  }
+});
+
+test("the two cross-tenant private entries carry ID and confirmed status only (private-first)", () => {
+  const cross = ledger.private.filter((entry) => entry.status === "confirmed-product-bug");
+  assert.deepEqual(
+    cross.map((entry) => entry.id),
+    ["P5-TW-MT-002", "NEW-TW-5"],
+  );
+  for (const entry of cross) {
+    assert.deepEqual(Object.keys(entry).sort(), ["id", "status"], String(entry.id));
+    assert.equal(isPrivateEntry(entry), true, String(entry.id));
+  }
 });

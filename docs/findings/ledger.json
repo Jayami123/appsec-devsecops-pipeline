@@ -115,20 +115,23 @@
     {
       "id": "P5-CAL-TOK-001",
       "product": "cal",
-      "status": "gated",
+      "status": "confirmed-product-bug",
       "title": "Reset token concurrent redemption",
       "lane": "L-CAL",
-      "severity": null,
-      "blocker": "NOT BUILT: no test file; cal plan row P1 needs the investigative budget CAL_RESET_CONCURRENT_N, which is not set."
+      "severity": null
     },
     {
       "id": "P5-CAL-RL-002",
       "product": "cal",
-      "status": "gated",
+      "status": "verified",
       "title": "API key over quota returns 429",
       "lane": "L-CAL",
       "severity": null,
-      "blocker": "BLOCKED: the effective limit read for the API-key default is not exposed to the lane (cal plan row P2); never PASS on the default value alone."
+      "verification": {
+        "runId": "43426196801",
+        "job": "p5-cal / cal-serial",
+        "testFile": "tests/serial/cal/api-key-quota.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-XSS-001",
@@ -146,11 +149,15 @@
     {
       "id": "P5-CAL-XSS-002",
       "product": "cal",
-      "status": "gated",
+      "status": "verified",
       "title": "Description in confirmation email sanitised",
       "lane": "L-CAL",
       "severity": null,
-      "blocker": "BLOCKED: gated until P-13 (the cal mail catcher) is shown (master plan section 13)."
+      "verification": {
+        "runId": "43426196801",
+        "job": "p5-cal / cal-ui",
+        "testFile": "tests/ui/cal/confirmation-email-sanitised.spec.ts"
+      }
     },
     {
       "id": "P5-CAL-RED-001",
@@ -238,20 +245,28 @@
     {
       "id": "P5-DOC-OIDC-001",
       "product": "documenso",
-      "status": "gated",
+      "status": "verified",
       "title": "OAuth state replay rejected",
       "lane": "L-DOC",
       "severity": null,
-      "blocker": "GATED: owner decision D9; probe P-8 (the OIDC mock IdP through normal harness routes) is not shown; no test file."
+      "verification": {
+        "runId": "43426196801",
+        "job": "p5-doc / doc-oidc",
+        "testFile": "tests/integration/doc/oidc-state-replay.spec.ts"
+      }
     },
     {
       "id": "P5-DOC-OIDC-002",
       "product": "documenso",
-      "status": "gated",
+      "status": "verified",
       "title": "`email_verified=false` not auto-linked",
       "lane": "L-DOC",
       "severity": null,
-      "blocker": "GATED: owner decision D9; probe P-8 (the OIDC mock IdP through normal harness routes) is not shown; no test file."
+      "verification": {
+        "runId": "43426196801",
+        "job": "p5-doc / doc-oidc",
+        "testFile": "tests/integration/doc/oidc-unverified-email.spec.ts"
+      }
     },
     {
       "id": "P5-MED-WH-001",
@@ -382,20 +397,15 @@
     {
       "id": "P5-TW-MT-001",
       "product": "twenty",
-      "status": "gated",
+      "status": "verified",
       "title": "Apple user cannot read YC company",
       "lane": "L-TW-A",
       "severity": null,
-      "blocker": "NOT BUILT: the multi-workspace job shape (tw-multiws) is not built (tw plan row 3b, RC-6); no test file."
-    },
-    {
-      "id": "P5-TW-MT-002",
-      "product": "twenty",
-      "status": "gated",
-      "title": "Signed file URL from one workspace not readable in another",
-      "lane": "L-TW-A",
-      "severity": null,
-      "blocker": "NOT BUILT: the multi-workspace job shape (tw-multiws) is not built (tw plan row 3b, RC-6); no test file."
+      "verification": {
+        "runId": "43426196801",
+        "job": "p5-tw / tw-multiws",
+        "testFile": "tests/integration/tw/apple-cannot-read-yc.spec.ts"
+      }
     },
     {
       "id": "P5-TW-RBAC-001",
@@ -883,6 +893,14 @@
     {
       "id": "P5-DOC-OIDC-003",
       "status": "held-private"
+    },
+    {
+      "id": "P5-TW-MT-002",
+      "status": "confirmed-product-bug"
+    },
+    {
+      "id": "NEW-TW-5",
+      "status": "confirmed-product-bug"
     }
   ],
   "findings": [
@@ -940,6 +958,20 @@
         "artifact": "job log, no artifact uploaded before this PR (p5-tw / tw-api)",
         "file": "tests/contracts/tw/mass-assignment.spec.ts",
         "line": 143
+      }
+    },
+    {
+      "id": "P5-CAL-TOK-001",
+      "product": "cal",
+      "status": "confirmed-product-bug",
+      "title": "Reset token concurrent redemption",
+      "severity": "Medium",
+      "bugId": "P5-CAL-TOK-001",
+      "evidence": {
+        "runId": "43426196801",
+        "artifact": "job log (p5-cal / cal-serial), expectedDefect title",
+        "file": "tests/serial/cal/reset-token-concurrent.spec.ts",
+        "line": 87
       }
     }
   ],
