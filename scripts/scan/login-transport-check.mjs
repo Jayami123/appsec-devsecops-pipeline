@@ -44,11 +44,25 @@ export async function checkLogin(base, paths) {
           .first();
         if ((await emailField.count()) > 0) await emailField.fill(email);
         await form.locator("input[type=password]").first().fill(dummy);
-        await form
-          .locator("button[type=submit], input[type=submit], button")
-          .first()
-          .click({ timeout: 10000 });
+        // The real submit control, never a visibility toggle (type=button). Without one, submit the form itself.
+        const submit = form
+          .locator("button[type=submit], input[type=submit], button:not([type])")
+          .first();
+        if ((await submit.count()) > 0) {
+          await submit.click({ timeout: 10000 });
+        } else {
+          await form.evaluate((element) => element.requestSubmit());
+        }
         await page.waitForTimeout(3000);
+        // Zero observed requests means the transport was not observed. It is never reported as "not in the URL".
+        if (seen.length === 0) {
+          return {
+            ok: false,
+            path,
+            formMethodAttr,
+            reason: "no submission observed after the form was filled",
+          };
+        }
         const passwordInUrl = seen.some(
           (r) => r.url.includes(dummy) || r.url.includes(encodeURIComponent(dummy)),
         );
