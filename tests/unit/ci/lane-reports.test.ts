@@ -135,6 +135,20 @@ describe("product lanes write a Playwright JSON report, a per-title summary and 
       laneRuns(name).map((run) => `p5-${run.label}-report`),
     );
     assert.equal(new Set(names).size, names.length, names.join(", "));
-    assert.equal(names.length, 10, names.join(", "));
+    // Explicit list (not a bare count): the tw-multiws artifact is named here (owner-approved, D-TW-B47).
+    const expected = [
+      "p5-cal-api-report",
+      "p5-cal-ui-report",
+      "p5-cal-serial-report",
+      "p5-doc-api-report",
+      "p5-doc-serial-report",
+      "p5-med-api-report",
+      "p5-med-serial-report",
+      "p5-tw-api-report",
+      "p5-tw-multiws-report",
+      "p5-tw-serial-report",
+      "p5-tw-iso-report",
+    ];
+    assert.deepEqual([...names].sort(), [...expected].sort(), names.join(", "));
   });
 });
