@@ -126,21 +126,31 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
       ? ((await negative.json()) as { data?: { createWebhook?: { id?: string } }; id?: string })
       : undefined;
   const crossId = crossBody?.data?.createWebhook?.id ?? crossBody?.id;
+  // The row may land in B (the origin) or in A (the key's workspace). Both lists are read, and cleanup removes the row
+  // from both (a DELETE of an id that is not in a workspace is harmless).
   if (crossId !== undefined) {
     run.onCleanup(async () => {
-      await fetch(`${b.origin}/rest/webhooks/${crossId}`, {
-        method: "DELETE",
-        headers: { authorization: `Bearer ${b.admin.accessToken}` },
-      });
+      for (const side of [b, a]) {
+        await fetch(`${side.origin}/rest/webhooks/${crossId}`, {
+          method: "DELETE",
+          headers: { authorization: `Bearer ${side.admin.accessToken}` },
+        });
+      }
     });
   }
-  const listedAfterCreate =
+  const listedInA =
+    crossId !== undefined &&
+    (
+      await readRest({ url: `${a.origin}/rest/webhooks?limit=200`, bearer: a.admin.accessToken })
+    ).text.includes(crossId);
+  const listedInB =
     crossId !== undefined &&
     (await readRest({ url: listUrl, bearer: b.admin.accessToken })).text.includes(crossId);
-  // Expected defect only when the defect reproduces: a 201 from B and the row is listed in B. Evidence is status only.
-  if (negative.status === 201 && listedAfterCreate) {
+  // Expected defect only when the defect reproduces: a 201 for A's key on B's origin, and the row is listed in A or B.
+  // Evidence is status only (private-first).
+  if (negative.status === 201 && (listedInA || listedInB)) {
     expectedDefect(
-      "NEW-TW-2: a key of one workspace creates a webhook in another workspace (status 201, row listed). Private-first: details held by the owner.",
+      "NEW-TW-2: a key of one workspace creates a webhook on another workspace's origin (status 201, row listed). Private-first: details held by the owner.",
     );
   }
   expect([400, 401, 403], `negative: A's key is refused on B (HTTP ${negative.status})`).toContain(
