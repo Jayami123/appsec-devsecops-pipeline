@@ -87,3 +87,57 @@ test("the trim keeps interior characters and removes only trailing delimiters (t
     /key=token position=query value=8-15 charset=code/,
   );
 });
+
+// B46: the gate exempts ONLY the exact redaction placeholder. Synthetic values, assembled at runtime.
+const PLACEHOLDER = "[REDACTED]";
+const LONG_SECRET = ["hunter2", "LongValueHere"].join("-");
+
+test("the exact redaction placeholder passes the gate for a sensitive query key (B46)", () => {
+  const result = run({
+    "a.json": `uri: "https://x.test/login?password=${PLACEHOLDER}&next=/home"\n`,
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("a real value for a sensitive key fails the gate", () => {
+  const result = run({
+    "a.json": `uri: "https://x.test/login?password=${LONG_SECRET}&next=/home"\n`,
+  });
+  assert.equal(result.status, 1);
+  assert.doesNotMatch(result.stderr, new RegExp(LONG_SECRET));
+});
+
+test("look-alike variants of the placeholder fail the gate: no partial, extended, lower-case or encoded form passes", () => {
+  for (const variant of [
+    "[REDACTED]x",
+    "REDACTED",
+    "[redacted]",
+    "%5BREDACTED%5D",
+    "[REDACTED",
+    "xREDACTED]",
+  ]) {
+    const result = run({
+      "a.json": `uri: "https://x.test/login?password=${variant}&next=/home"\n`,
+    });
+    assert.equal(result.status, 1, `variant must fail: ${variant}`);
+  }
+});
+
+test("a line that mixes the placeholder with a real value fails: every hit must be the placeholder", () => {
+  const result = run({
+    "a.json": `uri: "https://x.test/?password=${PLACEHOLDER}&token=${LONG_SECRET}"\n`,
+  });
+  assert.equal(result.status, 1);
+});
+
+test("the placeholder does not exempt other PN-7 patterns: a Bearer token or an api_ identifier in the same file still fails", () => {
+  const jwt = ["eyJhbGciOiJIUzI1NiJ9", "eyJzdWIiOiIxIn0", "c2lnbmF0dXJlMTIzNDU2"].join(".");
+  const bearer = run({
+    "a.json": `uri: "https://x.test/?password=${PLACEHOLDER}"\nevidence: "Authorization: Bearer ${jwt}"\n`,
+  });
+  assert.equal(bearer.status, 1);
+  assert.match(bearer.stderr, /rule Bearer header text/);
+  const apiId = run({ "b.txt": `password=${PLACEHOLDER}\napi_${LONG_SECRET.replace(/-/g, "")}\n` });
+  assert.equal(apiId.status, 1);
+  assert.match(apiId.stderr, /rule api_ identifier shape/);
+});

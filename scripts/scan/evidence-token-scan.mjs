@@ -4,6 +4,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { REDACTED_PLACEHOLDER } from "./redaction-placeholder.mjs";
 
 // The three patterns of the Task 8 step 8 grep, then the additions.
 /** @type {RegExp[]} */
@@ -93,6 +94,14 @@ export function isScriptCodeAssignment(line) {
   return hit !== null && hit.position === "other" && charsetOf(hit.value) === "code";
 }
 
+// True only when every password, secret or token assignment in the line has a value exactly equal to the redaction
+// placeholder. "[REDACTED]x", "REDACTED", "[redacted]" and encoded forms are not the placeholder and still fail.
+/** @param {string} line @returns {boolean} */
+export function isPlaceholderOnlyAssignment(line) {
+  const hits = [...line.matchAll(/\b(?:password|secret|token)=([^&#\s"'<>\\]*)/gi)];
+  return hits.length > 0 && hits.every((hit) => hit[1] === REDACTED_PLACEHOLDER);
+}
+
 /** @param {string} text @returns {{ line: number, rule: string }[]} */
 export function findRuleHits(text) {
   /** @type {{ line: number, rule: string }[]} */
@@ -101,6 +110,7 @@ export function findRuleHits(text) {
     PATTERNS.forEach((pattern, rule) => {
       if (!pattern.test(line)) return;
       if (rule === 7 && isScriptCodeAssignment(line)) return; // narrowed: script code is not a credential
+      if (rule === 7 && isPlaceholderOnlyAssignment(line)) return; // the exact redaction placeholder (B46)
       const detail = rule === 7 ? describeAssignment(line) : "";
       hits.push({ line: index + 1, rule: (RULE_LABELS[rule] ?? "unlabelled rule") + detail });
     });

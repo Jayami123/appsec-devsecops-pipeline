@@ -72,15 +72,11 @@ test("the gate still fails on an unredacted credential-shaped token anywhere els
   assert.doesNotMatch(gate.stderr, new RegExp(JWT.slice(0, 16)));
 });
 
-test("the gate's name=value rule still reports the redacted placeholder (the gate is not changed by redaction)", () => {
-  // This documents the open conflict in F-ZAP-1: the placeholder keeps the key and an "=" and is flagged by PN-7.
+test("the exact placeholder that the redactor writes passes the gate (B46): the placeholder is one shared constant", () => {
   const dir = scratch("zap-redact-sentinel");
   writeTree(dir, { "zap.json": `{"uri":"https://x.test/?password=${SECRET}"}\n` });
   spawnSync(process.execPath, ["--experimental-strip-types", REDACTOR, dir], { encoding: "utf8" });
+  assert.match(readFileSync(join(dir, "zap.json"), "utf8"), /password=\[REDACTED\]/);
   const gate = spawnSync(process.execPath, [SCANNER, dir], { encoding: "utf8" });
-  assert.equal(gate.status, 1);
-  assert.match(
-    gate.stderr,
-    /rule name=value assignment \(password, secret or token\) key=password position=query/,
-  );
+  assert.equal(gate.status, 0, gate.stderr);
 });

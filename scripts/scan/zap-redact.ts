@@ -5,6 +5,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { REDACTED_PLACEHOLDER } from "./redaction-placeholder.mjs";
 
 // Sensitive key names (case-insensitive). A key matches only as a whole name: "postcode" is not "code".
 export const SENSITIVE_KEYS = [
@@ -38,7 +39,7 @@ const QUERY_OR_FORM = new RegExp(`(?<![A-Za-z0-9])(${KEY_ALTERNATION})=([^&#\\s"
 // "key": "value" in a JSON document. The value is a JSON string.
 const JSON_KEY = new RegExp(`"(${KEY_ALTERNATION})"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, "gi");
 
-export const REDACTED = "[REDACTED]";
+export const REDACTED = REDACTED_PLACEHOLDER;
 
 export function redactText(text: string): { text: string; count: number } {
   let count = 0;

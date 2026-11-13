@@ -31,7 +31,10 @@ interface SarifResult {
   readonly ruleIndex?: number;
   readonly rule?: SarifRuleRef;
   readonly locations?: readonly {
-    readonly physicalLocation?: { readonly artifactLocation?: { readonly uri?: string } };
+    readonly physicalLocation?: {
+      readonly artifactLocation?: { readonly uri?: string };
+      readonly region?: { readonly startLine?: number };
+    };
   }[];
   readonly partialFingerprints?: { readonly primaryLocationLineHash?: string };
 }
@@ -50,6 +53,8 @@ interface Sarif {
 export interface CodeqlScan {
   readonly outcome: ScanOutcome;
   readonly current: ReadonlySet<string>;
+  // Diagnostic only: "rule uri line N" for each blocking alert. Never part of the verdict or the baseline.
+  readonly alerts?: readonly string[];
 }
 
 // Resolves a result's rule. (a) rule.toolComponent.index picks an extension, then rule.index picks its rule;
@@ -98,6 +103,7 @@ export function scanCodeql(
   }
   const current = new Set<string>();
   const blocking: string[] = [];
+  const alerts: string[] = [];
   for (const result of run.results ?? []) {
     const ruleId = result.ruleId ?? result.rule?.id ?? "";
     const uri = result.locations?.[0]?.physicalLocation?.artifactLocation?.uri ?? "";
@@ -114,12 +120,14 @@ export function scanCodeql(
     if (matchAcceptedRisk(accepted, { tool: "codeql", fingerprint: fp }, today) === "suppressed")
       continue;
     blocking.push(fp);
+    const line = result.locations?.[0]?.physicalLocation?.region?.startLine;
+    alerts.push(`${ruleId} ${uri} line ${line ?? "?"}`);
   }
   const outcome: ScanOutcome =
     blocking.length === 0
       ? { verdict: "pass", reason: "no NEW High or Critical in owned code", blocking }
       : { verdict: "fail", reason: "NEW High or Critical in owned code", blocking };
-  return { outcome, current };
+  return { outcome, current, alerts };
 }
 
 export function evaluateCodeql(
@@ -146,6 +154,7 @@ function main(argv: readonly string[]): number {
   };
   const accepted = ledger.accepted_risks ?? [];
   const scan = scanCodeql(sarifPath, activeFingerprints(baseline, nowIso), accepted, today);
+  for (const alert of scan.alerts ?? []) console.error(`codeql blocking alert: ${alert}`);
   const stale = scan.outcome.verdict === "pass" ? staleFingerprints(baseline, scan.current) : [];
   const verdict = scan.outcome.verdict === "pass" && stale.length === 0 ? "pass" : "fail";
   if (verdict === "fail")
