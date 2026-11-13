@@ -1,6 +1,6 @@
 // Vendored from Jayami123/k6-load-concurrency-suite commit 0533e61 scripts/evidence-token-scan.mjs. Change here only with a reason in the PR.
 // Scans evidence files for tokens before they go into a release.
-// Prints file and line only. The matched text is never printed.
+// Prints file, line and the rule label only (the label names the rule; the matched text is never printed).
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +21,35 @@ export const PATTERNS = [
   /'(?:password|secret|token|api_key|apiKey)'\s*:\s*'(?:[^'\\]|\\.)+'/i,
 ];
 
+// One label per PATTERNS entry, in the same order. A label describes the rule shape, never a value.
+/** @type {string[]} */
+export const RULE_LABELS = [
+  "api_ identifier shape",
+  "Bearer header text",
+  "sessionId name",
+  "GitHub token shape (gh prefix)",
+  "GitHub fine-grained token shape",
+  "JWT shape",
+  "Authorization header name",
+  "name=value assignment (password, secret or token)",
+  "cookie or authorization JSON key",
+  "credential JSON key with a value",
+  "credential key with a single-quoted value",
+];
+
+/** @param {string} text @returns {{ line: number, rule: string }[]} */
+export function findRuleHits(text) {
+  /** @type {{ line: number, rule: string }[]} */
+  const hits = [];
+  text.split("\n").forEach((line, index) => {
+    PATTERNS.forEach((pattern, rule) => {
+      if (pattern.test(line))
+        hits.push({ line: index + 1, rule: RULE_LABELS[rule] ?? "unlabelled rule" });
+    });
+  });
+  return hits;
+}
+
 /** @param {string} text @returns {number[]} */
 export function findHits(text) {
   /** @type {number[]} */
@@ -39,10 +68,14 @@ function listFiles(dir) {
   });
 }
 
-/** @param {string} root @returns {{ file: string, lines: number[] }[]} */
+/** @param {string} root @returns {{ file: string, lines: number[], rules: { line: number, rule: string }[] }[]} */
 export function scanTree(root) {
   return listFiles(root)
-    .map((file) => ({ file: relative(root, file), lines: findHits(readFileSync(file, "utf8")) }))
+    .map((file) => {
+      const text = readFileSync(file, "utf8");
+      const rules = findRuleHits(text);
+      return { file: relative(root, file), lines: findHits(text), rules };
+    })
     .filter((hit) => hit.lines.length > 0);
 }
 
@@ -53,8 +86,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(2);
   }
   const hits = scanTree(root);
-  for (const { file, lines } of hits)
-    console.error(`TOKEN PATTERN: ${file} line ${lines.join(", ")}`);
+  for (const { file, rules } of hits)
+    for (const { line, rule } of rules)
+      console.error(`TOKEN PATTERN: ${file} line ${line} rule ${rule}`);
   if (hits.length > 0) {
     console.error("stop: nothing was uploaded");
     process.exit(1);

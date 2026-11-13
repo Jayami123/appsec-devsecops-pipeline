@@ -5,11 +5,10 @@ name: p5-zap-nightly
 # workflow_call exists only so that p5-scans.yml can run it on a manual dispatch (its zap-nightly job, off by default).
 # ci.yml never calls this file, and a pull request never reaches a job here (master plan 9.10).
 #
-# O-10: the schedule is declared, but every job is gated on workflow_dispatch, so the cron starts nothing until the
-# owner enables it. Active scanning (D11) is not wired here: mode=active fails closed in the plan job.
+# O-10: there is no schedule trigger until the owner enables it (D-ZAP-B27). Enabling means adding a schedule with
+# cron "0 1 * * *" and removing the workflow_dispatch gate on the jobs. Active scanning (D11) is not wired here:
+# mode=active fails closed in the plan job.
 on:
-  schedule:
-    - cron: "0 1 * * *"
   workflow_call:
     inputs:
       mode:
@@ -90,7 +89,11 @@ jobs:
           printf '%s\n' '<!doctype html><html><head><title>zap positive control</title></head><body><h1>local fixture</h1><p>no security headers on purpose</p></body></html>' > "$RUNNER_TEMP/control-www/index.html"
           python3 -m http.server 8765 --bind 127.0.0.1 --directory "$RUNNER_TEMP/control-www" > "$RUNNER_TEMP/control-http.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/control-http.pid"
-          timeout 30 bash -c 'until curl -sf -o /dev/null "$TARGET"; do sleep 1; done'
+          for _ in $(seq 1 30); do
+            if curl -sf -o /dev/null "$TARGET"; then break; fi
+            sleep 1
+          done
+          curl -sf -o /dev/null "$TARGET"
       - name: Positive-control scan (the same image and committed rules)
         run: |
           set -euo pipefail

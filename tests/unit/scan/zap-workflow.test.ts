@@ -38,8 +38,8 @@ function triggers(): string[] {
   return keys;
 }
 
-test("the triggers are schedule, workflow_call (used only by p5-scans on a dispatch) and workflow_dispatch; no pull_request or push", () => {
-  assert.deepEqual([...triggers()].sort(), ["schedule", "workflow_call", "workflow_dispatch"]);
+test("the triggers are workflow_call (used only by p5-scans on a dispatch) and workflow_dispatch; no schedule until O-10, no pull_request or push", () => {
+  assert.deepEqual([...triggers()].sort(), ["workflow_call", "workflow_dispatch"]);
 });
 
 test("ci.yml never calls the zap workflow, and the p5-scans hook is dispatch-only and off by default", () => {
