@@ -51,11 +51,11 @@ function runHook(env: Record<string, string>): { status: number | null; stderr: 
   return { status: result.status, stderr: result.stderr };
 }
 
-test("package.json pins qa-portfolio-harness to v0.4.0", () => {
+test("package.json pins qa-portfolio-harness to v0.5.0", () => {
   const pkg = JSON.parse(readRepo("package.json")) as { dependencies?: Record<string, string> };
   assert.equal(
     pkg.dependencies?.["qa-portfolio-harness"],
-    "github:Jayami123/qa-portfolio-harness#v0.4.0",
+    "github:Jayami123/qa-portfolio-harness#v0.5.0",
   );
 });
 

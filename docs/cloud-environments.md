@@ -178,7 +178,7 @@ settings by hand. A committed file does not activate them.
    | `ghcr.io`, `pkg-containers.githubusercontent.com` | the ZAP image (GitHub Container Registry). The blob host is UNVERIFIED until the first pull |
    | `pypi.org`, `files.pythonhosted.org` | pip packages |
 
-   Registry check (grep only; no compose file was run). The harness pin is `v0.4.0` (PR #22, merged). The grep was of the v0.4.0 tag's `docker/*.yml` (commit `31cafc0`).
+   Registry check (grep only; no compose file was run). The harness pin is `v0.5.0` (foundation PR for this release). The grep below was of the v0.4.0 tag's `docker/*.yml` (commit `31cafc0`, PR #22). The v0.5.0 additions are `ghcr.io/navikt/mock-oauth2-server:2.1.11@sha256:…` (opt-in `DOCUMENSO_OIDC=1`, GitHub Container Registry, so the `ghcr.io` and `pkg-containers.githubusercontent.com` rows above cover it; the blob host is UNVERIFIED until the first pull) and `axllent/mailpit:v1.22.3@sha256:…` (`up cal`, Docker Hub).
    The v0.3.1 copy (the pin before #22) named the same images, except the Twenty Redis digest pin. Images found: `postgres:15` (Documenso,
    Medusa), `redis:7` (Medusa, Cal), `inbucket/inbucket`, `axllent/mailpit:v1.22.3`, `twentycrm/twenty:${TAG:-v2.44.0}`,
    `gotenberg/gotenberg:8@sha256:…`, and `redis:8.10.3@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53`
@@ -227,7 +227,7 @@ The pin is `requirements/schemathesis.in` (`schemathesis==4.33.1`) and the fully
 
 ## PRODUCTS_ROOT (one value for bootstrap and the harness)
 
-The harness reads `PRODUCTS_ROOT` only from the process environment and resolves an unset or relative value against the current directory (harness v0.4.0 `src/config.ts:11`, `:37-48`). So: always export an absolute `PRODUCTS_ROOT` before bootstrap and harness commands. Cloud setup (`scripts/cloud-install.sh`) and the SessionStart hook (`.claude/hooks/session-start.sh`) default to `$HOME/products` when `PRODUCTS_ROOT` is unset; an explicit `PRODUCTS_ROOT` still wins; an unset `HOME` with no `PRODUCTS_ROOT` fails with a clear error. That default is writable on both clouds: Claude Code cloud uses the cloud user's `HOME`, and Cursor cloud uses `/home/ubuntu` (`.cursor/Dockerfile` `USER ubuntu`). Locally, run `bash scripts/bootstrap.sh --print-products-root` to see the path bootstrap will use; when the value came from `.env` or the default, bootstrap prints the exact `export PRODUCTS_ROOT=...` line. Bootstrap's own default is `../products` next to this repository; a relative value or an unwritable default fails instead of falling back to `$HOME/products`. In CI, every lane job that clones or calls the harness sets it for the whole job, first step: `echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"` (enforced by `tests/unit/ci/workflow.test.ts`).
+The harness reads `PRODUCTS_ROOT` only from the process environment and resolves an unset or relative value against the current directory (harness v0.5.0 `src/config.ts:57` and `resolveProductsRoot`). So: always export an absolute `PRODUCTS_ROOT` before bootstrap and harness commands. Cloud setup (`scripts/cloud-install.sh`) and the SessionStart hook (`.claude/hooks/session-start.sh`) default to `$HOME/products` when `PRODUCTS_ROOT` is unset; an explicit `PRODUCTS_ROOT` still wins; an unset `HOME` with no `PRODUCTS_ROOT` fails with a clear error. That default is writable on both clouds: Claude Code cloud uses the cloud user's `HOME`, and Cursor cloud uses `/home/ubuntu` (`.cursor/Dockerfile` `USER ubuntu`). Locally, run `bash scripts/bootstrap.sh --print-products-root` to see the path bootstrap will use; when the value came from `.env` or the default, bootstrap prints the exact `export PRODUCTS_ROOT=...` line. Bootstrap's own default is `../products` next to this repository; a relative value or an unwritable default fails instead of falling back to `$HOME/products`. In CI, every lane job that clones or calls the harness sets it for the whole job, first step: `echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"` (enforced by `tests/unit/ci/workflow.test.ts`).
 
 ## Claude Code
 
@@ -291,7 +291,7 @@ Cursor stays on its existing lean selection until the owner selects this reposit
 
 ## Lockfile and transport evidence (`qa-portfolio-harness`)
 
-- The lock records the harness as `git+ssh://git@github.com/Jayami123/qa-portfolio-harness.git#31cafc0844d441a8567db89cd18612300c3d4b77` (tag `v0.4.0`; the v0.3.1 pin recorded `7d4a3ae`).
+- The lock records the harness as `git+ssh://git@github.com/Jayami123/qa-portfolio-harness.git#9cddd6808acefc791aebee60cbc203794b293981` (tag `v0.5.0`, peeled; the v0.4.0 pin recorded `31cafc0`, and v0.3.1 recorded `7d4a3ae`).
 - A fresh scratch `npm ci` (npm 10.9.9, empty npm cache, inherited sandbox CA and proxy variables kept,
   injected Git rewrites removed with `GIT_CONFIG_COUNT=0`, `GIT_CONFIG_GLOBAL=/dev/null`,
   `GIT_CONFIG_NOSYSTEM=1`, and SSH forced to fail with `GIT_SSH=/bin/false`) **exited 0** and installed the
