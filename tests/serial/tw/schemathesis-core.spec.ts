@@ -2,7 +2,7 @@
 // throwaway key returned 200 application/json on the stack (403 without a key). The control is that read.
 // The negative runs Schemathesis (pinned lock, requirements/schemathesis.txt) on the core document, with
 // FUZZ_MAX_EXAMPLES (examples) and FUZZ_WALL_MIN (wall clock) by name. The oracle: no 5xx.
-// The bearer reaches Schemathesis through the environment (src/lanes/tw/schemathesis_hooks.py), never argv.
+// The bearer reaches Schemathesis through the environment fork ref held by the owner), never argv.
 import { execFile } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -23,6 +23,31 @@ import { BUDGETS } from "../../../src/security/budgets.ts";
 
 const execute = promisify(execFile);
 const HOOKS_DIR = fileURLToPath(new URL("../../../src/lanes/tw", import.meta.url));
+
+/**
+ * Parses the core document and accepts it only when it is a JSON object with `openapi` and `paths`.
+ * The error text is generic: a malformed body is never echoed into the test output.
+ */
+function parseOpenApiDocument(body: string): Record<string, unknown> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    throw new Error("the core OpenAPI document is not valid JSON");
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error("the core OpenAPI document is not a JSON object");
+  }
+  const document = parsed as Record<string, unknown>;
+  if (
+    typeof document.openapi !== "string" ||
+    typeof document.paths !== "object" ||
+    document.paths === null
+  ) {
+    throw new Error("the core document lacks the OpenAPI `openapi` and `paths` members");
+  }
+  return document;
+}
 
 /** Runs Schemathesis. Returns the exit code and a count summary only (the output can echo headers). */
 async function runSchemathesis(input: {
@@ -111,7 +136,10 @@ test("P5-TW-FUZZ-001: generated examples on the core OpenAPI path never return 5
   const document = await fetch(`${base}${CORE_OPENAPI_PATH}`, {
     headers: { authorization: `Bearer ${key.secret}` },
   });
-  writeFileSync(schemaFile, await document.text());
+  expect(document.status, "the core OpenAPI document is served (2xx)").toBeLessThan(300);
+  // Only the re-serialised object is written, never the raw response body.
+  const schema = parseOpenApiDocument(await document.text());
+  writeFileSync(schemaFile, JSON.stringify(schema));
 
   const outcome = await runSchemathesis({
     args: schemathesisArgs({ schemaFile, baseUrl: base }),
