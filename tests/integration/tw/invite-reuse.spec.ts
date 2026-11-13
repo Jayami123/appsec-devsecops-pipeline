@@ -1,8 +1,7 @@
 // NEW-TW-5 reuse (tw-api). An invite is sent to a throwaway invitee and accepted once (control, joins
 // the workspace). The second accept with the same invite hash must be refused, with the membership
-// unchanged. Observed on the live stack: the second accept with the same correct password succeeded
-// (re-authentication, no membership change); a different password was refused and the original
-// password still works, so no takeover was observed. The planned oracle (refused) is asserted as written.
+// unchanged. Detail of the observed behaviour is held by the owner (private-first). The planned oracle is
+// asserted as written.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import {
@@ -21,7 +20,7 @@ import {
   recipeRootUrl,
 } from "./multiws-support.ts";
 
-test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
+test("NEW-TW-5: invite acceptance, repeated use", async ({ run }) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const email = throwawayEmail(run.prefix, "reuse");
@@ -43,16 +42,12 @@ test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
     refused = true;
     message = error instanceof Error ? error.message.slice(0, 120) : "unknown";
   }
-  // PRODUCT BUG (CONFIRMED, round 2 tw-api: control and negative), marked before the unchanged assertion (owner decision 2). Fork: the invite
-  // path is auth.resolver.ts:523-532 (signUpInWorkspace, metadata). Live: the second accept with the same
-  // correct password returned success; a different password was refused (no takeover observed).
-  expectedDefect(
-    "NEW-TW-5: second accept of one invite hash succeeds for the same member. Fork: auth.resolver.ts:523-532 (signUpInWorkspace). Live (tw-api run): same password accepted, different password refused, membership unchanged.",
-  );
+  // PRODUCT BUG (CONFIRMED), marked before the unchanged assertion (owner decision 2). Detail held by the owner.
+  expectedDefect("NEW-TW-5: second acceptance succeeded (status 2xx; detail held by the owner).");
   expect(refused, `the second accept is refused (${message || "accepted"})`).toBe(true);
 });
 
-// NEW-TW-5 cross-workspace half (tw-multiws, D-TW-B46). PRODUCT BUG (CONFIRMED, D-TW-B54): control and negative reproduced. An invite issued by workspace A is accepted by a user of
+// NEW-TW-5 cross-workspace half (tw-multiws, D-TW-B46). PRODUCT BUG (CONFIRMED, D-TW-B54): control and negative reproduced (detail held by the owner). An invite issued by workspace A is accepted by a user of
 // workspace B. Setup (asserted first): the recipe is on the stack and lvh.me resolves to loopback. Owner A and owner
 // B are throwaway owners of their own workspaces; the invitee is a throwaway email the owner of A invites to A.
 // Control: the invitee accepts A's invite on A's origin (membership of A is created).

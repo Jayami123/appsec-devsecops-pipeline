@@ -3,7 +3,7 @@
 // from the environment (src/lanes/tw/schemathesis_hooks.py).
 import { BUDGETS } from "../../security/budgets.ts";
 
-/** The core OpenAPI document (ROUTE probed live: 200 with a key, 403 without). */
+/** The core OpenAPI document (the route requires a key). */
 export const CORE_OPENAPI_PATH = "/rest/open-api/core";
 
 /**

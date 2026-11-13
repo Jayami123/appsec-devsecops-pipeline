@@ -114,7 +114,7 @@ test("P5-TW-2FA-001: a burst of wrong one-time codes is limited or recorded", as
     const code = String(guess).padStart(6, "0");
     if (!valid.has(code)) wrongCodes.push(code);
   }
-  // A refused OTP is HTTP 200 with a GraphQL error (live), so the outcome is classified from the
+  // A refused OTP can be returned as HTTP 200 with a GraphQL error, so the outcome is classified from the
   // reply's ok and limited fields, never from the HTTP status alone.
   const outcomes: Array<"accepted" | "limited" | "refused"> = [];
   const burst = await runBurst({

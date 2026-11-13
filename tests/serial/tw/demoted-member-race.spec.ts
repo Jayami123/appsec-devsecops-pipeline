@@ -1,6 +1,6 @@
 // NEW-TW-6 (tw-serial; D-TW-B10). A throwaway member M is invited as Admin (control: M's update of a
 // company is 2xx and persisted). Each trial restores Admin, then sends the demotion of M
-// (updateWorkspaceMemberRole, role.resolver.ts:107) and M's update of the same company together. The
+// (the role-change mutation) and M's update of the same company together. The
 // per-trial oracle: 2xx and persisted, or 4xx and unchanged, never 5xx. Deterministic sub-check: after the
 // demotion response, M's next update is sent alone and must be refused and not persisted.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
@@ -18,9 +18,7 @@ import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { roleIdByLabel } from "../../../src/lanes/tw/keys.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 
-test("NEW-TW-6: a demoted member's concurrent update is 2xx-and-persisted or 4xx-and-unchanged, never 5xx", async ({
-  run,
-}, testInfo) => {
+test("NEW-TW-6: role change and concurrent update, status check", async ({ run }, testInfo) => {
   const base = apiBaseUrl("twenty");
   const admin = await adminSetupSession(base); // setup only (D-TW-B5)
   const adminRole = await roleIdByLabel({ baseUrl: base, session: admin, label: "Admin" });
@@ -138,11 +136,9 @@ test("NEW-TW-6: a demoted member's concurrent update is 2xx-and-persisted or 4xx
   await setRole(restricted);
   const beforeSequential = await readName();
   const sequential = await update(`${run.prefix}-after-demotion`);
-  // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Fork:
-  // user-role.service.ts:95-135 assigns with createMany only (:126) and never removes the prior role target.
-  // Live: a demoted member's update is accepted for at least 5.2 s, persisted, also on a fresh sign-in.
+  // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Detail held by the owner.
   expectedDefect(
-    "NEW-TW-6: a demoted member keeps the prior role's write access. Fork: user-role.service.ts:126 (createMany only; no delete of the previous role target). Live (demoted-member-race run): post-demotion update accepted and persisted.",
+    "NEW-TW-6: update after role change succeeded (status 2xx; detail held by the owner).",
   );
   expect(
     sequential.status >= 400 && sequential.status < 500,

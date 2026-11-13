@@ -1,4 +1,4 @@
-// P5-TW-FUZZ-001 (tw-serial). Gate lifted by live evidence (D-TW-B9): GET /rest/open-api/core with a
+// P5-TW-FUZZ-001 (tw-serial). Gate lifted (D-TW-B9): GET /rest/open-api/core with a
 // throwaway key returned 200 application/json on the stack (403 without a key). The control is that read.
 // The negative runs Schemathesis (pinned lock, requirements/schemathesis.txt) on the core document, with
 // FUZZ_MAX_EXAMPLES (examples) and FUZZ_WALL_MIN (wall clock) by name. The oracle: no 5xx.

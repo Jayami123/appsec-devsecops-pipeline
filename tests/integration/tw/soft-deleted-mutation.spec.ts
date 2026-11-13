@@ -1,7 +1,7 @@
 // NEW-TW-7 (tw-api; pairs with MI-17). The control is a GraphQL updateCompany on a live company (data
-// API, /graphql). The record is soft-deleted (REST DELETE /rest/companies/:id, 200 on the live stack),
-// then the same GraphQL mutation is sent. The oracle: refused (the live stack returns "Record not
-// found") and the record is still absent from a REST read after the refused mutation.
+// API, /graphql). The record is soft-deleted (REST DELETE /rest/companies/:id),
+// then the same GraphQL mutation is sent. The oracle: refused, and the record is still absent from a REST read after
+// the refused mutation.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
 import { adminSetupSession } from "../../../src/lanes/tw/login.ts";

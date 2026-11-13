@@ -1,8 +1,8 @@
 // P5-TW-RLS-001 (MI-17) (tw-api). The hidden-record title of RLS-001 is GATED (see the PR body): row-level predicates
-// need an enterprise plan and the RLS billing entitlement (row-level-permission-predicate.service.ts:569-573 and the
-// feature check at :579), which the harness stack does not provide. This file builds only the MI-17 case: a
+// need an enterprise plan and a billing entitlement, which the harness stack does not provide (detail held by the
+// owner). This file builds only the MI-17 case: a
 // soft-deleted record is absent from search. Control: the live record is in search (REST list, filter by name).
-// Negative: after DELETE /rest/companies/:id (soft delete, 200 live), the record is absent from the same search and
+// Negative: after DELETE /rest/companies/:id (soft delete, status 200), the record is absent from the same search and
 // the id read returns no entity. Before and after state is recorded for the mutation.
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { apiBaseUrl } from "../../../src/kit/env.ts";
