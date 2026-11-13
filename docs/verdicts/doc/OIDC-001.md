@@ -20,3 +20,8 @@
 ## CI status (round 13)
 
 - Runs 43408976457 (head `a1003ad`) and 43409454536 (head `bbd50fe`): the three OIDC-001 titles failed before any request reached the provider, with `DOCUMENSO_OIDC_NOT_ENABLED` (TEST BUG in job configuration, D-DOC-B90). The fix is `0d90ff7`. No verdict is recorded from these runs (D-DOC-B91).
+
+## Live result (round 14, D-DOC-B92)
+
+- CI run 43412270906 (head `0d90ff7`), job `doc-oidc`: 3 of 3 titles PASS (control; consumed-state replay refused; mismatched state refused with a fresh control). Verdict: PASS for the run. The ledger status is unchanged in this PR.
+- Scope limit unchanged: the replay asserted is the consumed state cookie, and no provider-side rejection is asserted.

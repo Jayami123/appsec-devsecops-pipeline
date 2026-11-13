@@ -19,3 +19,8 @@
 ## CI status (round 13)
 
 - Runs 43408976457 (head `a1003ad`) and 43409454536 (head `bbd50fe`): the two OIDC-002 titles failed before any request reached the provider, with `DOCUMENSO_OIDC_NOT_ENABLED` (TEST BUG in job configuration, D-DOC-B90). The fix is `0d90ff7`. No verdict is recorded from these runs (D-DOC-B91).
+
+## Live result (round 14, D-DOC-B92)
+
+- CI run 43412270906 (head `0d90ff7`), job `doc-oidc`: 2 of 2 titles PASS (verified control signs in; unverified provider login for an existing local account refused, with the local sign-in status identical before and after). Verdict: PASS for the run. The ledger status is unchanged in this PR.
+- Scope limit unchanged: the account-state check is the before and after local sign-in status, and no provider-side rejection is asserted.
