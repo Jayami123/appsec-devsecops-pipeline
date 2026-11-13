@@ -146,16 +146,26 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
   const listedInB =
     crossId !== undefined &&
     (await readRest({ url: listUrl, bearer: b.admin.accessToken })).text.includes(crossId);
-  // Expected defect only when the defect reproduces: a 201 for A's key on B's origin, and the row is listed in A or B.
-  // Evidence is status only (private-first).
-  if (negative.status === 201 && (listedInA || listedInB)) {
+  // Expected defect only when the row is listed in B's workspace: A's key wrote into B (a cross-tenant write). Evidence is
+  // status only (private-first).
+  if (negative.status === 201 && listedInB) {
     expectedDefect(
-      "NEW-TW-2: a key of one workspace creates a webhook on another workspace's origin (status 201, row listed). Private-first: details held by the owner.",
+      "NEW-TW-2: a key of one workspace creates a webhook in another workspace (status 201, row listed in that workspace). Private-first: details held by the owner.",
     );
   }
-  expect([400, 401, 403], `negative: A's key is refused on B (HTTP ${negative.status})`).toContain(
-    negative.status,
-  );
+  // A 201 with the row in A is the key writing into its own workspace: correct behaviour, not a cross-tenant defect.
+  // It is recorded as an observation (the origin is not bound to the key's workspace), and the row is removed in cleanup.
+  const rowInKeyWorkspace = negative.status === 201 && listedInA && !listedInB;
+  test.info().annotations.push({
+    type: "observation",
+    description: rowInKeyWorkspace
+      ? "origin not bound to the key's workspace: 201 with the row in the key's workspace (not a cross-tenant write)"
+      : `negative status ${negative.status}`,
+  });
+  expect(
+    rowInKeyWorkspace || [400, 401, 403].includes(negative.status),
+    `negative: A's key is refused on B or writes into A only (HTTP ${negative.status})`,
+  ).toBe(true);
   const after = await readRest({ url: listUrl, bearer: b.admin.accessToken });
   expect(after.text, "negative: B's webhook list is unchanged").toEqual(before.text);
 });

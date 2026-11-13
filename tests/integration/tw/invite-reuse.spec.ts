@@ -43,7 +43,7 @@ test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
     refused = true;
     message = error instanceof Error ? error.message.slice(0, 120) : "unknown";
   }
-  // PRODUCT BUG (SUSPECTED), marked before the unchanged assertion (owner decision 2). Fork: the invite
+  // PRODUCT BUG (CONFIRMED, round 2 tw-api: control and negative), marked before the unchanged assertion (owner decision 2). Fork: the invite
   // path is auth.resolver.ts:523-532 (signUpInWorkspace, metadata). Live: the second accept with the same
   // correct password returned success; a different password was refused (no takeover observed).
   expectedDefect(
@@ -52,7 +52,7 @@ test("NEW-TW-5: an invite token cannot be accepted twice", async ({ run }) => {
   expect(refused, `the second accept is refused (${message || "accepted"})`).toBe(true);
 });
 
-// NEW-TW-5 cross-workspace half (tw-multiws, D-TW-B46). An invite issued by workspace A is accepted by a user of
+// NEW-TW-5 cross-workspace half (tw-multiws, D-TW-B46). PRODUCT BUG (CONFIRMED, D-TW-B54): control and negative reproduced. An invite issued by workspace A is accepted by a user of
 // workspace B. Setup (asserted first): the recipe is on the stack and lvh.me resolves to loopback. Owner A and owner
 // B are throwaway owners of their own workspaces; the invitee is a throwaway email the owner of A invites to A.
 // Control: the invitee accepts A's invite on A's origin (membership of A is created).

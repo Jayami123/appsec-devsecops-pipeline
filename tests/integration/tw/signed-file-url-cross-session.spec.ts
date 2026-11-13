@@ -4,6 +4,7 @@
 // Control: the signed URL read on A's origin: 200 and the PNG bytes.
 // Negative: the same path and query, presented to B's origin with B's session (A's file reached from B's workspace).
 // Oracle: refused (4xx), and no PNG bytes in the body.
+// PRODUCT BUG (CONFIRMED, D-TW-B54): control and negative reproduced (run 43409729454).
 import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import {
