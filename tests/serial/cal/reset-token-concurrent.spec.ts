@@ -8,6 +8,7 @@ import { test, expect } from "../../../src/lanes/cal/run-fixture.ts";
 import { loadEnv } from "../../../src/kit/env.ts";
 import { catcherMessagesFor } from "../../../src/lanes/cal/mail.ts";
 import { createThrowawayActor, labelFor, type CalActor } from "../../../src/lanes/cal/actor.ts";
+import { throwawayPassword } from "../../../src/lanes/cal/login.ts";
 import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { BUDGETS } from "../../../src/security/budgets.ts";
 import { currentRunPrefix } from "../../../src/kit/run/prefix.ts";
@@ -55,7 +56,7 @@ async function redeem(actor: CalActor, requestId: string, token: string): Promis
     headers: { "content-type": "application/json" },
     data: {
       csrfToken: token,
-      password: `Bb2@${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}Reset`,
+      password: throwawayPassword(),
       requestId,
     },
   });
