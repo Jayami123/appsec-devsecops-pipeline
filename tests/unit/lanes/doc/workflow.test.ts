@@ -19,8 +19,8 @@ function jobBlock(name: string): string {
   return (next < 0 ? rest : rest.slice(0, next)).join("\n");
 }
 
-test("p5-doc.yml has doc-api and doc-serial, each timeout 60 and contents: read", () => {
-  for (const name of ["doc-api", "doc-serial"]) {
+test("p5-doc.yml has doc-api, doc-serial and doc-oidc, each timeout 60 and contents: read", () => {
+  for (const name of ["doc-api", "doc-serial", "doc-oidc"]) {
     const body = jobBlock(name);
     assert.ok(body.length > 0, `${name} job missing`);
     assert.match(body, /^ {4}timeout-minutes: 60\b/m, `${name} timeout`);
@@ -39,7 +39,7 @@ test("p5-doc.yml references no secrets expression", () => {
 });
 
 test("every p5-doc job pins NODE24 from setup-node 24.22.0 and runs harness down under if: always()", () => {
-  for (const name of ["doc-api", "doc-serial"]) {
+  for (const name of ["doc-api", "doc-serial", "doc-oidc"]) {
     const body = jobBlock(name);
     assert.match(body, /node-version: 24\.22\.0/, `${name} Node 24 pin`);
     assert.match(body, /NODE24=\$\(command -v node\)/, `${name} NODE24 capture`);
@@ -61,8 +61,8 @@ test("every p5-doc playwright step passes --trace off", () => {
   for (const run of runs) assert.match(run, /--trace off/, run);
 });
 
-test("both doc jobs run on ubuntu-24.04 and their bootstrap step skips browser downloads", () => {
-  for (const name of ["doc-api", "doc-serial"]) {
+test("every doc job runs on ubuntu-24.04 and their bootstrap step skips browser downloads", () => {
+  for (const name of ["doc-api", "doc-serial", "doc-oidc"]) {
     const body = jobBlock(name);
     assert.match(body, /^ {4}runs-on: ubuntu-24\.04$/m, `${name} runner pin`);
     assert.doesNotMatch(body, /runs-on: ubuntu-latest/, `${name} must not float to ubuntu-latest`);
@@ -84,8 +84,8 @@ test("both doc jobs run on ubuntu-24.04 and their bootstrap step skips browser d
   }
 });
 
-test("both doc jobs print masked Documenso web log evidence only on failure", () => {
-  for (const name of ["doc-api", "doc-serial"]) {
+test("every doc job prints masked Documenso web log evidence only on failure", () => {
+  for (const name of ["doc-api", "doc-serial", "doc-oidc"]) {
     const body = jobBlock(name);
     const start = body.indexOf("      - name: Documenso web log");
     assert.ok(start >= 0, `${name} evidence step`);
@@ -93,5 +93,57 @@ test("both doc jobs print masked Documenso web log evidence only on failure", ()
     assert.match(step, /^ {8}if: failure\(\)$/m, `${name} evidence runs only on failure`);
     assert.match(step, /documenso-web\.log/, `${name} evidence reads the server log`);
     assert.match(step, /sed -E .*\*\*\*/, `${name} evidence masks credential values`);
+  }
+});
+
+// The OIDC rows (D-DOC-B72): their own job, the mock provider on that job only, and the stock jobs keep the stock stack.
+test("doc-oidc sets DOCUMENSO_OIDC to exactly 1 on the start step and the run step, and nowhere else", () => {
+  // Comment lines may name the flag; the assertion counts only lines that set it.
+  const flagLines = lane
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("#") && line.includes("DOCUMENSO_OIDC"));
+  assert.equal(flagLines.length, 2, "two DOCUMENSO_OIDC settings in the workflow (start and run)");
+  const body = jobBlock("doc-oidc");
+  const start = body.indexOf("      - name: Start documenso with the mock OIDC provider");
+  assert.ok(start >= 0, "doc-oidc start step");
+  const step = body.slice(start, body.indexOf("\n      - name:", start + 1));
+  assert.match(step, /^ {10}DOCUMENSO_OIDC: "1"$/m, "flag on the start step");
+  // The run step reads the seeded users through the harness reader, which requires the same flag.
+  const runStart = body.indexOf("      - name: Run the OIDC rows");
+  assert.ok(runStart >= 0, "doc-oidc run step");
+  const runStep = body.slice(runStart, body.indexOf("\n      - name:", runStart + 1));
+  assert.match(runStep, /^ {10}DOCUMENSO_OIDC: "1"$/m, "flag on the run step");
+  assert.match(step, /run: node node_modules\/qa-portfolio-harness\/scripts\/up\.mjs documenso/);
+  assert.doesNotMatch(jobBlock("doc-api"), /DOCUMENSO_OIDC/, "stock job has no flag");
+  assert.doesNotMatch(jobBlock("doc-serial"), /DOCUMENSO_OIDC/, "serial job has no flag");
+});
+
+test("the stock doc-api job excludes the OIDC titles, and doc-oidc runs only them", () => {
+  assert.match(
+    jobBlock("doc-api"),
+    /npx playwright test --project=doc --grep-invert "OIDC-00" --trace off/,
+  );
+  assert.match(
+    jobBlock("doc-oidc"),
+    /npx playwright test --project=doc --grep "OIDC-00" --trace off/,
+  );
+  assert.match(jobBlock("doc-oidc"), /prepare-ci-artifacts\.ts doc-oidc /);
+  assert.match(jobBlock("doc-oidc"), /write-ci-job-summary\.ts doc-oidc /);
+  assert.match(jobBlock("doc-oidc"), /name: p5-doc-oidc-report/);
+});
+
+test("doc-oidc needs no other job and runs on its own stack", () => {
+  assert.doesNotMatch(jobBlock("doc-oidc"), /^ {4}needs:/m);
+});
+
+// The harness state folder (web log, env) is never an upload path (owner instruction, round 10).
+test("no p5-doc upload path names the harness state folder", () => {
+  const uploads = [
+    ...lane.matchAll(/uses: actions\/upload-artifact@[^\n]*\n(?:[^\n]*\n){1,12}?/g),
+  ].map((m) => m[0]);
+  assert.ok(uploads.length >= 3, "one upload per doc job");
+  for (const block of uploads) {
+    assert.doesNotMatch(block, /\.harness/, block);
+    assert.doesNotMatch(block, /documenso-web\.log/, block);
   }
 });

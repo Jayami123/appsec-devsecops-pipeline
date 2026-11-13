@@ -10,6 +10,8 @@ permissions:
 # Documenso lane (doc plan section 5). Each job runs on a fresh runner with its own Documenso stack, started
 # and stopped through the harness only. No secrets: the rows mint throwaway accounts and tokens through
 # product routes (D-DOC-B6). The Node 24.22.0 runtime for Documenso is pinned per job (D-DOC-B9).
+# doc-oidc runs the two OIDC rows on their own stack with the mock provider (DOCUMENSO_OIDC=1). The stock jobs
+# exclude those titles (--grep-invert "OIDC-00") and keep the stock stack.
 jobs:
   doc-api:
     # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
@@ -59,7 +61,7 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-doc-api.raw.json
           PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report
           PLAYWRIGHT_HTML_OPEN: never
-        run: npx playwright test --project=doc --trace off --reporter=list,json,html
+        run: npx playwright test --project=doc --grep-invert "OIDC-00" --trace off --reporter=list,json,html
       - name: Sanitise the doc-api report (private-first items reduced to ID and status)
         if: always()
         run: node scripts/prepare-ci-artifacts.ts doc-api "$RUNNER_TEMP/playwright-doc-api.raw.json" results/playwright-doc-api.json
@@ -156,6 +158,87 @@ jobs:
           path: |
             playwright-report/
             results/playwright-doc-serial.json
+            test-results/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Documenso web log, error lines only (masked; failure evidence)
+        if: failure()
+        run: |
+          grep -iE "error|uncaught|exception|fatal|signal|killed|exit" node_modules/qa-portfolio-harness/.harness/documenso-web.log | tail -n 80 | cut -c1-300 | sed -E "s/(sessionId|csrfToken|cookie|authorization|token|password|secret)[=: ][^ ]*/\\1=***/Ig" || true
+      - name: Stop documenso
+        if: always()
+        run: node node_modules/qa-portfolio-harness/scripts/down.mjs documenso
+
+  doc-oidc:
+    # Own stack with the mock OIDC provider (DOCUMENSO_OIDC=1 on the start step only). Runs the OIDC titles only (D-DOC-B72).
+    # Pinned: ubuntu-latest is ubuntu26.04, which Playwright 1.64 does not support for chromium (CI run 42974288439).
+    # Same pin as Jayami123/api-webhook-db-test-suite .github/workflows/p2-doc.yml:47 and :152 at 99a2fde.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60 # LANE_JOB_TIMEOUT_MIN doc (src/security/budgets.ts), provisional
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Set the products root and the run id for the whole job
+        run: |
+          echo "PRODUCTS_ROOT=$RUNNER_TEMP/products" >> "$GITHUB_ENV"
+          echo "P5_RUN_ID=p5-qa-$(date -u +%Y%m%dt%H%M%Sz)-$(openssl rand -hex 4)" >> "$GITHUB_ENV"
+      - name: Record the Docker server version
+        run: echo "docker server $(docker info --format '{{.ServerVersion}}')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install
+        run: npm ci
+      - name: Set up Node.js 24.22.0 for Documenso
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Pin the Node 24 path and record its npm
+        run: |
+          echo "NODE24=$(command -v node)" >> "$GITHUB_ENV"
+          echo "node24 $(node --version) npm $(npm --version)" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Set up Node.js from .nvmrc again for the harness scripts and Playwright
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Bootstrap documenso
+        # The product install must not download browsers (P2 sets the same variable: p2-doc.yml:35-36 at 99a2fde).
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: bash scripts/bootstrap.sh documenso
+      - name: Start documenso with the mock OIDC provider
+        # DOCUMENSO_OIDC must be exactly 1 (harness v0.5.0; any other value fails up). It is set on this step only.
+        env:
+          DOCUMENSO_OIDC: "1"
+        run: node node_modules/qa-portfolio-harness/scripts/up.mjs documenso
+      - name: Run the OIDC rows (titles OIDC-00x only)
+        env:
+          # The test process reads the seeded users through documensoOidcTestUsers(), which requires the same flag
+          # the start step set (harness README: exactly 1). Without it the rows fail before the provider is reached.
+          DOCUMENSO_OIDC: "1"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-doc-oidc.raw.json
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report
+          PLAYWRIGHT_HTML_OPEN: never
+        run: npx playwright test --project=doc --grep "OIDC-00" --trace off --reporter=list,json,html
+      - name: Sanitise the doc-oidc report (private-first items reduced to ID and status)
+        if: always()
+        run: node scripts/prepare-ci-artifacts.ts doc-oidc "$RUNNER_TEMP/playwright-doc-oidc.raw.json" results/playwright-doc-oidc.json
+      - name: Write the doc-oidc job summary (one row per title)
+        if: always()
+        run: node scripts/write-ci-job-summary.ts doc-oidc results/playwright-doc-oidc.json
+      - name: Upload the doc-oidc reports and test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: p5-doc-oidc-report
+          path: |
+            playwright-report/
+            results/playwright-doc-oidc.json
             test-results/
           retention-days: 7
           if-no-files-found: warn
