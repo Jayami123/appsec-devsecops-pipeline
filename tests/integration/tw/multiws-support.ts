@@ -96,58 +96,31 @@ const SIGN_UP = `mutation SignUp($email: String!, $password: String!) {
   }
 }`;
 
-// The argument shape of signUpInNewWorkspace is not recorded anywhere in this repository, and GraphQL introspection is
-// disabled on the stack (run 43401486505: "GraphQL introspection has been disabled"). The call with no argument reached
-// the resolver ("Workspace name is required"), so the field validates without arguments and the name is optional. The
-// helper tries the common shapes in order and keeps the first the product accepts. A rejected shape creates nothing
-// (validation or the resolver fails before the workspace is written), and every product message is kept for the report.
-const NEW_WORKSPACE_SHAPES: Array<(name: string) => string> = [
-  (name) => `(input: { displayName: ${JSON.stringify(name)} })`,
-  (name) => `(displayName: ${JSON.stringify(name)})`,
-  (name) => `(input: { workspaceName: ${JSON.stringify(name)} })`,
-  (name) => `(workspaceName: ${JSON.stringify(name)})`,
-  (name) => `(input: { name: ${JSON.stringify(name)} })`,
-  () => "",
-];
-
-async function createNewWorkspace(input: {
-  readonly baseUrl: string;
-  readonly bearer: string;
-  readonly name: string;
-}): Promise<string> {
-  const rejections: string[] = [];
-  for (const shape of NEW_WORKSPACE_SHAPES) {
-    try {
-      const created = await gql<{ signUpInNewWorkspace: { workspace: { id: string } } }>({
-        baseUrl: input.baseUrl,
-        endpoint: "metadata",
-        operation: "signUpInNewWorkspace",
-        query: `mutation N { signUpInNewWorkspace${shape(input.name)} { workspace { id } } }`,
-        bearer: input.bearer,
-      });
-      return created.signUpInNewWorkspace.workspace.id;
-    } catch (error) {
-      rejections.push(error instanceof Error ? error.message.slice(0, 160) : "unknown");
-    }
-  }
-  throw new Error(
-    `TEST BUG: no signUpInNewWorkspace shape was accepted: ${rejections.join(" | ")}`,
-  );
-}
-
-const SIGN_IN_LIST = `mutation SignIn($email: String!, $password: String!) {
-  signIn(email: $email, password: $password) {
-    availableWorkspaces {
-      availableWorkspacesForSignIn { id loginToken workspaceUrls { subdomainUrl } }
-    }
+/**
+ * The exact contract of signUpInNewWorkspace at the Twenty pin 7cbdfec6 (D-TW-B48):
+ * - resolver: packages/twenty-server/src/engine/core-modules/auth/auth.resolver.ts:614-620, an optional
+ *   `input: SignUpInNewWorkspaceInput`, guarded by UserAuthGuard and RequireUserSessionGuard (so the user session
+ *   token from signUp is required, not a login token);
+ * - input: packages/twenty-server/src/engine/core-modules/auth/dto/sign-up-in-new-workspace.input.ts:7-16, with
+ *   `displayName` (the workspace name, max 100) and an optional `subdomain`;
+ * - name check: packages/twenty-server/src/engine/core-modules/auth/services/sign-in-up.service.ts:699-706 throws
+ *   "Workspace name is required" when displayName is blank (the failure of run 43401486505 and 43399311588);
+ * - output: SignUpDTO (auth/dto/sign-up.dto.ts:8-13): loginToken and workspace { id, workspaceUrls }, where
+ *   workspaceUrls.subdomainUrl is the origin of the new workspace (workspace-urls.dto.ts:9).
+ * The helper sends exactly this shape, once, and takes the origin from the response.
+ */
+const SIGN_UP_IN_NEW_WORKSPACE = `mutation SignUpInNewWorkspace($input: SignUpInNewWorkspaceInput) {
+  signUpInNewWorkspace(input: $input) {
+    loginToken { token expiresAt }
+    workspace { id workspaceUrls { customUrl subdomainUrl } }
   }
 }`;
 
 /**
- * A throwaway owner with its own workspace, created through the product: sign-up (no workspace), then
- * signUpInNewWorkspace with the workspace-agnostic token. The workspace origin comes from the product's own list of
- * the owner's workspaces (workspaceUrls.subdomainUrl), so no subdomain is guessed. Each step names its operation in
- * any error, and no body is returned.
+ * A throwaway owner with its own workspace, created through the product: sign-up (no workspace) with the user session,
+ * then signUpInNewWorkspace with `displayName` set to the run-prefixed name. The workspace origin is the subdomainUrl
+ * in the response. A session on that origin is then created with the owner's credentials. Each step names its operation
+ * in any error, and no body is returned.
  */
 export async function createOwnedWorkspace(input: {
   readonly root: URL;
@@ -167,37 +140,24 @@ export async function createOwnedWorkspace(input: {
     query: SIGN_UP,
     variables: { email, password },
   });
-  const agnostic = signedUp.signUp.tokens.accessOrWorkspaceAgnosticToken.token;
+  const userSession = signedUp.signUp.tokens.accessOrWorkspaceAgnosticToken.token;
 
-  const workspaceId = await createNewWorkspace({
-    baseUrl,
-    bearer: agnostic,
-    name: `${input.prefix}-${input.label}-ws`,
-  });
-
-  const listed = await gql<{
-    signIn: {
-      availableWorkspaces: {
-        availableWorkspacesForSignIn: Array<{
-          id: string;
-          workspaceUrls: { subdomainUrl: string | null } | null;
-        }>;
-      };
+  const created = await gql<{
+    signUpInNewWorkspace: {
+      loginToken: { token: string; expiresAt: string };
+      workspace: { id: string; workspaceUrls: { customUrl: string | null; subdomainUrl: string } };
     };
   }>({
     baseUrl,
     endpoint: "metadata",
-    operation: "signIn",
-    query: SIGN_IN_LIST,
-    variables: { email, password },
+    operation: "signUpInNewWorkspace",
+    query: SIGN_UP_IN_NEW_WORKSPACE,
+    variables: { input: { displayName: `${input.prefix}-${input.label}-ws` } },
+    bearer: userSession,
   });
-  const entry = listed.signIn.availableWorkspaces.availableWorkspacesForSignIn.find(
-    (row) => row.id === workspaceId,
-  );
-  const subdomainUrl = entry?.workspaceUrls?.subdomainUrl?.trim();
-  if (subdomainUrl === undefined || subdomainUrl === "") {
-    throw new Error("TEST BUG: the new workspace has no subdomain URL in the product's list");
-  }
+  const subdomainUrl = created.signUpInNewWorkspace.workspace.workspaceUrls.subdomainUrl.trim();
+  if (subdomainUrl === "")
+    throw new Error("TEST BUG: signUpInNewWorkspace returned no subdomainUrl");
   const origin = new URL(subdomainUrl).origin;
   const session = await loginThrowaway({ baseUrl: origin, email, password });
   return { origin, session, email, password };
