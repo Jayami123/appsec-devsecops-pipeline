@@ -58,3 +58,9 @@ test("a JWT-shaped credential in a name=value assignment is still a hit (narrowi
   assert.match(result.stderr, /rule name=value assignment \(password, secret or token\) key=token/);
   assert.doesNotMatch(result.stderr, new RegExp(jwt.slice(0, 20)));
 });
+
+test("a query-string password value with code-like characters is still a hit (the narrowing does not drop query values)", () => {
+  const result = run({ "u.json": 'uri: "https://x.test/login?password=Ab(9)+x;z"\n' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /key=password position=query/);
+});

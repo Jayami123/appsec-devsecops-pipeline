@@ -79,10 +79,13 @@ export function describeAssignment(line) {
   return ` key=${hit.key} position=${hit.position} value=${bucket} charset=${charsetOf(hit.value)}`;
 }
 
-/** True for a name=value hit whose value is script code (a false match on page source, not a credential). */
+/**
+ * True for a name=value hit that is script code in page source (not in a query string): a false match, not a
+ * credential. A query-string value is never treated as code, because a real password can contain such characters.
+ */
 export function isScriptCodeAssignment(line) {
   const hit = assignmentOf(line);
-  return hit !== null && charsetOf(hit.value) === "code";
+  return hit !== null && hit.position === "other" && charsetOf(hit.value) === "code";
 }
 
 /** @param {string} text @returns {{ line: number, rule: string }[]} */
