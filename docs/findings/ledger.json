@@ -689,7 +689,7 @@
       "id": "P5-CAL-CSV-002",
       "product": "cal",
       "status": "gated",
-      "blocker": "GATED: Medusa leg needs a throwaway admin route (D-1); Twenty UI leg needs D-8 live evidence and P-4; csv-corpus module not on main (L-CAL)",
+      "blocker": "GATED: Medusa leg needs a throwaway admin route (D-1); Twenty UI leg needs P-4 (sign-up route), a measured CSV_UI_DOWNLOAD_MS budget and D-8 live evidence",
       "title": "Medusa and Twenty export control with the same corpus",
       "lane": "X",
       "severity": null
