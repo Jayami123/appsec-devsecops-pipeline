@@ -248,3 +248,29 @@ test("the positive-control job requires the four known alerts, uploads nothing a
   assert.match(control, /--bind 127\.0\.0\.1/);
   assert.doesNotMatch(control, /\bhttps?:\/\/(?!127\.0\.0\.1)/);
 });
+
+test("every product job redacts the evidence before the threshold and the gate (F-ZAP-1)", () => {
+  for (const job of ZAP_JOBS) {
+    const body = jobText(job);
+    const redact = body.indexOf("scripts/scan/zap-redact.ts");
+    const judge = body.indexOf("zap-threshold.ts judge");
+    const gate = body.indexOf("evidence-token-scan.mjs");
+    assert.ok(redact > 0, `${job} redacts`);
+    assert.ok(redact < judge && judge < gate, `${job}: redact, then threshold, then gate`);
+  }
+});
+
+test("the browser login check runs only on the cal and doc stacks, before their teardown, and prints no value", () => {
+  for (const job of ["zap-cal", "zap-doc"]) {
+    const body = jobText(job);
+    assert.match(body, /login-transport-check\.mjs http:\/\/127\.0\.0\.1:\d+ \/[^ ]+/, job);
+    assert.ok(
+      body.indexOf("login-transport-check.mjs") < body.indexOf("down.mjs"),
+      `${job}: check before stop`,
+    );
+  }
+  for (const job of ["zap-med", "zap-tw"]) {
+    assert.doesNotMatch(jobText(job), /login-transport-check/, job);
+  }
+  assert.doesNotMatch(text, /console\.log\(.*(password|dummy)/i);
+});

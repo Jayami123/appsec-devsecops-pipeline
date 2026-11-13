@@ -183,6 +183,14 @@ jobs:
             exit "$code"
           fi
           cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Install Chromium for the login transport check (F-ZAP-1)
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+      - name: Login transport check (F-ZAP-1; prints the form method and booleans only)
+        timeout-minutes: 5
+        run: node scripts/scan/login-transport-check.mjs http://127.0.0.1:3000 /auth/login,/login
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
       - name: Threshold (a new alert type fails; unusable input fails)
         id: judge
         env:
@@ -287,6 +295,14 @@ jobs:
             exit "$code"
           fi
           cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Install Chromium for the login transport check (F-ZAP-1)
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+      - name: Login transport check (F-ZAP-1; prints the form method and booleans only)
+        timeout-minutes: 5
+        run: node scripts/scan/login-transport-check.mjs http://127.0.0.1:3001 /signin,/login
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
       - name: Threshold (a new alert type fails; unusable input fails)
         id: judge
         env:
@@ -394,6 +410,8 @@ jobs:
             exit "$code"
           fi
           cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
       - name: Threshold (a new alert type fails; unusable input fails)
         id: judge
         env:
@@ -483,6 +501,8 @@ jobs:
             exit "$code"
           fi
           cp "$RUNNER_TEMP/zap/zap.json" "$RUNNER_TEMP/zap/zap.html" "$RUNNER_TEMP/zap-evidence/"
+      - name: Sanitise the evidence (redact sensitive query and form values, F-ZAP-1; no value printed)
+        run: node --experimental-strip-types scripts/scan/zap-redact.ts "$RUNNER_TEMP/zap-evidence"
       - name: Threshold (a new alert type fails; unusable input fails)
         id: judge
         env:
