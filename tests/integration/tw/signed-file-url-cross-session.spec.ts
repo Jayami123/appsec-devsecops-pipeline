@@ -8,7 +8,7 @@ import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import {
   PNG,
   assertLoopbackRecipeName,
-  createOwnedWorkspace,
+  seededPair,
   readRest,
   recipeRootUrl,
   uploadPng,
@@ -19,8 +19,7 @@ test("P5-TW-MT-002: a signed file URL from one workspace is not readable in anot
 }) => {
   const root = recipeRootUrl(); // setup: ENV failure stops here, before any product call
   await assertLoopbackRecipeName(root.hostname);
-  const a = await createOwnedWorkspace({ root, prefix: run.prefix, label: "mt2a" });
-  const b = await createOwnedWorkspace({ root, prefix: run.prefix, label: "mt2b" });
+  const { a, b } = await seededPair({ root, prefix: run.prefix, label: "mt2" });
   const signedUrl = await uploadPng({
     origin: a.origin,
     session: a.session,

@@ -11,10 +11,16 @@
 // are held in memory only and are never printed.
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { twentyMailApiUrl } from "qa-portfolio-harness";
-import { gql } from "../../../src/lanes/tw/gql.ts";
 import {
-  loginThrowaway,
+  TWENTY_DEV_SEED_PASSWORD,
+  TWENTY_SEED_APPLE_WORKSPACE_SUBDOMAIN,
+  TWENTY_SEED_YC_WORKSPACE_SUBDOMAIN,
+  twentyMailApiUrl,
+} from "qa-portfolio-harness";
+import { gql } from "../../../src/lanes/tw/gql.ts";
+import { awaitInviteLink, joinWorkspace } from "../../../src/lanes/tw/member.ts";
+import {
+  adminSetupSession,
   throwawayEmail,
   throwawayPassword,
   type TwSession,
@@ -81,86 +87,124 @@ export function workspaceOrigin(subdomain: string, root: URL): string {
   return `${root.protocol}//${subdomain}.${root.host}`;
 }
 
-export interface OwnedWorkspace {
-  /** The workspace origin: the subdomain URL the product reports for the new workspace. */
+export interface MultiworkspaceMember {
+  /** The workspace origin (the seeded subdomain on the README recipe host). */
   readonly origin: string;
-  /** A session on that origin, for the throwaway owner. */
+  /** A throwaway member of that workspace, invited through the product. */
   readonly session: TwSession;
+  /** The workspace admin, used as setup only (invites, API keys). Never an actor under test (D-TW-B5). */
+  readonly admin: TwSession;
   readonly email: string;
   readonly password: string;
 }
 
-const SIGN_UP = `mutation SignUp($email: String!, $password: String!) {
-  signUp(email: $email, password: $password) {
+/** A: a member of the YC workspace. B: a member of the Apple workspace. Each is a throwaway member. */
+export interface MultiworkspacePair {
+  readonly a: MultiworkspaceMember;
+  readonly b: MultiworkspaceMember;
+}
+
+/**
+ * The YC admin of the dev seed: TIM_ACME holds the admin role of YC (fork
+ * packages/twenty-server/src/engine/workspace-manager/dev-seeder/core/services/dev-seeder-permissions.service.ts:145-146),
+ * and tim@apple.dev is the seed login of TIM (seed-users.util.ts:30). The shared dev-seed password is the harness
+ * export TWENTY_DEV_SEED_PASSWORD. Setup only.
+ */
+const YC_SEED_ADMIN_EMAIL = "tim@apple.dev";
+
+const SEED_LOGIN = `mutation Login($email: String!, $password: String!, $origin: String!) {
+  getLoginTokenFromCredentials(email: $email, password: $password, origin: $origin) { loginToken { token } }
+}`;
+const SEED_EXCHANGE = `mutation Exchange($loginToken: String!, $origin: String!) {
+  getAuthTokensFromLoginToken(loginToken: $loginToken, origin: $origin) {
     tokens { accessOrWorkspaceAgnosticToken { token } }
   }
 }`;
 
 /**
- * The exact contract of signUpInNewWorkspace at the Twenty pin 7cbdfec6 (D-TW-B48):
- * - resolver: packages/twenty-server/src/engine/core-modules/auth/auth.resolver.ts:614-620, an optional
- *   `input: SignUpInNewWorkspaceInput`, guarded by UserAuthGuard and RequireUserSessionGuard (so the user session
- *   token from signUp is required, not a login token);
- * - input: packages/twenty-server/src/engine/core-modules/auth/dto/sign-up-in-new-workspace.input.ts:7-16, with
- *   `displayName` (the workspace name, max 100) and an optional `subdomain`;
- * - name check: packages/twenty-server/src/engine/core-modules/auth/services/sign-in-up.service.ts:699-706 throws
- *   "Workspace name is required" when displayName is blank (the failure of run 43401486505 and 43399311588);
- * - output: SignUpDTO (auth/dto/sign-up.dto.ts:8-13): loginToken and workspace { id, workspaceUrls }, where
- *   workspaceUrls.subdomainUrl is the origin of the new workspace (workspace-urls.dto.ts:9).
- * The helper sends exactly this shape, once, and takes the origin from the response.
+ * A session on a seeded workspace for a seed admin (setup only). Same product mutations as loginThrowaway, without the
+ * throwaway-prefix guard, because the seed admin is not a throwaway actor.
  */
-const SIGN_UP_IN_NEW_WORKSPACE = `mutation SignUpInNewWorkspace($input: SignUpInNewWorkspaceInput) {
-  signUpInNewWorkspace(input: $input) {
-    loginToken { token expiresAt }
-    workspace { id workspaceUrls { customUrl subdomainUrl } }
-  }
-}`;
+async function seedAdminSession(
+  origin: string,
+  email: string,
+  password: string,
+): Promise<TwSession> {
+  const login = await gql<{ getLoginTokenFromCredentials: { loginToken: { token: string } } }>({
+    baseUrl: origin,
+    endpoint: "metadata",
+    operation: "getLoginTokenFromCredentials",
+    query: SEED_LOGIN,
+    variables: { email, password, origin },
+  });
+  const exchanged = await gql<{
+    getAuthTokensFromLoginToken: { tokens: { accessOrWorkspaceAgnosticToken: { token: string } } };
+  }>({
+    baseUrl: origin,
+    endpoint: "metadata",
+    operation: "getAuthTokensFromLoginToken",
+    query: SEED_EXCHANGE,
+    variables: { loginToken: login.getLoginTokenFromCredentials.loginToken.token, origin },
+  });
+  const accessToken =
+    exchanged.getAuthTokensFromLoginToken.tokens.accessOrWorkspaceAgnosticToken.token;
+  const current = await gql<{ currentWorkspace: { id: string } }>({
+    baseUrl: origin,
+    endpoint: "metadata",
+    operation: "currentWorkspace",
+    query: `query { currentWorkspace { id } }`,
+    bearer: accessToken,
+  });
+  return { accessToken, workspaceId: current.currentWorkspace.id };
+}
+
+/** One throwaway member, invited by the workspace admin through the product (invite mail read by recipient). */
+async function invitedMember(input: {
+  readonly origin: string;
+  readonly admin: TwSession;
+  readonly prefix: string;
+  readonly label: string;
+}): Promise<MultiworkspaceMember> {
+  const email = throwawayEmail(input.prefix, input.label);
+  const password = throwawayPassword();
+  const session = await joinWorkspace({
+    baseUrl: input.origin,
+    admin: input.admin,
+    email,
+    password,
+    awaitLink: () => awaitInviteLink(email),
+  });
+  return { origin: input.origin, session, admin: input.admin, email, password };
+}
 
 /**
- * A throwaway owner with its own workspace, created through the product: sign-up (no workspace) with the user session,
- * then signUpInNewWorkspace with `displayName` set to the run-prefixed name. The workspace origin is the subdomainUrl
- * in the response. A session on that origin is then created with the owner's credentials. Each step names its operation
- * in any error, and no body is returned.
+ * The two rows' workspaces: the seeded YC and Apple workspaces on the recipe host (D-TW-B50). A throwaway member is
+ * invited into each. Workspace creation is not used: the stack caps instance workspaces at five without an enterprise
+ * key (fork packages/twenty-server/src/engine/core-modules/auth/services/sign-in-up.service.ts:579-585, run 43403186450),
+ * and the seeded pair is within the recipe. The seed subdomains are the harness exports.
  */
-export async function createOwnedWorkspace(input: {
+export async function seededPair(input: {
   readonly root: URL;
   readonly prefix: string;
   readonly label: string;
-}): Promise<OwnedWorkspace> {
-  const baseUrl = input.root.origin;
-  const email = throwawayEmail(input.prefix, input.label);
-  const password = throwawayPassword();
-
-  const signedUp = await gql<{
-    signUp: { tokens: { accessOrWorkspaceAgnosticToken: { token: string } } };
-  }>({
-    baseUrl,
-    endpoint: "metadata",
-    operation: "signUp",
-    query: SIGN_UP,
-    variables: { email, password },
+}): Promise<MultiworkspacePair> {
+  const ycOrigin = workspaceOrigin(TWENTY_SEED_YC_WORKSPACE_SUBDOMAIN, input.root);
+  const appleOrigin = workspaceOrigin(TWENTY_SEED_APPLE_WORKSPACE_SUBDOMAIN, input.root);
+  const ycAdmin = await seedAdminSession(ycOrigin, YC_SEED_ADMIN_EMAIL, TWENTY_DEV_SEED_PASSWORD);
+  const appleAdmin = await adminSetupSession(appleOrigin); // setup only (D-TW-B5)
+  const a = await invitedMember({
+    origin: ycOrigin,
+    admin: ycAdmin,
+    prefix: input.prefix,
+    label: `${input.label}a`,
   });
-  const userSession = signedUp.signUp.tokens.accessOrWorkspaceAgnosticToken.token;
-
-  const created = await gql<{
-    signUpInNewWorkspace: {
-      loginToken: { token: string; expiresAt: string };
-      workspace: { id: string; workspaceUrls: { customUrl: string | null; subdomainUrl: string } };
-    };
-  }>({
-    baseUrl,
-    endpoint: "metadata",
-    operation: "signUpInNewWorkspace",
-    query: SIGN_UP_IN_NEW_WORKSPACE,
-    variables: { input: { displayName: `${input.prefix}-${input.label}-ws` } },
-    bearer: userSession,
+  const b = await invitedMember({
+    origin: appleOrigin,
+    admin: appleAdmin,
+    prefix: input.prefix,
+    label: `${input.label}b`,
   });
-  const subdomainUrl = created.signUpInNewWorkspace.workspace.workspaceUrls.subdomainUrl.trim();
-  if (subdomainUrl === "")
-    throw new Error("TEST BUG: signUpInNewWorkspace returned no subdomainUrl");
-  const origin = new URL(subdomainUrl).origin;
-  const session = await loginThrowaway({ baseUrl: origin, email, password });
-  return { origin, session, email, password };
+  return { a, b };
 }
 
 /** Creates one company in a workspace (REST). Returns its id; the name carries the run prefix. */

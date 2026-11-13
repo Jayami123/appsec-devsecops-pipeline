@@ -10,7 +10,7 @@ import { createApiKey, revokeApiKey } from "../../../src/lanes/tw/keys.ts";
 import { gql } from "../../../src/lanes/tw/gql.ts";
 import {
   assertLoopbackRecipeName,
-  createOwnedWorkspace,
+  seededPair,
   readRest,
   recipeRootUrl,
 } from "./multiws-support.ts";
@@ -78,15 +78,14 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
 }) => {
   const root = recipeRootUrl(); // setup: ENV failure stops here, before any product call
   await assertLoopbackRecipeName(root.hostname);
-  const a = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt2a" });
-  const b = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt2b" });
+  const { a, b } = await seededPair({ root, prefix: run.prefix, label: "nt2" });
   const key = await createApiKey({
     baseUrl: a.origin,
-    session: a.session,
+    session: a.admin,
     name: `${run.prefix}-scope-a`,
   });
   run.onCleanup(() =>
-    revokeApiKey({ baseUrl: a.origin, session: a.session, keyId: key.id }).catch(() => undefined),
+    revokeApiKey({ baseUrl: a.origin, session: a.admin, keyId: key.id }).catch(() => undefined),
   );
 
   // control: A's key creates a webhook in A
@@ -105,14 +104,15 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
     if (createdId !== undefined) {
       await fetch(`${a.origin}/rest/webhooks/${createdId}`, {
         method: "DELETE",
-        headers: { authorization: `Bearer ${a.session.accessToken}` },
+        headers: { authorization: `Bearer ${a.admin.accessToken}` },
       });
     }
   });
 
   // negative: A's key on B's origin, B's list before and after
   const listUrl = `${b.origin}/rest/webhooks?limit=200`;
-  const before = await readRest({ url: listUrl, bearer: b.session.accessToken });
+  const before = await readRest({ url: listUrl, bearer: b.admin.accessToken });
+  expect(before.status, "control: B's admin lists its webhooks").toBe(200);
   const negative = await fetch(`${b.origin}/rest/webhooks`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key.secret}` },
@@ -121,6 +121,6 @@ test("NEW-TW-2 (a): an API key of one workspace cannot create a webhook in anoth
   expect([400, 401, 403], `negative: A's key is refused on B (HTTP ${negative.status})`).toContain(
     negative.status,
   );
-  const after = await readRest({ url: listUrl, bearer: b.session.accessToken });
+  const after = await readRest({ url: listUrl, bearer: b.admin.accessToken });
   expect(after.text, "negative: B's webhook list is unchanged").toEqual(before.text);
 });

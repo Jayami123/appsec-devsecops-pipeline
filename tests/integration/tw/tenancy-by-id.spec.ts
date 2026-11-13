@@ -11,7 +11,7 @@ import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import {
   assertLoopbackRecipeName,
   createCompany,
-  createOwnedWorkspace,
+  seededPair,
   readRest,
   recipeRootUrl,
 } from "./multiws-support.ts";
@@ -44,8 +44,7 @@ test("NEW-TW-1: a workspace B session cannot read or update a workspace A compan
 }) => {
   const root = recipeRootUrl(); // setup: ENV failure stops here, before any product call
   await assertLoopbackRecipeName(root.hostname);
-  const a = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt1a" });
-  const b = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt1b" });
+  const { a, b } = await seededPair({ root, prefix: run.prefix, label: "nt1" });
   const name = `${run.prefix}-nt1-target`;
   const aId = await createCompany({ origin: a.origin, session: a.session, name });
   const bId = await createCompany({

@@ -15,7 +15,7 @@ import { expectedDefect } from "../../../src/kit/ci/known-defect.ts";
 import { awaitInviteLink, joinWorkspace } from "../../../src/lanes/tw/member.ts";
 import {
   assertLoopbackRecipeName,
-  createOwnedWorkspace,
+  seededPair,
   findInviteHash,
   memberIdsByEmail,
   recipeRootUrl,
@@ -63,12 +63,11 @@ test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A
 }) => {
   const root = recipeRootUrl(); // setup: ENV failure stops here, before any product call
   await assertLoopbackRecipeName(root.hostname);
-  const a = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt5a" });
-  const b = await createOwnedWorkspace({ root, prefix: run.prefix, label: "nt5b" });
+  const { a, b } = await seededPair({ root, prefix: run.prefix, label: "nt5" });
   const invitee = throwawayEmail(run.prefix, "nt5invitee");
   const inviteePassword = throwawayPassword();
 
-  await sendInvite({ baseUrl: a.origin, admin: a.session, email: invitee });
+  await sendInvite({ baseUrl: a.origin, admin: a.admin, email: invitee });
   await expect.poll(() => findInviteHash(invitee)).not.toBeUndefined(); // the invite mail arrives
   const hash = await findInviteHash(invitee);
   if (hash === undefined) throw new Error("TEST BUG: the invite hash disappeared after the poll");
@@ -82,7 +81,7 @@ test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A
   });
   const controlMembers = await memberIdsByEmail({
     origin: a.origin,
-    session: a.session,
+    session: a.admin,
     email: invitee,
   });
   expect(controlMembers.length, "control: the invitee is a member of A").toBe(1);
@@ -90,7 +89,7 @@ test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A
   // negative: B's owner presents A's invite hash on B's origin
   const membersBefore = await memberIdsByEmail({
     origin: a.origin,
-    session: a.session,
+    session: a.admin,
     email: b.email,
   });
   let refused = false;
@@ -111,7 +110,7 @@ test("NEW-TW-5 (cross-workspace): a workspace B user cannot accept a workspace A
   );
   const membersAfter = await memberIdsByEmail({
     origin: a.origin,
-    session: a.session,
+    session: a.admin,
     email: b.email,
   });
   expect(membersAfter, "negative: B's user is not a member of A").toEqual(membersBefore);

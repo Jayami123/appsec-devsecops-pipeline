@@ -9,7 +9,7 @@ import { test, expect } from "../../../src/lanes/tw/run-fixture.ts";
 import {
   assertLoopbackRecipeName,
   createCompany,
-  createOwnedWorkspace,
+  seededPair,
   readRest,
   recipeRootUrl,
 } from "./multiws-support.ts";
@@ -19,8 +19,7 @@ test("P5-TW-MT-001: a user of a second workspace cannot read a company of the fi
 }) => {
   const root = recipeRootUrl(); // setup: ENV failure stops here, before any product call
   await assertLoopbackRecipeName(root.hostname);
-  const a = await createOwnedWorkspace({ root, prefix: run.prefix, label: "mt1a" });
-  const b = await createOwnedWorkspace({ root, prefix: run.prefix, label: "mt1b" });
+  const { a, b } = await seededPair({ root, prefix: run.prefix, label: "mt1" });
   const name = `${run.prefix}-mt001-company`;
   const companyId = await createCompany({ origin: a.origin, session: a.session, name });
 
